@@ -1,13 +1,15 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatCard } from "@/components/StatCard";
-import { Users, Gavel, DollarSign, TrendingUp, Search, PlusCircle, Settings } from "lucide-react";
+import { Users, Gavel, DollarSign, TrendingUp, Search, PlusCircle, Settings, ShieldCheck } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -126,6 +128,14 @@ const Index = () => {
               >
                 <PlusCircle className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
                 New Auction
+              </Button>
+              <Button 
+                variant="outline" 
+                className="shadow-sm hover:shadow-md transition-all duration-300 hover:bg-gray-50"
+                onClick={() => navigate('/admin')}
+              >
+                <ShieldCheck className="mr-2 h-4 w-4 transition-transform hover:rotate-12" />
+                Admin
               </Button>
               <Button 
                 variant="outline" 
