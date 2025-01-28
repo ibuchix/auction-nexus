@@ -2,11 +2,19 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type Auction = Database['public']['Tables']['cars']['Row'] & {
   bids: Database['public']['Tables']['bids']['Row'][];
   auction_metrics: Database['public']['Tables']['auction_metrics']['Row'][];
 };
+
+type RealtimeCarPayload = RealtimePostgresChangesPayload<{
+  [key: string]: any;
+  id: string;
+}>;
+
+type RealtimeBidPayload = RealtimePostgresChangesPayload<Database['public']['Tables']['bids']['Row']>;
 
 export function useAuctionMonitoring() {
   const [realTimeAuctions, setRealTimeAuctions] = useState<Auction[]>([]);
@@ -56,7 +64,7 @@ export function useAuctionMonitoring() {
           table: 'cars',
           filter: 'is_auction=eq.true',
         },
-        (payload) => {
+        (payload: RealtimeCarPayload) => {
           setRealTimeAuctions((current) => {
             const updated = [...current];
             const index = updated.findIndex((auction) => auction.id === payload.new.id);
@@ -76,7 +84,7 @@ export function useAuctionMonitoring() {
           schema: 'public',
           table: 'bids',
         },
-        (payload) => {
+        (payload: RealtimeBidPayload) => {
           setRealTimeAuctions((current) => {
             const updated = [...current];
             const index = updated.findIndex((auction) => auction.id === payload.new.car_id);
