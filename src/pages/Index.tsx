@@ -1,15 +1,17 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatCard } from "@/components/StatCard";
-import { Users, Gavel, DollarSign, TrendingUp, Search, PlusCircle, Settings, ShieldCheck } from "lucide-react";
+import { Users, Gavel, DollarSign, TrendingUp, Search, PlusCircle, Settings, ShieldCheck, AlertTriangle, CheckCircle2, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -86,11 +88,42 @@ const Index = () => {
     }
   });
 
+  const { data: pendingVerifications } = useQuery({
+    queryKey: ['pendingVerifications'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('dealers')
+        .select('*', { count: 'exact', head: true })
+        .eq('verification_status', 'pending');
+      return count || 0;
+    }
+  });
+
+  const { data: suspiciousActivities } = useQuery({
+    queryKey: ['suspiciousActivities'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('bid_metrics')
+        .select('*', { count: 'exact', head: true })
+        .eq('success', false);
+      return count || 0;
+    }
+  });
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
+  };
+
+  const handleAdminClick = () => {
+    toast({
+      title: "Admin Features Available",
+      description: "You can now access dealer verification, suspicious activity monitoring, auction management, and bid validation from the admin dashboard.",
+      duration: 5000,
+    });
+    navigate('/admin');
   };
 
   return (
@@ -131,11 +164,16 @@ const Index = () => {
               </Button>
               <Button 
                 variant="outline" 
-                className="shadow-sm hover:shadow-md transition-all duration-300 hover:bg-gray-50"
-                onClick={() => navigate('/admin')}
+                className="shadow-sm hover:shadow-md transition-all duration-300 hover:bg-gray-50 relative"
+                onClick={handleAdminClick}
               >
                 <ShieldCheck className="mr-2 h-4 w-4 transition-transform hover:rotate-12" />
                 Admin
+                {(pendingVerifications || suspiciousActivities) ? (
+                  <span className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+                    {(pendingVerifications || 0) + (suspiciousActivities || 0)}
+                  </span>
+                ) : null}
               </Button>
               <Button 
                 variant="outline" 
@@ -183,12 +221,50 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300">
-          <h2 className="text-xl font-semibold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Recent Activity
-          </h2>
-          <div className="space-y-4">
-            <p className="text-gray-600">No recent activity to display.</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300">
+            <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Pending Verifications
+              </span>
+            </h2>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">{pendingVerifications || 0}</span>
+              <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                View All
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300">
+            <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Recent Auctions Closed
+              </span>
+            </h2>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">{activeAuctions || 0}</span>
+              <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                Manage
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300">
+            <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <Activity className="h-5 w-5 text-red-500" />
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Suspicious Activities
+              </span>
+            </h2>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">{suspiciousActivities || 0}</span>
+              <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                Investigate
+              </Button>
+            </div>
           </div>
         </div>
       </div>
