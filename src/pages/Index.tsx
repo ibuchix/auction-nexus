@@ -45,6 +45,17 @@ const Index = () => {
     }
   });
 
+  const { data: dealerCount } = useQuery({
+    queryKey: ['dealerCount'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('dealers')
+        .select('*', { count: 'exact', head: true })
+        .eq('verification_status', 'approved');
+      return count || 0;
+    }
+  });
+
   const { data: activeAuctions } = useQuery({
     queryKey: ['activeAuctions'],
     queryFn: async () => {
@@ -189,7 +200,7 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="transform hover:scale-105 transition-transform duration-300">
             <StatCard
-              title="Total Sellers"
+              title="Active Sellers"
               value={sellerCount?.toString() || "0"}
               icon={Users}
               trend={{ value: 12, isPositive: true }}
@@ -197,8 +208,8 @@ const Index = () => {
           </div>
           <div className="transform hover:scale-105 transition-transform duration-300">
             <StatCard
-              title="Active Auctions"
-              value={activeAuctions?.toString() || "0"}
+              title="Verified Dealers"
+              value={dealerCount?.toString() || "0"}
               icon={Gavel}
               trend={{ value: 8, isPositive: true }}
             />
@@ -226,7 +237,7 @@ const Index = () => {
             <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
               <AlertTriangle className="h-5 w-5 text-yellow-500" />
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Pending Verifications
+                Pending Dealer Verifications
               </span>
             </h2>
             <div className="flex items-center justify-between">
@@ -241,7 +252,7 @@ const Index = () => {
             <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
               <CheckCircle2 className="h-5 w-5 text-green-500" />
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Recent Auctions Closed
+                Active Auctions
               </span>
             </h2>
             <div className="flex items-center justify-between">
