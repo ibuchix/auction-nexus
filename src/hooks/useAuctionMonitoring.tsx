@@ -9,12 +9,11 @@ type Auction = Database['public']['Tables']['cars']['Row'] & {
   auction_metrics: Database['public']['Tables']['auction_metrics']['Row'][];
 };
 
-type RealtimeCarPayload = RealtimePostgresChangesPayload<{
-  [key: string]: any;
-  id: string;
-}>;
+type CarRow = Database['public']['Tables']['cars']['Row'];
+type BidRow = Database['public']['Tables']['bids']['Row'];
 
-type RealtimeBidPayload = RealtimePostgresChangesPayload<Database['public']['Tables']['bids']['Row']>;
+type RealtimeCarPayload = RealtimePostgresChangesPayload<CarRow>;
+type RealtimeBidPayload = RealtimePostgresChangesPayload<BidRow>;
 
 export function useAuctionMonitoring() {
   const [realTimeAuctions, setRealTimeAuctions] = useState<Auction[]>([]);
@@ -65,6 +64,8 @@ export function useAuctionMonitoring() {
           filter: 'is_auction=eq.true',
         },
         (payload: RealtimeCarPayload) => {
+          if (!payload.new) return;
+          
           setRealTimeAuctions((current) => {
             const updated = [...current];
             const index = updated.findIndex((auction) => auction.id === payload.new.id);
@@ -85,6 +86,8 @@ export function useAuctionMonitoring() {
           table: 'bids',
         },
         (payload: RealtimeBidPayload) => {
+          if (!payload.new) return;
+
           setRealTimeAuctions((current) => {
             const updated = [...current];
             const index = updated.findIndex((auction) => auction.id === payload.new.car_id);
