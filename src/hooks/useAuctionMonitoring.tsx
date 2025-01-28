@@ -64,14 +64,15 @@ export function useAuctionMonitoring() {
           filter: 'is_auction=eq.true',
         },
         (payload: RealtimeCarPayload) => {
-          if (!payload.new) return;
+          if (!payload.new || typeof payload.new !== 'object') return;
+          const newData = payload.new as CarRow;
           
           setRealTimeAuctions((current) => {
             const updated = [...current];
-            const index = updated.findIndex((auction) => auction.id === payload.new.id);
+            const index = updated.findIndex((auction) => auction.id === newData.id);
             
             if (index !== -1) {
-              updated[index] = { ...updated[index], ...payload.new };
+              updated[index] = { ...updated[index], ...newData };
             }
             
             return updated;
@@ -86,17 +87,18 @@ export function useAuctionMonitoring() {
           table: 'bids',
         },
         (payload: RealtimeBidPayload) => {
-          if (!payload.new) return;
+          if (!payload.new || typeof payload.new !== 'object') return;
+          const newBid = payload.new as BidRow;
 
           setRealTimeAuctions((current) => {
             const updated = [...current];
-            const index = updated.findIndex((auction) => auction.id === payload.new.car_id);
+            const index = updated.findIndex((auction) => auction.id === newBid.car_id);
             
             if (index !== -1) {
               const auction = updated[index];
               updated[index] = {
                 ...auction,
-                bids: [...(auction.bids || []), payload.new],
+                bids: [...(auction.bids || []), newBid],
               };
             }
             
