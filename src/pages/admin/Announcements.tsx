@@ -8,7 +8,7 @@ const Announcements = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">System Announcements</h1>
+          <h1 className="text-3xl font-bold">Announcements</h1>
           <Button>
             <Megaphone className="mr-2 h-4 w-4" />
             New Announcement
