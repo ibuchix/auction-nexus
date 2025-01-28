@@ -1,10 +1,35 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatCard } from "@/components/StatCard";
-import { Users, Gavel, DollarSign, TrendingUp } from "lucide-react";
+import { Users, Gavel, DollarSign, TrendingUp, Search, PlusCircle, Settings } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
 
 const Index = () => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
   const { data: sellerCount } = useQuery({
     queryKey: ['sellerCount'],
     queryFn: async () => {
@@ -69,9 +94,35 @@ const Index = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome to your auction management system</p>
+        <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-center md:justify-between bg-white p-6 rounded-lg shadow-sm">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-gray-500">{formatDate(currentTime)}</p>
+          </div>
+          
+          <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4 md:items-center">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search auctions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-full md:w-[300px]"
+              />
+            </div>
+            
+            <div className="flex space-x-2">
+              <Button variant="default" className="shadow-sm">
+                <PlusCircle className="mr-2" />
+                New Auction
+              </Button>
+              <Button variant="outline" className="shadow-sm">
+                <Settings className="mr-2" />
+                Settings
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
