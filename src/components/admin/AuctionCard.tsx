@@ -3,6 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Database } from "@/integrations/supabase/types";
 import { Ban, Clock, DollarSign, Pause, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Auction = Database['public']['Tables']['cars']['Row'] & {
   bids: Database['public']['Tables']['bids']['Row'][];
@@ -71,14 +82,31 @@ export function AuctionCard({ auction, onPause, onCancel }: AuctionCardProps) {
               <Pause className="h-4 w-4 mr-1" />
               Pause
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleCancel}
-            >
-              <Ban className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                >
+                  <Ban className="h-4 w-4 mr-1" />
+                  Cancel
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel Auction</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to cancel this auction? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleCancel}>
+                    Yes, cancel auction
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardTitle>
       </CardHeader>
