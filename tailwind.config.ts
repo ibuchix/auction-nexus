@@ -22,16 +22,29 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        background: "#FFFFFF",
+        foreground: "#222020",
         primary: {
-          DEFAULT: "#1a365d",
-          foreground: "#ffffff",
+          DEFAULT: "#0E0E2C",
+          foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "#c4a777",
-          foreground: "#ffffff",
+          DEFAULT: "#383B39",
+          foreground: "#FFFFFF",
         },
+        iris: {
+          DEFAULT: "#4B4DED",
+          light: "#EFEFFD",
+        },
+        success: {
+          DEFAULT: "#21CA6F",
+          foreground: "#FFFFFF",
+        },
+        accent: {
+          DEFAULT: "#ECF1F4",
+          foreground: "#222020",
+        },
+        subtitle: "#6A6A77",
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -39,10 +52,6 @@ export default {
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -54,7 +63,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        kanit: ["Kanit", "sans-serif"],
+        oswald: ["Oswald", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
