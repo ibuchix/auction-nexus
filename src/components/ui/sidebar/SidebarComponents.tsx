@@ -30,7 +30,6 @@ export const sidebarMenuButtonVariants = cva(
   }
 )
 
-// Export all the small components
 export function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -54,8 +53,120 @@ export function SidebarContent({ className, ...props }: React.ComponentProps<"di
   )
 }
 
-// ... Continue with other small components like SidebarFooter, SidebarGroup, etc.
-// For brevity, I'm not showing all components here, but they would follow the same pattern
+export function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-sidebar="footer"
+      className={cn("flex flex-col gap-2 p-2", className)}
+      {...props}
+    />
+  )
+}
+
+export function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-sidebar="group"
+      className={cn("flex flex-col gap-1", className)}
+      {...props}
+    />
+  )
+}
+
+export function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input>) {
+  return (
+    <Input
+      data-sidebar="input"
+      className={cn("h-8 w-full", className)}
+      {...props}
+    />
+  )
+}
+
+export function SidebarMenu({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-sidebar="menu"
+      className={cn("flex flex-col gap-1", className)}
+      {...props}
+    />
+  )
+}
+
+export function SidebarMenuItem({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-sidebar="menu-item"
+      className={cn("group/menu-item relative", className)}
+      {...props}
+    />
+  )
+}
+
+export function SidebarMenuSub({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-sidebar="menu-sub"
+      className={cn("flex flex-col gap-1 pl-6", className)}
+      {...props}
+    />
+  )
+}
+
+export function SidebarMenuSubItem({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-sidebar="menu-sub-item"
+      className={cn("group/menu-sub-item relative", className)}
+      {...props}
+    />
+  )
+}
+
+export function SidebarMenuSubButton({
+  asChild = false,
+  isActive = false,
+  variant = "default",
+  size = "sm",
+  tooltip,
+  className,
+  ...props
+}: React.ComponentProps<"button"> & {
+  asChild?: boolean
+  isActive?: boolean
+  tooltip?: string | React.ComponentProps<typeof TooltipContent>
+  variant?: "default" | "outline"
+  size?: "default" | "sm" | "lg"
+}) {
+  const Comp = asChild ? Slot : "button"
+  const { isMobile, state } = useSidebar()
+
+  const button = (
+    <Comp
+      data-sidebar="menu-sub-button"
+      data-size={size}
+      data-active={isActive}
+      className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+      {...props}
+    />
+  )
+
+  if (!tooltip) {
+    return button
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent
+        side="right"
+        align="center"
+        hidden={state !== "collapsed" || isMobile}
+        {...(typeof tooltip === "string" ? { children: tooltip } : tooltip)}
+      />
+    </Tooltip>
+  )
+}
 
 export function SidebarMenuButton({
   asChild = false,
