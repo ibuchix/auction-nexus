@@ -123,6 +123,13 @@ export type Database = {
             foreignKeyName: "auction_activity_stats_car_id_fkey"
             columns: ["car_id"]
             isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_activity_stats_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
             referencedRelation: "auction_performance_summary"
             referencedColumns: ["auction_id"]
           },
@@ -187,6 +194,13 @@ export type Database = {
             foreignKeyName: "auction_metrics_auction_id_fkey"
             columns: ["auction_id"]
             isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_metrics_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
             referencedRelation: "auction_performance_summary"
             referencedColumns: ["auction_id"]
           },
@@ -244,6 +258,13 @@ export type Database = {
             foreignKeyName: "auction_results_auction_id_fkey"
             columns: ["auction_id"]
             isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_results_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
             referencedRelation: "auction_performance_summary"
             referencedColumns: ["auction_id"]
           },
@@ -259,6 +280,13 @@ export type Database = {
             columns: ["highest_bid_dealer_id"]
             isOneToOne: false
             referencedRelation: "dealers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_auction"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
             referencedColumns: ["id"]
           },
           {
@@ -354,6 +382,13 @@ export type Database = {
             foreignKeyName: "bids_car_id_fkey"
             columns: ["car_id"]
             isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
             referencedRelation: "auction_performance_summary"
             referencedColumns: ["auction_id"]
           },
@@ -439,6 +474,13 @@ export type Database = {
             foreignKeyName: "car_file_uploads_car_id_fkey"
             columns: ["car_id"]
             isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_file_uploads_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
             referencedRelation: "auction_performance_summary"
             referencedColumns: ["auction_id"]
           },
@@ -477,6 +519,13 @@ export type Database = {
           updated_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "car_status_logs_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "car_status_logs_car_id_fkey"
             columns: ["car_id"]
@@ -700,6 +749,13 @@ export type Database = {
             columns: ["buyer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_watchlist_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
             referencedColumns: ["id"]
           },
           {
@@ -981,6 +1037,13 @@ export type Database = {
             foreignKeyName: "proxy_bid_audit_logs_car_id_fkey"
             columns: ["car_id"]
             isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proxy_bid_audit_logs_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
             referencedRelation: "auction_performance_summary"
             referencedColumns: ["auction_id"]
           },
@@ -1080,6 +1143,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "proxy_bids_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "proxy_bids_car_id_fkey"
             columns: ["car_id"]
@@ -1216,6 +1286,27 @@ export type Database = {
       }
     }
     Views: {
+      admin_vehicle_listings: {
+        Row: {
+          active_bidders: number | null
+          auction_end_time: string | null
+          auction_start_time: string | null
+          auction_status: string | null
+          highest_actual_bid: number | null
+          highest_proxy_bid: number | null
+          id: string | null
+          interested_dealers: number | null
+          is_auction: boolean | null
+          make: string | null
+          model: string | null
+          price: number | null
+          reserve_price: number | null
+          seller_role: Database["public"]["Enums"]["user_role"] | null
+          title: string | null
+          year: number | null
+        }
+        Relationships: []
+      }
       auction_performance_summary: {
         Row: {
           auction_end_time: string | null
