@@ -13,47 +13,43 @@ import {
   Play,
   Pause,
   Ban,
-  Clock
+  Clock,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
-
-type AdminVehicleListing = {
-  id: string;
-  title: string;
-  make: string;
-  model: string;
-  year: number;
-  price: number;
-  is_auction: boolean;
-  auction_status: string | null;
-  auction_start_time: string | null;
-  auction_end_time: string | null;
-  reserve_price: number | null;
-  seller_role: string;
-  interested_dealers: number;
-  highest_proxy_bid: number | null;
-  active_bidders: number;
-  highest_actual_bid: number | null;
-};
+import { AuctionDetails } from "@/components/admin/AuctionDetails";
 
 const AuctionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [expandedCards, setExpandedCards] = useState<string[]>([]);
   const { pauseAuction, cancelAuction } = useAuctionOperations();
 
   const { data: listings, isLoading } = useQuery({
     queryKey: ['adminVehicleListings'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('admin_vehicle_listings')
-        .select('*');
+        .from('cars')
+        .select(`
+          *,
+          car_file_uploads (*)
+        `);
       
       if (error) throw error;
-      return data as AdminVehicleListing[];
+      return data;
     }
   });
+
+  const toggleCardExpansion = (id: string) => {
+    setExpandedCards(prev => 
+      prev.includes(id) 
+        ? prev.filter(cardId => cardId !== id)
+        : [...prev, id]
+    );
+  };
 
   const startAuction = async (carId: string) => {
     const startTime = new Date();
@@ -81,9 +77,9 @@ const AuctionManagement = () => {
 
   const filteredListings = listings?.filter(listing => {
     const matchesSearch = 
-      listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.model.toLowerCase().includes(searchTerm.toLowerCase());
+      listing.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.model?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || listing.auction_status === statusFilter;
     
@@ -132,26 +128,32 @@ const AuctionManagement = () => {
             filteredListings?.map((listing) => (
               <Card key={listing.id} className="p-6">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-semibold">{listing.title}</h3>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold">{listing.title}</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleCardExpansion(listing.id)}
+                        className="p-0 h-auto"
+                      >
+                        {expandedCards.includes(listing.id) ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                     <p className="text-sm text-gray-500">
                       {listing.make} {listing.model} {listing.year}
                     </p>
                     <div className="mt-2 space-y-1">
                       <p className="text-sm">
-                        <span className="font-medium">Price:</span> ${listing.price.toLocaleString()}
+                        <span className="font-medium">Price:</span> ${listing.price?.toLocaleString()}
                       </p>
                       {listing.reserve_price && (
                         <p className="text-sm">
                           <span className="font-medium">Reserve:</span> ${listing.reserve_price.toLocaleString()}
-                        </p>
-                      )}
-                      <p className="text-sm">
-                        <span className="font-medium">Interested Dealers:</span> {listing.interested_dealers}
-                      </p>
-                      {listing.highest_proxy_bid && (
-                        <p className="text-sm">
-                          <span className="font-medium">Highest Proxy Bid:</span> ${listing.highest_proxy_bid.toLocaleString()}
                         </p>
                       )}
                       {listing.auction_status && (
@@ -208,6 +210,9 @@ const AuctionManagement = () => {
                       Ends: {format(new Date(listing.auction_end_time), 'PPp')}
                     </span>
                   </div>
+                )}
+                {expandedCards.includes(listing.id) && (
+                  <AuctionDetails car={listing} />
                 )}
               </Card>
             ))
