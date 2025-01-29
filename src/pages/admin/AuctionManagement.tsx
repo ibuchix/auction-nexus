@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 
 type AdminVehicleListing = {
   id: string;
@@ -40,6 +41,7 @@ type AdminVehicleListing = {
 const AuctionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { pauseAuction, cancelAuction } = useAuctionOperations();
 
   const { data: listings, isLoading } = useQuery({
     queryKey: ['adminVehicleListings'],
@@ -58,20 +60,22 @@ const AuctionManagement = () => {
     const endTime = new Date();
     endTime.setHours(endTime.getHours() + 24); // 24-hour auction by default
 
-    const { error } = await supabase
-      .from('cars')
-      .update({
-        is_auction: true,
-        auction_status: 'active',
-        auction_start_time: startTime.toISOString(),
-        auction_end_time: endTime.toISOString()
-      })
-      .eq('id', carId);
+    try {
+      const { error } = await supabase
+        .from('cars')
+        .update({
+          is_auction: true,
+          auction_status: 'active',
+          auction_start_time: startTime.toISOString(),
+          auction_end_time: endTime.toISOString()
+        })
+        .eq('id', carId);
 
-    if (error) {
-      toast.error("Failed to start auction");
-    } else {
+      if (error) throw error;
       toast.success("Auction started successfully");
+    } catch (error) {
+      toast.error("Failed to start auction");
+      console.error('Error starting auction:', error);
     }
   };
 
@@ -109,6 +113,8 @@ const AuctionManagement = () => {
               <option value="pending">Pending</option>
               <option value="active">Active</option>
               <option value="ended">Ended</option>
+              <option value="paused">Paused</option>
+              <option value="cancelled">Cancelled</option>
             </Select>
           </div>
         </div>
@@ -148,6 +154,19 @@ const AuctionManagement = () => {
                           <span className="font-medium">Highest Proxy Bid:</span> ${listing.highest_proxy_bid.toLocaleString()}
                         </p>
                       )}
+                      {listing.auction_status && (
+                        <p className="text-sm">
+                          <span className="font-medium">Status:</span>{" "}
+                          <span className={`capitalize ${
+                            listing.auction_status === 'active' ? 'text-green-600' :
+                            listing.auction_status === 'paused' ? 'text-yellow-600' :
+                            listing.auction_status === 'cancelled' ? 'text-red-600' :
+                            'text-gray-600'
+                          }`}>
+                            {listing.auction_status}
+                          </span>
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -164,6 +183,7 @@ const AuctionManagement = () => {
                       <>
                         <Button
                           variant="outline"
+                          onClick={() => pauseAuction(listing.id)}
                           className="flex items-center gap-2"
                         >
                           <Pause className="h-4 w-4" />
@@ -171,6 +191,7 @@ const AuctionManagement = () => {
                         </Button>
                         <Button
                           variant="destructive"
+                          onClick={() => cancelAuction(listing.id)}
                           className="flex items-center gap-2"
                         >
                           <Ban className="h-4 w-4" />
@@ -180,11 +201,11 @@ const AuctionManagement = () => {
                     )}
                   </div>
                 </div>
-                {listing.auction_status === 'active' && (
+                {listing.auction_status === 'active' && listing.auction_end_time && (
                   <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
                     <Clock className="h-4 w-4" />
                     <span>
-                      Ends: {format(new Date(listing.auction_end_time!), 'PPp')}
+                      Ends: {format(new Date(listing.auction_end_time), 'PPp')}
                     </span>
                   </div>
                 )}
