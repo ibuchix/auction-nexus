@@ -4,11 +4,10 @@ import {
   AlertTriangle,
   LineChart,
   Bell,
-  ShieldAlert,
-  Scale,
   ScrollText,
   ChevronDown,
   ChevronRight,
+  Search,
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,20 +21,24 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
+  SidebarInput,
 } from "@/components/ui/sidebar";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
   {
     title: "Dashboard",
     icon: LayoutDashboard,
     path: "/admin",
+    shortcut: "Alt+H",
   },
   {
     title: "Auctions",
     icon: Gavel,
+    shortcut: "Alt+A",
     submenu: [
       {
         title: "Monitor Auctions",
@@ -50,6 +53,7 @@ const menuItems = [
   {
     title: "Risk Management",
     icon: AlertTriangle,
+    shortcut: "Alt+R",
     submenu: [
       {
         title: "Disputes",
@@ -84,6 +88,8 @@ const menuItems = [
 
 export function AppSidebar() {
   const [openGroups, setOpenGroups] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation();
 
   const toggleGroup = (title: string) => {
     setOpenGroups((prev) =>
@@ -93,6 +99,15 @@ export function AppSidebar() {
     );
   };
 
+  const filteredItems = menuItems.filter((item) =>
+    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.submenu?.some((subItem) =>
+      subItem.title.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
+
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -101,8 +116,17 @@ export function AppSidebar() {
         </div>
         <SidebarGroup>
           <SidebarGroupContent>
+            <div className="px-2 mb-4">
+              <SidebarInput
+                type="search"
+                placeholder="Search menu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.submenu ? (
                     <Collapsible
@@ -110,9 +134,12 @@ export function AppSidebar() {
                       onOpenChange={() => toggleGroup(item.title)}
                     >
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full justify-between">
+                        <SidebarMenuButton 
+                          className="w-full justify-between hover:bg-iris-light group"
+                          tooltip={item.shortcut}
+                        >
                           <div className="flex items-center gap-3">
-                            <item.icon className="h-5 w-5" />
+                            <item.icon className="h-5 w-5 group-hover:text-iris" />
                             <span>{item.title}</span>
                           </div>
                           {openGroups.includes(item.title) ? (
@@ -126,7 +153,13 @@ export function AppSidebar() {
                         <SidebarMenuSub>
                           {item.submenu.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton asChild>
+                              <SidebarMenuSubButton
+                                asChild
+                                className={cn(
+                                  "hover:bg-iris-light",
+                                  isActive(subItem.path) && "bg-iris-light text-iris font-medium"
+                                )}
+                              >
                                 <Link
                                   to={subItem.path}
                                   className="pl-9 flex items-center gap-3"
@@ -140,9 +173,16 @@ export function AppSidebar() {
                       </CollapsibleContent>
                     </Collapsible>
                   ) : (
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      asChild
+                      className={cn(
+                        "hover:bg-iris-light group",
+                        isActive(item.path) && "bg-iris-light text-iris font-medium"
+                      )}
+                      tooltip={item.shortcut}
+                    >
                       <Link to={item.path} className="flex items-center gap-3">
-                        <item.icon className="h-5 w-5" />
+                        <item.icon className="h-5 w-5 group-hover:text-iris" />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
