@@ -38,6 +38,7 @@ const SellerManagement = () => {
   const { data: sellers, isLoading, refetch } = useQuery({
     queryKey: ['activeSellers'],
     queryFn: async () => {
+      // First get cars with active sellers
       const { data: cars, error: carsError } = await supabase
         .from('cars')
         .select('seller_id')
@@ -47,19 +48,47 @@ const SellerManagement = () => {
 
       const sellerIds = [...new Set(cars?.map(car => car.seller_id))];
 
+      // Then get seller profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*, email:auth_users(email)')
+        .select('id, role, created_at')
         .in('id', sellerIds)
         .eq('role', 'seller');
 
       if (profilesError) throw profilesError;
 
-      // Transform the data to match our Seller interface
-      return profiles.map(profile => ({
-        ...profile,
-        email: profile.email?.email // Nested email from auth.users
-      }));
+      // Get additional seller details from cars table
+      const { data: sellerDetails, error: detailsError } = await supabase
+        .from('cars')
+        .select('seller_id, name, mobile_number, address')
+        .in('seller_id', sellerIds)
+        .eq('status', 'available');
+
+      if (detailsError) throw detailsError;
+
+      // Get emails from auth.users using service role (this would need to be done server-side in production)
+      const { data: authUsers, error: authError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', sellerIds);
+
+      if (authError) throw authError;
+
+      // Combine all the data
+      return profiles.map(profile => {
+        const details = sellerDetails?.find(d => d.seller_id === profile.id);
+        const authUser = authUsers?.find(u => u.id === profile.id);
+        
+        return {
+          id: profile.id,
+          email: authUser?.email,
+          role: profile.role,
+          created_at: profile.created_at,
+          name: details?.name || null,
+          mobile_number: details?.mobile_number || null,
+          address: details?.address || null,
+        } as Seller;
+      });
     }
   });
 
@@ -116,10 +145,10 @@ const SellerManagement = () => {
             <TableBody>
               {sellers?.map((seller) => (
                 <TableRow key={seller.id}>
-                  <TableCell>{seller.name}</TableCell>
-                  <TableCell>{seller.email}</TableCell>
-                  <TableCell>{seller.mobile_number}</TableCell>
-                  <TableCell>{seller.address}</TableCell>
+                  <TableCell>{seller.name || 'N/A'}</TableCell>
+                  <TableCell>{seller.email || 'N/A'}</TableCell>
+                  <TableCell>{seller.mobile_number || 'N/A'}</TableCell>
+                  <TableCell>{seller.address || 'N/A'}</TableCell>
                   <TableCell>
                     {new Date(seller.created_at).toLocaleDateString()}
                   </TableCell>
