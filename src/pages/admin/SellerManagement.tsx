@@ -23,11 +23,12 @@ import { Loader2, Trash2 } from "lucide-react";
 
 interface Seller {
   id: string;
-  email: string;
-  name: string;
-  mobile_number: string;
-  address: string;
+  email: string | null;
+  role: string;
   created_at: string;
+  name: string | null;
+  mobile_number: string | null;
+  address: string | null;
 }
 
 const SellerManagement = () => {
@@ -46,22 +47,19 @@ const SellerManagement = () => {
 
       const sellerIds = [...new Set(cars?.map(car => car.seller_id))];
 
-      const { data: sellerProfiles, error: profilesError } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          email:auth.users!id(email),
-          name,
-          mobile_number,
-          address,
-          created_at
-        `)
+        .select('*, email:auth_users(email)')
         .in('id', sellerIds)
         .eq('role', 'seller');
 
       if (profilesError) throw profilesError;
 
-      return sellerProfiles;
+      // Transform the data to match our Seller interface
+      return profiles.map(profile => ({
+        ...profile,
+        email: profile.email?.email // Nested email from auth.users
+      }));
     }
   });
 
