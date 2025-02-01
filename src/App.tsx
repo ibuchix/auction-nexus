@@ -14,6 +14,7 @@ import Announcements from "./pages/admin/Announcements";
 import FraudDetection from "./pages/admin/FraudDetection";
 import Compliance from "./pages/admin/Compliance";
 import AuditLogs from "./pages/admin/AuditLogs";
+import SellerManagement from "./pages/admin/SellerManagement";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/sellers" element={<SellerManagement />} />
           <Route path="/admin/auctions/monitor" element={<AuctionMonitoring />} />
           <Route path="/admin/auctions/manage" element={<AuctionManagement />} />
           <Route path="/admin/disputes" element={<DisputeResolution />} />

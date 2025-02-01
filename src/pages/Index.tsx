@@ -23,16 +23,16 @@ const Index = () => {
   const { data: sellerCount } = useQuery({
     queryKey: ['activeSellers'],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data: cars } = await supabase
         .from('cars')
-        .select('seller_id', { count: 'exact', head: true })
-        .eq('status', 'available')
-        .not('seller_id', 'is', null);
-      return count || 0;
+        .select('seller_id')
+        .eq('status', 'available');
+
+      const uniqueSellers = new Set(cars?.map(car => car.seller_id));
+      return uniqueSellers.size || 0;
     }
   });
 
-  // Verified dealers
   const { data: dealerCount } = useQuery({
     queryKey: ['verifiedDealers'],
     queryFn: async () => {
