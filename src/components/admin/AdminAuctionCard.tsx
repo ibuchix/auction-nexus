@@ -70,7 +70,10 @@ export function AdminAuctionCard({ auction, onPause, onCancel }: AdminAuctionCar
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-semibold">{auction.title}</h3>
               {auction.is_damaged && (
-                <AlertTriangle className="h-4 w-4 text-red-500" title="Vehicle has reported damage" />
+                <AlertTriangle 
+                  className="h-4 w-4 text-red-500" 
+                  aria-label="Vehicle has reported damage"
+                />
               )}
             </div>
             <p className="text-sm text-muted-foreground">
@@ -166,7 +169,7 @@ export function AdminAuctionCard({ auction, onPause, onCancel }: AdminAuctionCar
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span className="text-sm">{auction.seller?.name || 'N/A'}</span>
+                <span className="text-sm">{auction.seller?.avatar_url || 'N/A'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
