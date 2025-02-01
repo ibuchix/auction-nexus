@@ -5,8 +5,10 @@ import { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StatsOverview } from "@/components/dashboard/StatsOverview";
 import { MonitoringCards } from "@/components/dashboard/MonitoringCards";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -14,23 +16,25 @@ const Index = () => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
+  // Active sellers (those with at least one active listing)
   const { data: sellerCount } = useQuery({
-    queryKey: ['sellerCount'],
+    queryKey: ['activeSellers'],
     queryFn: async () => {
       const { count } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'seller');
+        .from('cars')
+        .select('seller_id', { count: 'exact', head: true })
+        .eq('status', 'available')
+        .not('seller_id', 'is', null);
       return count || 0;
     }
   });
 
+  // Verified dealers
   const { data: dealerCount } = useQuery({
-    queryKey: ['dealerCount'],
+    queryKey: ['verifiedDealers'],
     queryFn: async () => {
       const { count } = await supabase
         .from('dealers')
@@ -40,6 +44,52 @@ const Index = () => {
     }
   });
 
+  // Monthly revenue from successful auctions
+  const { data: monthlyRevenue } = useQuery({
+    queryKey: ['monthlyRevenue'],
+    queryFn: async () => {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { data } = await supabase
+        .from('auction_results')
+        .select('final_price')
+        .gte('created_at', startOfMonth.toISOString())
+        .not('final_price', 'is', null);
+
+      return (data || []).reduce((sum, result) => sum + (result.final_price || 0), 0);
+    }
+  });
+
+  // Success rate of auctions
+  const { data: successRate } = useQuery({
+    queryKey: ['auctionSuccessRate'],
+    queryFn: async () => {
+      const { data: results } = await supabase
+        .from('auction_results')
+        .select('*')
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
+      if (!results?.length) return 0;
+      const successful = results.filter(result => result.final_price >= (result.reserve_price || 0)).length;
+      return Math.round((successful / results.length) * 100);
+    }
+  });
+
+  // Pending verifications
+  const { data: pendingVerifications } = useQuery({
+    queryKey: ['pendingVerifications'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('dealers')
+        .select('*', { count: 'exact', head: true })
+        .eq('verification_status', 'pending');
+      return count || 0;
+    }
+  });
+
+  // Active auctions
   const { data: activeAuctions } = useQuery({
     queryKey: ['activeAuctions'],
     queryFn: async () => {
@@ -52,55 +102,15 @@ const Index = () => {
     }
   });
 
-  const { data: monthlyRevenue } = useQuery({
-    queryKey: ['monthlyRevenue'],
-    queryFn: async () => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const { data } = await supabase
-        .from('auction_results')
-        .select('final_price')
-        .gte('created_at', startOfMonth.toISOString());
-
-      const total = (data || []).reduce((sum, result) => sum + (result.final_price || 0), 0);
-      return total;
-    }
-  });
-
-  const { data: successRate } = useQuery({
-    queryKey: ['successRate'],
-    queryFn: async () => {
-      const { data: results } = await supabase
-        .from('auction_results')
-        .select('*');
-
-      if (!results?.length) return 0;
-
-      const successful = results.filter(result => result.final_price >= (result.reserve_price || 0)).length;
-      return Math.round((successful / results.length) * 100);
-    }
-  });
-
-  const { data: pendingVerifications } = useQuery({
-    queryKey: ['pendingVerifications'],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from('dealers')
-        .select('*', { count: 'exact', head: true })
-        .eq('verification_status', 'pending');
-      return count || 0;
-    }
-  });
-
+  // Suspicious activities (failed bids in last 24h)
   const { data: suspiciousActivities } = useQuery({
     queryKey: ['suspiciousActivities'],
     queryFn: async () => {
       const { count } = await supabase
         .from('bid_metrics')
         .select('*', { count: 'exact', head: true })
-        .eq('success', false);
+        .eq('success', false)
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
       return count || 0;
     }
   });
@@ -125,12 +135,23 @@ const Index = () => {
           dealerCount={dealerCount || 0}
           monthlyRevenue={monthlyRevenue || 0}
           successRate={successRate || 0}
+          onCardClick={{
+            sellers: () => navigate('/admin/sellers'),
+            dealers: () => navigate('/admin/dealers'),
+            revenue: () => navigate('/admin/analytics'),
+            success: () => navigate('/admin/analytics')
+          }}
         />
 
         <MonitoringCards
           pendingVerifications={pendingVerifications || 0}
           activeAuctions={activeAuctions || 0}
           suspiciousActivities={suspiciousActivities || 0}
+          onCardClick={{
+            verifications: () => navigate('/admin/dealers'),
+            auctions: () => navigate('/admin/auctions/monitor'),
+            activities: () => navigate('/admin/fraud')
+          }}
         />
       </div>
     </DashboardLayout>
