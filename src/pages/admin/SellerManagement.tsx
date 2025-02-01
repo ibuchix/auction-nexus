@@ -66,9 +66,9 @@ const SellerManagement = () => {
 
       if (detailsError) throw detailsError;
 
-      // Get emails from auth.users using service role (this would need to be done server-side in production)
+      // Get user emails from auth.users via profiles
       const { data: authUsers, error: authError } = await supabase
-        .from('profiles')
+        .from('auth.users')
         .select('id, email')
         .in('id', sellerIds);
 
@@ -81,7 +81,7 @@ const SellerManagement = () => {
         
         return {
           id: profile.id,
-          email: authUser?.email,
+          email: authUser?.email || null,
           role: profile.role,
           created_at: profile.created_at,
           name: details?.name || null,
