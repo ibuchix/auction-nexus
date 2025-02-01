@@ -23,7 +23,6 @@ import { Loader2, Trash2 } from "lucide-react";
 
 interface Seller {
   id: string;
-  email: string | null;
   role: string;
   created_at: string;
   name: string | null;
@@ -41,7 +40,7 @@ const SellerManagement = () => {
       // First get cars with active sellers
       const { data: cars, error: carsError } = await supabase
         .from('cars')
-        .select('seller_id')
+        .select('seller_id, name, mobile_number, address')
         .eq('status', 'available');
 
       if (carsError) throw carsError;
@@ -57,36 +56,17 @@ const SellerManagement = () => {
 
       if (profilesError) throw profilesError;
 
-      // Get additional seller details from cars table
-      const { data: sellerDetails, error: detailsError } = await supabase
-        .from('cars')
-        .select('seller_id, name, mobile_number, address')
-        .in('seller_id', sellerIds)
-        .eq('status', 'available');
-
-      if (detailsError) throw detailsError;
-
-      // Get user emails from auth.users via profiles
-      const { data: authUsers, error: authError } = await supabase
-        .from('auth.users')
-        .select('id, email')
-        .in('id', sellerIds);
-
-      if (authError) throw authError;
-
-      // Combine all the data
+      // Combine the data
       return profiles.map(profile => {
-        const details = sellerDetails?.find(d => d.seller_id === profile.id);
-        const authUser = authUsers?.find(u => u.id === profile.id);
+        const details = cars?.find(c => c.seller_id === profile.id);
         
         return {
           id: profile.id,
-          email: authUser?.email || null,
           role: profile.role,
           created_at: profile.created_at,
-          name: details?.name || null,
-          mobile_number: details?.mobile_number || null,
-          address: details?.address || null,
+          name: details?.name || 'N/A',
+          mobile_number: details?.mobile_number || 'N/A',
+          address: details?.address || 'N/A',
         } as Seller;
       });
     }
@@ -135,7 +115,6 @@ const SellerManagement = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Address</TableHead>
                 <TableHead>Joined</TableHead>
@@ -145,10 +124,9 @@ const SellerManagement = () => {
             <TableBody>
               {sellers?.map((seller) => (
                 <TableRow key={seller.id}>
-                  <TableCell>{seller.name || 'N/A'}</TableCell>
-                  <TableCell>{seller.email || 'N/A'}</TableCell>
-                  <TableCell>{seller.mobile_number || 'N/A'}</TableCell>
-                  <TableCell>{seller.address || 'N/A'}</TableCell>
+                  <TableCell>{seller.name}</TableCell>
+                  <TableCell>{seller.mobile_number}</TableCell>
+                  <TableCell>{seller.address}</TableCell>
                   <TableCell>
                     {new Date(seller.created_at).toLocaleDateString()}
                   </TableCell>
