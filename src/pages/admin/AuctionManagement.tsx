@@ -1,31 +1,16 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useState } from "react";
-import { 
-  Car, 
-  Search, 
-  Filter,
-  Play,
-  Pause,
-  Ban,
-  Clock,
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
-import { format } from "date-fns";
-import { toast } from "sonner";
+import { Search } from "lucide-react";
+import { AdminAuctionCard } from "@/components/admin/AdminAuctionCard";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
-import { AuctionDetails } from "@/components/admin/AuctionDetails";
 
 const AuctionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [expandedCards, setExpandedCards] = useState<string[]>([]);
   const { pauseAuction, cancelAuction } = useAuctionOperations();
 
   const { data: listings, isLoading } = useQuery({
@@ -35,7 +20,8 @@ const AuctionManagement = () => {
         .from('cars')
         .select(`
           *,
-          car_file_uploads (*)
+          bids (*),
+          seller:profiles (*)
         `);
       
       if (error) throw error;
@@ -43,43 +29,12 @@ const AuctionManagement = () => {
     }
   });
 
-  const toggleCardExpansion = (id: string) => {
-    setExpandedCards(prev => 
-      prev.includes(id) 
-        ? prev.filter(cardId => cardId !== id)
-        : [...prev, id]
-    );
-  };
-
-  const startAuction = async (carId: string) => {
-    const startTime = new Date();
-    const endTime = new Date();
-    endTime.setHours(endTime.getHours() + 24); // 24-hour auction by default
-
-    try {
-      const { error } = await supabase
-        .from('cars')
-        .update({
-          is_auction: true,
-          auction_status: 'active',
-          auction_start_time: startTime.toISOString(),
-          auction_end_time: endTime.toISOString()
-        })
-        .eq('id', carId);
-
-      if (error) throw error;
-      toast.success("Auction started successfully");
-    } catch (error) {
-      toast.error("Failed to start auction");
-      console.error('Error starting auction:', error);
-    }
-  };
-
   const filteredListings = listings?.filter(listing => {
     const matchesSearch = 
       listing.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       listing.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.model?.toLowerCase().includes(searchTerm.toLowerCase());
+      listing.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listing.vin?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || listing.auction_status === statusFilter;
     
@@ -95,7 +50,7 @@ const AuctionManagement = () => {
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search vehicles..."
+                placeholder="Search by title, make, model, or VIN..."
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -117,104 +72,17 @@ const AuctionManagement = () => {
 
         <div className="grid gap-4">
           {isLoading ? (
-            <Card className="p-6">
-              <p>Loading...</p>
-            </Card>
+            <p>Loading...</p>
           ) : filteredListings?.length === 0 ? (
-            <Card className="p-6">
-              <p className="text-center text-gray-500">No vehicles found</p>
-            </Card>
+            <p className="text-center text-gray-500">No vehicles found</p>
           ) : (
             filteredListings?.map((listing) => (
-              <Card key={listing.id} className="p-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold">{listing.title}</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleCardExpansion(listing.id)}
-                        className="p-0 h-auto"
-                      >
-                        {expandedCards.includes(listing.id) ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      {listing.make} {listing.model} {listing.year}
-                    </p>
-                    <div className="mt-2 space-y-1">
-                      <p className="text-sm">
-                        <span className="font-medium">Price:</span> ${listing.price?.toLocaleString()}
-                      </p>
-                      {listing.reserve_price && (
-                        <p className="text-sm">
-                          <span className="font-medium">Reserve:</span> ${listing.reserve_price.toLocaleString()}
-                        </p>
-                      )}
-                      {listing.auction_status && (
-                        <p className="text-sm">
-                          <span className="font-medium">Status:</span>{" "}
-                          <span className={`capitalize ${
-                            listing.auction_status === 'active' ? 'text-green-600' :
-                            listing.auction_status === 'paused' ? 'text-yellow-600' :
-                            listing.auction_status === 'cancelled' ? 'text-red-600' :
-                            'text-gray-600'
-                          }`}>
-                            {listing.auction_status}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {!listing.is_auction && (
-                      <Button
-                        onClick={() => startAuction(listing.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Play className="h-4 w-4" />
-                        Start Auction
-                      </Button>
-                    )}
-                    {listing.auction_status === 'active' && (
-                      <>
-                        <Button
-                          variant="outline"
-                          onClick={() => pauseAuction(listing.id)}
-                          className="flex items-center gap-2"
-                        >
-                          <Pause className="h-4 w-4" />
-                          Pause
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={() => cancelAuction(listing.id)}
-                          className="flex items-center gap-2"
-                        >
-                          <Ban className="h-4 w-4" />
-                          Cancel
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {listing.auction_status === 'active' && listing.auction_end_time && (
-                  <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      Ends: {format(new Date(listing.auction_end_time), 'PPp')}
-                    </span>
-                  </div>
-                )}
-                {expandedCards.includes(listing.id) && (
-                  <AuctionDetails car={listing} />
-                )}
-              </Card>
+              <AdminAuctionCard
+                key={listing.id}
+                auction={listing}
+                onPause={pauseAuction}
+                onCancel={cancelAuction}
+              />
             ))
           )}
         </div>
