@@ -1322,6 +1322,14 @@ export type Database = {
         }
         Relationships: []
       }
+      deprecated_function_calls: {
+        Row: {
+          call_count: number | null
+          last_called: string | null
+          query_text: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       append_additional_photo: {
@@ -1387,6 +1395,12 @@ export type Database = {
       check_system_performance_alert: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      check_vin_exists: {
+        Args: {
+          check_vin: string
+        }
+        Returns: boolean
       }
       cleanup_failed_dealer_registration: {
         Args: {
