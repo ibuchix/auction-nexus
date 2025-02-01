@@ -1,23 +1,13 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Database } from "@/integrations/supabase/types";
-import { AlertTriangle, Ban, Clock, DollarSign, Edit2, Phone, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { AuctionHeader } from "./auction-card/AuctionHeader";
+import { EditForm } from "./auction-card/EditForm";
+import { AuctionDetails } from "./auction-card/AuctionDetails";
+import { SellerInfo } from "./auction-card/SellerInfo";
+import { VehicleImages } from "./auction-card/VehicleImages";
 
 type Auction = Database['public']['Tables']['cars']['Row'] & {
   bids: Database['public']['Tables']['bids']['Row'][];
@@ -65,135 +55,39 @@ export function AdminAuctionCard({ auction, onPause, onCancel }: AdminAuctionCar
   return (
     <Card className={`hover:shadow-md transition-shadow ${auction.is_damaged ? 'border-red-500' : ''}`}>
       <CardHeader className="pb-2">
-        <CardTitle className="flex justify-between items-start">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold">{auction.title}</h3>
-              {auction.is_damaged && (
-                <AlertTriangle 
-                  className="h-4 w-4 text-red-500" 
-                  aria-label="Vehicle has reported damage"
-                />
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              VIN: {auction.vin}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              <Edit2 className="h-4 w-4 mr-1" />
-              {isEditing ? "Cancel Edit" : "Edit"}
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                >
-                  <Ban className="h-4 w-4 mr-1" />
-                  Cancel Auction
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel Auction</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to cancel this auction? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>No, keep it</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onCancel(auction.id)}>
-                    Yes, cancel auction
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </CardTitle>
+        <AuctionHeader
+          title={auction.title}
+          vin={auction.vin}
+          isDamaged={auction.is_damaged}
+          isEditing={isEditing}
+          onEditToggle={() => setIsEditing(!isEditing)}
+          onCancel={() => onCancel(auction.id)}
+        />
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Price and Notes Editing Section */}
           {isEditing ? (
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Price</label>
-                <Input
-                  type="number"
-                  value={editedPrice}
-                  onChange={(e) => setEditedPrice(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Notes</label>
-                <Textarea
-                  value={editedNotes}
-                  onChange={(e) => setEditedNotes(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <Button onClick={handleSaveChanges}>Save Changes</Button>
-            </div>
+            <EditForm
+              price={editedPrice}
+              notes={editedNotes}
+              onPriceChange={setEditedPrice}
+              onNotesChange={setEditedNotes}
+              onSave={handleSaveChanges}
+            />
           ) : (
-            <>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" />
-                  <span>{auction.price?.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    Ends: {new Date(auction.auction_end_time || '').toLocaleString()}
-                  </span>
-                </div>
-              </div>
-              {auction.seller_notes && (
-                <div className="mt-2">
-                  <p className="text-sm text-muted-foreground">{auction.seller_notes}</p>
-                </div>
-              )}
-            </>
+            <AuctionDetails
+              price={auction.price}
+              endTime={auction.auction_end_time}
+              notes={auction.seller_notes}
+            />
           )}
 
-          {/* Seller Contact Information */}
-          <div className="mt-4 pt-4 border-t">
-            <h4 className="text-sm font-semibold mb-2">Seller Information</h4>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="text-sm">{auction.seller?.avatar_url || 'N/A'}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <span className="text-sm">{auction.mobile_number || 'N/A'}</span>
-              </div>
-            </div>
-          </div>
+          <SellerInfo
+            seller={auction.seller}
+            mobileNumber={auction.mobile_number}
+          />
 
-          {/* Vehicle Images */}
-          {auction.images && auction.images.length > 0 && (
-            <div className="mt-4">
-              <h4 className="text-sm font-semibold mb-2">Vehicle Images</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {auction.images.map((image, index) => (
-                  <img
-                    key={index}
-                    src={image}
-                    alt={`Vehicle image ${index + 1}`}
-                    className="w-full h-32 object-cover rounded"
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          <VehicleImages images={auction.images} />
         </div>
       </CardContent>
     </Card>
