@@ -122,28 +122,28 @@ export type Database = {
           {
             foreignKeyName: "auction_activity_stats_car_id_fkey"
             columns: ["car_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "admin_vehicle_listings"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "auction_activity_stats_car_id_fkey"
             columns: ["car_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "auction_performance_summary"
             referencedColumns: ["auction_id"]
           },
           {
             foreignKeyName: "auction_activity_stats_car_id_fkey"
             columns: ["car_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "car_listings"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "auction_activity_stats_car_id_fkey"
             columns: ["car_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "cars"
             referencedColumns: ["id"]
           },
