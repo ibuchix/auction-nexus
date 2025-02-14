@@ -230,6 +230,7 @@ export type Database = {
       auction_results: {
         Row: {
           auction_id: string
+          bid_count: number | null
           bidding_activity_timeline: Json | null
           created_at: string | null
           duration_minutes: number | null
@@ -237,12 +238,14 @@ export type Database = {
           highest_bid_dealer_id: string | null
           id: string
           reserve_price: number | null
+          sale_status: string | null
           start_price: number | null
           total_bids: number | null
           unique_bidders: number | null
         }
         Insert: {
           auction_id: string
+          bid_count?: number | null
           bidding_activity_timeline?: Json | null
           created_at?: string | null
           duration_minutes?: number | null
@@ -250,12 +253,14 @@ export type Database = {
           highest_bid_dealer_id?: string | null
           id?: string
           reserve_price?: number | null
+          sale_status?: string | null
           start_price?: number | null
           total_bids?: number | null
           unique_bidders?: number | null
         }
         Update: {
           auction_id?: string
+          bid_count?: number | null
           bidding_activity_timeline?: Json | null
           created_at?: string | null
           duration_minutes?: number | null
@@ -263,6 +268,7 @@ export type Database = {
           highest_bid_dealer_id?: string | null
           id?: string
           reserve_price?: number | null
+          sale_status?: string | null
           start_price?: number | null
           total_bids?: number | null
           unique_bidders?: number | null
@@ -844,6 +850,97 @@ export type Database = {
           {
             foreignKeyName: "cars_seller_id_fkey"
             columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dealer_purchases: {
+        Row: {
+          amount: number
+          car_id: string
+          created_at: string | null
+          dealer_id: string
+          id: string
+          notes: string | null
+          purchase_date: string | null
+          refund_date: string | null
+          refund_reason: string | null
+          refunded_by: string | null
+          status: string
+          transaction_reference: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          car_id: string
+          created_at?: string | null
+          dealer_id: string
+          id?: string
+          notes?: string | null
+          purchase_date?: string | null
+          refund_date?: string | null
+          refund_reason?: string | null
+          refunded_by?: string | null
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          car_id?: string
+          created_at?: string | null
+          dealer_id?: string
+          id?: string
+          notes?: string | null
+          purchase_date?: string | null
+          refund_date?: string | null
+          refund_reason?: string | null
+          refunded_by?: string | null
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dealer_purchases_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "admin_vehicle_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_purchases_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "auction_performance_summary"
+            referencedColumns: ["auction_id"]
+          },
+          {
+            foreignKeyName: "dealer_purchases_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "car_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_purchases_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_purchases_dealer_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "dealers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_purchases_refunded_by_fkey"
+            columns: ["refunded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
