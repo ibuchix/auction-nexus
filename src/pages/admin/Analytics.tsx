@@ -123,7 +123,7 @@ const Analytics = () => {
                 value={Number(totals?.totalSold || 0)}
                 icon={CalendarIcon}
                 trend={{
-                  value: ((totals?.totalSold || 0) / (totals?.totalAuctions || 1) * 100).toFixed(1),
+                  value: Number(((totals?.totalSold || 0) / (totals?.totalAuctions || 1) * 100).toFixed(1)),
                   isPositive: true
                 }}
               />
