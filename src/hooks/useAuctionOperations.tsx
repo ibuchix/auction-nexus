@@ -9,7 +9,7 @@ type Auction = Database['public']['Tables']['cars']['Row'] & {
 };
 
 export function useAuctionOperations() {
-  const pauseAuction = async (auctionId: string) => {
+  const pauseAuction = async (auctionId: string): Promise<void> => {
     try {
       const { error } = await supabase
         .from('cars')
@@ -18,15 +18,14 @@ export function useAuctionOperations() {
 
       if (error) throw error;
       toast.success("Auction paused successfully");
-      return true;
     } catch (error) {
       toast.error("Failed to pause auction");
       console.error('Error pausing auction:', error);
-      return false;
+      throw error;
     }
   };
 
-  const cancelAuction = async (auctionId: string) => {
+  const cancelAuction = async (auctionId: string): Promise<void> => {
     try {
       const { error } = await supabase
         .from('cars')
@@ -38,15 +37,14 @@ export function useAuctionOperations() {
 
       if (error) throw error;
       toast.success("Auction cancelled successfully");
-      return true;
     } catch (error) {
       toast.error("Failed to cancel auction");
       console.error('Error cancelling auction:', error);
-      return false;
+      throw error;
     }
   };
 
-  const startAuction = async (auctionId: string) => {
+  const startAuction = async (auctionId: string): Promise<void> => {
     try {
       const { error } = await supabase
         .from('cars')
@@ -60,11 +58,10 @@ export function useAuctionOperations() {
 
       if (error) throw error;
       toast.success("Auction started successfully");
-      return true;
     } catch (error) {
       toast.error("Failed to start auction");
       console.error('Error starting auction:', error);
-      return false;
+      throw error;
     }
   };
 
