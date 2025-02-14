@@ -103,7 +103,7 @@ const AuctionManagement = () => {
               <AdminAuctionCard
                 key={listing.id}
                 auction={listing}
-                onPause={pauseAution}
+                onPause={pauseAuction}
                 onCancel={cancelAuction}
               />
             ))
