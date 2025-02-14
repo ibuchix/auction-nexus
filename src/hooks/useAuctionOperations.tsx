@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -38,8 +39,29 @@ export function useAuctionOperations() {
     }
   };
 
+  const startAuction = async (auctionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('cars')
+        .update({ 
+          auction_status: 'active',
+          auction_start_time: new Date().toISOString(),
+          start_auction_at: new Date().toISOString()
+        })
+        .eq('id', auctionId)
+        .eq('auction_status', 'ready');
+
+      if (error) throw error;
+      toast.success("Auction started successfully");
+    } catch (error) {
+      toast.error("Failed to start auction");
+      console.error('Error starting auction:', error);
+    }
+  };
+
   return {
     pauseAuction,
     cancelAuction,
+    startAuction,
   };
 }

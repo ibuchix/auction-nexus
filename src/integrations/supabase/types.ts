@@ -804,6 +804,7 @@ export type Database = {
           service_history_type:
             | Database["public"]["Enums"]["service_history_type"]
             | null
+          start_auction_at: string | null
           status: string | null
           thumbnails: Json | null
           title: string
@@ -868,6 +869,7 @@ export type Database = {
           service_history_type?:
             | Database["public"]["Enums"]["service_history_type"]
             | null
+          start_auction_at?: string | null
           status?: string | null
           thumbnails?: Json | null
           title: string
@@ -932,6 +934,7 @@ export type Database = {
           service_history_type?:
             | Database["public"]["Enums"]["service_history_type"]
             | null
+          start_auction_at?: string | null
           status?: string | null
           thumbnails?: Json | null
           title?: string
@@ -5160,6 +5163,13 @@ export type Database = {
       }
     }
     Enums: {
+      auction_status:
+        | "ready"
+        | "pending"
+        | "active"
+        | "ended"
+        | "paused"
+        | "cancelled"
       auction_status_type:
         | "pending"
         | "active"

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Database } from "@/integrations/supabase/types";
@@ -18,9 +19,10 @@ interface AdminAuctionCardProps {
   auction: Auction;
   onPause: (id: string) => Promise<void>;
   onCancel: (id: string) => Promise<void>;
+  onStart?: (id: string) => Promise<void>;
 }
 
-export function AdminAuctionCard({ auction, onPause, onCancel }: AdminAuctionCardProps) {
+export function AdminAuctionCard({ auction, onPause, onCancel, onStart }: AdminAuctionCardProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editedPrice, setEditedPrice] = useState(auction.price?.toString() || "");
@@ -62,6 +64,9 @@ export function AdminAuctionCard({ auction, onPause, onCancel }: AdminAuctionCar
           isEditing={isEditing}
           onEditToggle={() => setIsEditing(!isEditing)}
           onCancel={() => onCancel(auction.id)}
+          onStart={auction.auction_status === 'ready' ? () => onStart?.(auction.id) : undefined}
+          onPause={auction.auction_status === 'active' ? () => onPause(auction.id) : undefined}
+          status={auction.auction_status}
         />
       </CardHeader>
       <CardContent>

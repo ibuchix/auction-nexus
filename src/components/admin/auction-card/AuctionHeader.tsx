@@ -1,4 +1,5 @@
-import { AlertTriangle, Edit2, Ban } from "lucide-react";
+
+import { AlertTriangle, Edit2, Ban, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -11,14 +12,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Database } from "@/integrations/supabase/types";
+
+type AuctionStatus = Database['public']['Enums']['auction_status'];
 
 interface AuctionHeaderProps {
   title: string;
   vin: string;
   isDamaged: boolean;
   isEditing: boolean;
+  status: AuctionStatus;
   onEditToggle: () => void;
   onCancel: () => void;
+  onStart?: () => void;
+  onPause?: () => void;
 }
 
 export function AuctionHeader({ 
@@ -26,8 +33,11 @@ export function AuctionHeader({
   vin, 
   isDamaged, 
   isEditing, 
+  status,
   onEditToggle, 
-  onCancel 
+  onCancel,
+  onStart,
+  onPause
 }: AuctionHeaderProps) {
   return (
     <div className="flex justify-between items-start">
@@ -44,6 +54,9 @@ export function AuctionHeader({
         <p className="text-sm text-muted-foreground">
           VIN: {vin}
         </p>
+        <p className="text-sm text-muted-foreground">
+          Status: {status}
+        </p>
       </div>
       <div className="flex gap-2">
         <Button
@@ -54,6 +67,29 @@ export function AuctionHeader({
           <Edit2 className="h-4 w-4 mr-1" />
           {isEditing ? "Cancel Edit" : "Edit"}
         </Button>
+
+        {onStart && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onStart}
+          >
+            <Play className="h-4 w-4 mr-1" />
+            Start Auction
+          </Button>
+        )}
+
+        {onPause && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onPause}
+          >
+            <Pause className="h-4 w-4 mr-1" />
+            Pause
+          </Button>
+        )}
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button

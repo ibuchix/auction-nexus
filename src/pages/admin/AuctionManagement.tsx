@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 const AuctionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const { pauseAuction, cancelAuction } = useAuctionOperations();
+  const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
   const { data: listings, isLoading, error } = useQuery({
@@ -84,7 +84,7 @@ const AuctionManagement = () => {
               onValueChange={setStatusFilter}
             >
               <option value="all">All Status</option>
-              <option value="pending">Pending</option>
+              <option value="ready">Ready</option>
               <option value="active">Active</option>
               <option value="ended">Ended</option>
               <option value="paused">Paused</option>
@@ -105,6 +105,7 @@ const AuctionManagement = () => {
                 auction={listing}
                 onPause={pauseAuction}
                 onCancel={cancelAuction}
+                onStart={startAuction}
               />
             ))
           )}
