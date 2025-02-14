@@ -110,10 +110,15 @@ const AuctionSummaries = () => {
       link.download = `auction-summary-${selectedTab}-${format(dateRange.from, "yyyy-MM-dd")}-to-${format(dateRange.to, "yyyy-MM-dd")}.csv`;
       link.click();
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       // Log export in history
       await supabase
         .from('export_history')
         .insert({
+          exported_by: user.id,
           export_type: 'auction_summary',
           date_range_start: dateRange.from.toISOString(),
           date_range_end: dateRange.to.toISOString(),

@@ -46,10 +46,19 @@ type Purchase = {
   amount: number;
   status: string;
   created_at: string;
+  purchase_date: string;
+  refund_date?: string;
+  refund_reason?: string;
+  refunded_by?: string;
+  notes?: string;
+  transaction_reference?: string;
+  updated_at: string;
   dealer: {
+    id: string;
     business_name: string;
   };
   car: {
+    id: string;
     title: string;
   };
 };
@@ -74,8 +83,8 @@ const Purchases = () => {
         .from('dealer_purchases')
         .select(`
           *,
-          dealer:dealers(business_name),
-          car:cars(title)
+          dealer:dealers(id, business_name),
+          car:cars(id, title)
         `)
         .gte('created_at', dateRange.from.toISOString())
         .lte('created_at', dateRange.to.toISOString());
