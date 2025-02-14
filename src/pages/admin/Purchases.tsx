@@ -79,10 +79,22 @@ const Purchases = () => {
   const { data: purchases, isLoading, refetch } = useQuery({
     queryKey: ['purchases', dateRange, statusFilter, dealerFilter],
     queryFn: async () => {
-      let query = supabase
+      const query = supabase
         .from('dealer_purchases')
         .select(`
-          *,
+          id,
+          dealer_id,
+          car_id,
+          amount,
+          status,
+          created_at,
+          purchase_date,
+          refund_date,
+          refund_reason,
+          refunded_by,
+          notes,
+          transaction_reference,
+          updated_at,
           dealer:dealers!dealer_id(id, business_name),
           car:cars!car_id(id, title)
         `)
@@ -90,16 +102,25 @@ const Purchases = () => {
         .lte('created_at', dateRange.to.toISOString());
 
       if (statusFilter !== "all") {
-        query = query.eq('status', statusFilter);
+        query.eq('status', statusFilter);
       }
       
       if (dealerFilter) {
-        query = query.ilike('dealer.business_name', `%${dealerFilter}%`);
+        query.ilike('dealer.business_name', `%${dealerFilter}%`);
       }
 
-      const { data, error } = await query;
+      const { data: purchasesData, error } = await query;
+      
       if (error) throw error;
-      return (data || []) as Purchase[];
+      
+      // Transform the data to match our Purchase type
+      const transformedData = (purchasesData || []).map(purchase => ({
+        ...purchase,
+        dealer: purchase.dealer as Purchase['dealer'],
+        car: purchase.car as Purchase['car']
+      }));
+
+      return transformedData;
     }
   });
 
@@ -202,8 +223,8 @@ const Purchases = () => {
                   {purchases?.map((purchase) => (
                     <TableRow key={purchase.id}>
                       <TableCell>{format(new Date(purchase.created_at), "PP")}</TableCell>
-                      <TableCell>{purchase.dealer.business_name}</TableCell>
-                      <TableCell>{purchase.car.title}</TableCell>
+                      <TableCell>{purchase.dealer?.business_name}</TableCell>
+                      <TableCell>{purchase.car?.title}</TableCell>
                       <TableCell>${purchase.amount.toLocaleString()}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
