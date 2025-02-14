@@ -2327,6 +2327,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      generate_auction_daily_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       geography:
         | {
             Args: {
@@ -4970,10 +4974,6 @@ export type Database = {
           "": string
         }
         Returns: number
-      }
-      update_auction_status: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
       update_required_photos: {
         Args: {
