@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,13 +8,15 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import { AdminAuctionCard } from "@/components/admin/AdminAuctionCard";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
+import { useToast } from "@/hooks/use-toast";
 
 const AuctionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { pauseAuction, cancelAuction } = useAuctionOperations();
+  const { toast } = useToast();
 
-  const { data: listings, isLoading } = useQuery({
+  const { data: listings, isLoading, error } = useQuery({
     queryKey: ['adminVehicleListings'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -24,10 +27,30 @@ const AuctionManagement = () => {
           seller:profiles (*)
         `);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching listings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load auction listings. Please try again.",
+          variant: "destructive",
+        });
+        throw error;
+      }
       return data;
     }
   });
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <div className="text-center text-red-500">
+            Failed to load auction listings. Please refresh the page or contact support.
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const filteredListings = listings?.filter(listing => {
     const matchesSearch = 
@@ -80,7 +103,7 @@ const AuctionManagement = () => {
               <AdminAuctionCard
                 key={listing.id}
                 auction={listing}
-                onPause={pauseAuction}
+                onPause={pauseAution}
                 onCancel={cancelAuction}
               />
             ))

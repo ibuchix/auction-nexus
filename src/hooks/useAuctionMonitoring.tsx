@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { Database } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +34,10 @@ export function useAuctionMonitoring() {
         .in('auction_status', ['active', 'pending'])
         .order('auction_end_time', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching auctions:', error);
+        throw error;
+      }
       return data as Auction[];
     },
   });
