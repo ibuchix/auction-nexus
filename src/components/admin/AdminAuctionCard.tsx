@@ -15,6 +15,8 @@ type Auction = Database['public']['Tables']['cars']['Row'] & {
   seller: Database['public']['Tables']['profiles']['Row'];
 };
 
+type AuctionStatus = Database['public']['Enums']['auction_status'];
+
 interface AdminAuctionCardProps {
   auction: Auction;
   onPause: (id: string) => Promise<void>;
@@ -66,7 +68,7 @@ export function AdminAuctionCard({ auction, onPause, onCancel, onStart }: AdminA
           onCancel={() => onCancel(auction.id)}
           onStart={auction.auction_status === 'ready' ? () => onStart?.(auction.id) : undefined}
           onPause={auction.auction_status === 'active' ? () => onPause(auction.id) : undefined}
-          status={auction.auction_status}
+          status={auction.auction_status as AuctionStatus}
         />
       </CardHeader>
       <CardContent>
