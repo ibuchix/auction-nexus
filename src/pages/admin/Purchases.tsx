@@ -47,20 +47,20 @@ type Purchase = {
   status: string;
   created_at: string;
   purchase_date: string;
-  refund_date?: string;
-  refund_reason?: string;
-  refunded_by?: string;
-  notes?: string;
-  transaction_reference?: string;
+  refund_date?: string | null;
+  refund_reason?: string | null;
+  refunded_by?: string | null;
+  notes?: string | null;
+  transaction_reference?: string | null;
   updated_at: string;
   dealer: {
     id: string;
     business_name: string;
-  };
+  } | null;
   car: {
     id: string;
     title: string;
-  };
+  } | null;
 };
 
 const Purchases = () => {
@@ -83,8 +83,8 @@ const Purchases = () => {
         .from('dealer_purchases')
         .select(`
           *,
-          dealer:dealers(id, business_name),
-          car:cars(id, title)
+          dealer:dealers!dealer_id(id, business_name),
+          car:cars!car_id(id, title)
         `)
         .gte('created_at', dateRange.from.toISOString())
         .lte('created_at', dateRange.to.toISOString());
@@ -99,7 +99,7 @@ const Purchases = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Purchase[];
+      return (data || []) as Purchase[];
     }
   });
 
