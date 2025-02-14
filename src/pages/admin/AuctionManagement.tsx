@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { AdminAuctionCard } from "@/components/admin/AdminAuctionCard";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
@@ -16,7 +16,7 @@ const AuctionManagement = () => {
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
-  const { data: listings, isLoading, error } = useQuery({
+  const { data: listings, isLoading, error, refetch } = useQuery({
     queryKey: ['adminVehicleListings'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,6 +39,28 @@ const AuctionManagement = () => {
       return data;
     }
   });
+
+  // Set up real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('auction-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cars'
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
 
   if (error) {
     return (

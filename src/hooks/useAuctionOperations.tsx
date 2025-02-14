@@ -18,9 +18,11 @@ export function useAuctionOperations() {
 
       if (error) throw error;
       toast.success("Auction paused successfully");
+      return true;
     } catch (error) {
       toast.error("Failed to pause auction");
       console.error('Error pausing auction:', error);
+      return false;
     }
   };
 
@@ -28,14 +30,19 @@ export function useAuctionOperations() {
     try {
       const { error } = await supabase
         .from('cars')
-        .update({ auction_status: 'cancelled' })
+        .update({ 
+          auction_status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
         .eq('id', auctionId);
 
       if (error) throw error;
       toast.success("Auction cancelled successfully");
+      return true;
     } catch (error) {
       toast.error("Failed to cancel auction");
       console.error('Error cancelling auction:', error);
+      return false;
     }
   };
 
@@ -53,9 +60,11 @@ export function useAuctionOperations() {
 
       if (error) throw error;
       toast.success("Auction started successfully");
+      return true;
     } catch (error) {
       toast.error("Failed to start auction");
       console.error('Error starting auction:', error);
+      return false;
     }
   };
 
