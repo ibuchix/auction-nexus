@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
-import { RefreshCw, Calendar as CalendarIcon } from "lucide-react";
+import { RefreshCw, Calendar as CalendarIcon, DollarSign, TrendingUp } from "lucide-react";
 import { 
   LineChart, 
   Line, 
@@ -95,7 +95,7 @@ const Analytics = () => {
                   }}
                   onSelect={(range) => {
                     if (range?.from && range?.to) {
-                      setDateRange(range);
+                      setDateRange({ from: range.from, to: range.to });
                     }
                   }}
                   numberOfMonths={2}
@@ -120,7 +120,8 @@ const Analytics = () => {
               />
               <StatCard
                 title="Vehicles Sold"
-                value={totals?.totalSold || 0}
+                value={Number(totals?.totalSold || 0)}
+                icon={CalendarIcon}
                 trend={{
                   value: ((totals?.totalSold || 0) / (totals?.totalAuctions || 1) * 100).toFixed(1),
                   isPositive: true
@@ -129,10 +130,12 @@ const Analytics = () => {
               <StatCard
                 title="Total Value"
                 value={`$${(totals?.totalValue || 0).toLocaleString()}`}
+                icon={DollarSign}
               />
               <StatCard
                 title="Average Sale Price"
                 value={`$${averageSalePrice.toLocaleString()}`}
+                icon={TrendingUp}
               />
             </div>
 
