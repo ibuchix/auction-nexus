@@ -156,6 +156,42 @@ export type Database = {
           },
         ]
       }
+      auction_daily_summaries: {
+        Row: {
+          average_sale_price: number | null
+          created_at: string | null
+          date: string
+          id: string
+          sold_vehicles: number
+          total_auctions_closed: number
+          total_value: number
+          unsold_vehicles: number
+          updated_at: string | null
+        }
+        Insert: {
+          average_sale_price?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          sold_vehicles?: number
+          total_auctions_closed?: number
+          total_value?: number
+          unsold_vehicles?: number
+          updated_at?: string | null
+        }
+        Update: {
+          average_sale_price?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          sold_vehicles?: number
+          total_auctions_closed?: number
+          total_value?: number
+          unsold_vehicles?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       auction_metrics: {
         Row: {
           auction_id: string | null
@@ -1476,6 +1512,44 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      refund_audit_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          previous_status: string
+          purchase_id: string
+          refund_amount: number
+          refund_reason: string
+          refunded_by: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          previous_status: string
+          purchase_id: string
+          refund_amount: number
+          refund_reason: string
+          refunded_by: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          previous_status?: string
+          purchase_id?: string
+          refund_amount?: number
+          refund_reason?: string
+          refunded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_audit_logs_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "dealer_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seller_operations: {
         Row: {

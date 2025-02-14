@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,7 @@ import FraudDetection from "./pages/admin/FraudDetection";
 import Compliance from "./pages/admin/Compliance";
 import AuditLogs from "./pages/admin/AuditLogs";
 import SellerManagement from "./pages/admin/SellerManagement";
+import Purchases from "./pages/admin/Purchases";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +38,7 @@ const App = () => (
           <Route path="/admin/fraud" element={<FraudDetection />} />
           <Route path="/admin/compliance" element={<Compliance />} />
           <Route path="/admin/audit-logs" element={<AuditLogs />} />
+          <Route path="/admin/purchases" element={<Purchases />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
