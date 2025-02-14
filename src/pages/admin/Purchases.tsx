@@ -2,66 +2,12 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
-import { RefreshCw, Calendar as CalendarIcon, Ban } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
 import { toast } from "sonner";
-
-type Purchase = {
-  id: string;
-  dealer_id: string;
-  car_id: string;
-  amount: number;
-  status: string;
-  created_at: string;
-  purchase_date: string;
-  refund_date?: string | null;
-  refund_reason?: string | null;
-  refunded_by?: string | null;
-  notes?: string | null;
-  transaction_reference?: string | null;
-  updated_at: string;
-  dealer: {
-    id: string;
-    business_name: string;
-  } | null;
-  car: {
-    id: string;
-    title: string;
-  } | null;
-};
+import { PurchaseFilters } from "@/components/admin/purchases/PurchaseFilters";
+import { PurchaseTable } from "@/components/admin/purchases/PurchaseTable";
+import { RefundDialog } from "@/components/admin/purchases/RefundDialog";
+import { Purchase } from "@/types/purchases";
 
 const Purchases = () => {
   const [dateRange, setDateRange] = useState<{
@@ -113,7 +59,6 @@ const Purchases = () => {
       
       if (error) throw error;
       
-      // Transform the data to match our Purchase type
       const transformedData = (purchasesData || []).map(purchase => ({
         ...purchase,
         dealer: purchase.dealer ? {
@@ -157,135 +102,34 @@ const Purchases = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Dealer Purchases</h1>
-          <div className="flex gap-4">
-            <Input
-              placeholder="Filter by dealer name..."
-              value={dealerFilter}
-              onChange={(e) => setDealerFilter(e.target.value)}
-              className="w-64"
-            />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="refunded">Refunded</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(dateRange.from, "PP")} - {format(dateRange.to, "PP")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={dateRange.from}
-                  selected={{
-                    from: dateRange.from,
-                    to: dateRange.to,
-                  }}
-                  onSelect={(range) => {
-                    if (range?.from && range?.to) {
-                      setDateRange({ from: range.from, to: range.to });
-                    }
-                  }}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-            <Button onClick={() => refetch()} size="icon">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
+          <PurchaseFilters
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            dealerFilter={dealerFilter}
+            setDealerFilter={setDealerFilter}
+            onRefresh={refetch}
+          />
         </div>
 
         {isLoading ? (
           <div>Loading...</div>
         ) : (
-          <>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Dealer</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {purchases?.map((purchase) => (
-                    <TableRow key={purchase.id}>
-                      <TableCell>{format(new Date(purchase.created_at), "PP")}</TableCell>
-                      <TableCell>{purchase.dealer?.business_name}</TableCell>
-                      <TableCell>{purchase.car?.title}</TableCell>
-                      <TableCell>${purchase.amount.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${purchase.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            purchase.status === 'refunded' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'}`}>
-                          {purchase.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              disabled={purchase.status !== 'completed'}
-                              onClick={() => setSelectedPurchase(purchase)}
-                            >
-                              <Ban className="h-4 w-4 mr-1" />
-                              Refund
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Confirm Refund</DialogTitle>
-                              <DialogDescription>
-                                Are you sure you want to refund this purchase? This action cannot be undone.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="py-4">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Refund Reason
-                              </label>
-                              <Input
-                                value={refundReason}
-                                onChange={(e) => setRefundReason(e.target.value)}
-                                placeholder="Enter reason for refund"
-                              />
-                            </div>
-                            <DialogFooter>
-                              <Button
-                                variant="destructive"
-                                onClick={handleRefund}
-                                disabled={!refundReason}
-                              >
-                                Confirm Refund
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </>
+          <PurchaseTable
+            purchases={purchases || []}
+            onRefundClick={setSelectedPurchase}
+          />
         )}
+
+        <RefundDialog
+          purchase={selectedPurchase}
+          isOpen={!!selectedPurchase}
+          onClose={() => setSelectedPurchase(null)}
+          refundReason={refundReason}
+          setRefundReason={setRefundReason}
+          onRefund={handleRefund}
+        />
       </div>
     </DashboardLayout>
   );
