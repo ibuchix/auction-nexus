@@ -95,7 +95,7 @@ const Purchases = () => {
           notes,
           transaction_reference,
           updated_at,
-          dealer:dealers!dealer_id(id, business_name),
+          dealer:dealers!dealer_id(id, dealership_name),
           car:cars!car_id(id, title)
         `)
         .gte('created_at', dateRange.from.toISOString())
@@ -106,7 +106,7 @@ const Purchases = () => {
       }
       
       if (dealerFilter) {
-        query.ilike('dealer.business_name', `%${dealerFilter}%`);
+        query.ilike('dealer.dealership_name', `%${dealerFilter}%`);
       }
 
       const { data: purchasesData, error } = await query;
@@ -116,7 +116,10 @@ const Purchases = () => {
       // Transform the data to match our Purchase type
       const transformedData = (purchasesData || []).map(purchase => ({
         ...purchase,
-        dealer: purchase.dealer as Purchase['dealer'],
+        dealer: purchase.dealer ? {
+          id: purchase.dealer.id,
+          business_name: purchase.dealer.dealership_name
+        } : null,
         car: purchase.car as Purchase['car']
       }));
 
