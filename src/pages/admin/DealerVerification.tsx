@@ -32,11 +32,15 @@ import {
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Json } from "@/integrations/supabase/types";
+
+// Define a type for verification status
+type VerificationStatus = "pending" | "approved" | "rejected";
 
 interface DealerVerification {
   id: string;
   dealer_id: string;
-  verification_status: 'pending' | 'approved' | 'rejected';
+  verification_status: VerificationStatus;
   submitted_at: string;
   reviewed_at: string | null;
   documents: any;
@@ -57,7 +61,8 @@ const DealerVerification = () => {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
-  const [activeTab, setActiveTab] = useState<string>("pending");
+  // Fix type issue - explicitly type activeTab as VerificationStatus
+  const [activeTab, setActiveTab] = useState<VerificationStatus>("pending");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const { 
@@ -93,7 +98,13 @@ const DealerVerification = () => {
 
         if (error) throw error;
         
-        return data as DealerVerification[];
+        // Transform the data to match our expected interface
+        // This fixes the dealers/dealer property name mismatch
+        return (data || []).map(item => ({
+          ...item,
+          dealer: item.dealers,
+          dealers: undefined
+        })) as DealerVerification[];
       } catch (error) {
         console.error('Error fetching dealer verifications:', error);
         toast.error('Failed to load dealer verifications');
@@ -216,7 +227,7 @@ const DealerVerification = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="pending" value={activeTab} onValueChange={(value) => setActiveTab(value as VerificationStatus)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pending" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
