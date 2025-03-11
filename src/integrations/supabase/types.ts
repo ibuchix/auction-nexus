@@ -1123,6 +1123,14 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_listing: {
+        Args: {
+          p_listing_id: string
+          p_admin_id: string
+          p_notes?: string
+        }
+        Returns: Json
+      }
       authenticate_dealer: {
         Args: {
           p_email: string
@@ -1221,6 +1229,15 @@ export type Database = {
       reject_dealer: {
         Args: {
           p_dealer_id: string
+          p_admin_id: string
+          p_rejection_reason: string
+          p_notes?: string
+        }
+        Returns: Json
+      }
+      reject_listing: {
+        Args: {
+          p_listing_id: string
           p_admin_id: string
           p_rejection_reason: string
           p_notes?: string

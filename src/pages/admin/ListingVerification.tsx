@@ -104,11 +104,14 @@ const ListingVerification = () => {
     try {
       const adminId = await getUserId();
       
-      const { error } = await supabase.rpc('approve_listing', {
-        p_listing_id: selectedListing.car_id,
-        p_admin_id: adminId,
-        p_notes: adminNotes
-      });
+      const { error } = await supabase.rpc(
+        'approve_listing',
+        {
+          p_listing_id: selectedListing.car_id,
+          p_admin_id: adminId,
+          p_notes: adminNotes
+        }
+      );
       
       if (error) throw error;
       
@@ -133,12 +136,15 @@ const ListingVerification = () => {
     try {
       const adminId = await getUserId();
       
-      const { error } = await supabase.rpc('reject_listing', {
-        p_listing_id: selectedListing.car_id,
-        p_admin_id: adminId,
-        p_rejection_reason: rejectionReason,
-        p_notes: adminNotes
-      });
+      const { error } = await supabase.rpc(
+        'reject_listing',
+        {
+          p_listing_id: selectedListing.car_id,
+          p_admin_id: adminId,
+          p_rejection_reason: rejectionReason,
+          p_notes: adminNotes
+        }
+      );
       
       if (error) throw error;
       
