@@ -51,6 +51,12 @@ const SellerManagement = () => {
         // For each seller profile, get their listing details
         const sellersWithDetails = await Promise.all(
           profilesData.map(async (profile) => {
+            // Check that profile data is valid
+            if (!profile || typeof profile.id !== 'string') {
+              console.error('Invalid profile data:', profile);
+              return null;
+            }
+
             const { data: carsData } = await supabase
               .from('cars')
               .select('mobile_number, address')
@@ -77,7 +83,7 @@ const SellerManagement = () => {
           })
         );
         
-        return sellersWithDetails.filter(seller => seller !== null);
+        return sellersWithDetails.filter((seller): seller is Seller => seller !== null);
       } catch (error) {
         console.error('Error fetching sellers:', error);
         throw error;
