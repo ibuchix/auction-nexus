@@ -36,6 +36,10 @@ export const menuItems: SidebarMenuItem[] = [
     shortcut: "Alt+A",
     submenu: [
       {
+        title: "Monitor Auctions",
+        path: "/admin/auctions/monitor",
+      },
+      {
         title: "Manage Auctions",
         path: "/admin/auctions/manage",
       },

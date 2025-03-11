@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,13 +13,29 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    const checkAuthAndRedirect = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile?.role === 'admin') {
+          navigate('/admin');
+          return;
+        }
+      }
+    };
+    
+    checkAuthAndRedirect();
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [navigate]);
 
-  // Active sellers (those with at least one active listing)
   const { data: sellerCount } = useQuery({
     queryKey: ['activeSellers'],
     queryFn: async () => {
@@ -45,7 +60,6 @@ const Index = () => {
     }
   });
 
-  // Monthly revenue from successful auctions
   const { data: monthlyRevenue } = useQuery({
     queryKey: ['monthlyRevenue'],
     queryFn: async () => {
@@ -63,7 +77,6 @@ const Index = () => {
     }
   });
 
-  // Success rate of auctions
   const { data: successRate } = useQuery({
     queryKey: ['auctionSuccessRate'],
     queryFn: async () => {
@@ -74,13 +87,11 @@ const Index = () => {
 
       if (!results?.length) return 0;
       
-      // Since we no longer have reserve_price in auction_results, we'll use sale_status
       const successful = results.filter(result => result.sale_status === 'sold').length;
       return Math.round((successful / results.length) * 100);
     }
   });
 
-  // Pending verifications
   const { data: pendingVerifications } = useQuery({
     queryKey: ['pendingVerifications'],
     queryFn: async () => {
@@ -92,7 +103,6 @@ const Index = () => {
     }
   });
 
-  // Active auctions
   const { data: activeAuctions } = useQuery({
     queryKey: ['activeAuctions'],
     queryFn: async () => {
@@ -105,7 +115,6 @@ const Index = () => {
     }
   });
 
-  // Suspicious activities (failed bids in last 24h)
   const { data: suspiciousActivities } = useQuery({
     queryKey: ['suspiciousActivities'],
     queryFn: async () => {

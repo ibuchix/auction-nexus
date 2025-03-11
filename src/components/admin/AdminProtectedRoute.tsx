@@ -11,7 +11,6 @@ export const AdminProtectedRoute = () => {
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        // Get current session
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
@@ -19,7 +18,6 @@ export const AdminProtectedRoute = () => {
           return;
         }
         
-        // Check if user has admin role
         const { data, error } = await supabase
           .from('profiles')
           .select('role')
@@ -40,9 +38,8 @@ export const AdminProtectedRoute = () => {
     };
 
     checkAdminStatus();
-  }, []);
+  }, [location.pathname]); // Re-check when path changes
 
-  // Auth check is still loading
   if (isAdmin === null) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -52,11 +49,9 @@ export const AdminProtectedRoute = () => {
     );
   }
 
-  // Not authenticated or not an admin
   if (!isAdmin) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  // User is an admin, render the protected content
   return <Outlet />;
 };
