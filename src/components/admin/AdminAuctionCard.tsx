@@ -55,10 +55,10 @@ export function AdminAuctionCard({ auction, onPause, onCancel, onStart, onExtend
   };
 
   // Determine which function to use for each action
-  const handlePause = onPause || (async () => await pauseAuction(auction.id));
-  const handleCancel = onCancel || (async () => await cancelAuction(auction.id));
-  const handleStart = onStart || (async () => await startAuction(auction.id));
-  const handleExtendTime = onExtendTime || (async () => await extendAuctionTime(auction.id));
+  const handlePause = async () => onPause ? await onPause(auction.id) : await pauseAuction(auction.id);
+  const handleCancel = async () => onCancel ? await onCancel(auction.id) : await cancelAuction(auction.id);
+  const handleStart = async () => onStart ? await onStart(auction.id) : await startAuction(auction.id);
+  const handleExtendTime = async () => onExtendTime ? await onExtendTime(auction.id) : await extendAuctionTime(auction.id);
 
   return (
     <Card className={`hover:shadow-md transition-shadow ${auction.is_damaged ? 'border-red-500' : ''}`}>
