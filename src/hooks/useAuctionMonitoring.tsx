@@ -1,14 +1,9 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { Database } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuctionRealtime } from './useAuctionRealtime';
 import { useAuctionOperations } from './useAuctionOperations';
-
-type Auction = Database['public']['Tables']['cars']['Row'] & {
-  bids: Database['public']['Tables']['bids']['Row'][];
-  auction_metrics: Database['public']['Tables']['auction_metrics']['Row'][];
-};
+import { Auction } from '@/types/auction';
 
 export function useAuctionMonitoring() {
   const { data: initialAuctions, isLoading } = useQuery({
@@ -18,17 +13,9 @@ export function useAuctionMonitoring() {
         .from('cars')
         .select(`
           *,
-          bids (
-            amount,
-            dealer_id,
-            created_at,
-            status
-          ),
-          auction_metrics (
-            total_bids,
-            unique_bidders,
-            final_price
-          )
+          bids (*),
+          auction_metrics (*),
+          seller:profiles (*)
         `)
         .eq('is_auction', true)
         .in('auction_status', ['active', 'pending'])
@@ -38,7 +25,7 @@ export function useAuctionMonitoring() {
         console.error('Error fetching auctions:', error);
         throw error;
       }
-      return data as Auction[];
+      return data as unknown as Auction[];
     },
   });
 

@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AuctionHeader } from "./auction-card/AuctionHeader";
@@ -9,13 +8,7 @@ import { EditForm } from "./auction-card/EditForm";
 import { AuctionDetails } from "./auction-card/AuctionDetails";
 import { SellerInfo } from "./auction-card/SellerInfo";
 import { VehicleImages } from "./auction-card/VehicleImages";
-
-type Auction = Database['public']['Tables']['cars']['Row'] & {
-  bids: Database['public']['Tables']['bids']['Row'][];
-  seller: Database['public']['Tables']['profiles']['Row'];
-};
-
-type AuctionStatus = Database['public']['Enums']['auction_status'];
+import { Auction, AuctionStatus } from "@/types/auction";
 
 interface AdminAuctionCardProps {
   auction: Auction;

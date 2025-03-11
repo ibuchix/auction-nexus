@@ -1,8 +1,9 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database } from "@/integrations/supabase/types";
 import { Ban, Clock, DollarSign, Pause, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Auction } from "@/types/auction";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,11 +15,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-type Auction = Database['public']['Tables']['cars']['Row'] & {
-  bids: Database['public']['Tables']['bids']['Row'][];
-  auction_metrics: Database['public']['Tables']['auction_metrics']['Row'][];
-};
 
 interface AuctionCardProps {
   auction: Auction;
@@ -62,6 +58,8 @@ export function AuctionCard({ auction, onPause, onCancel }: AuctionCardProps) {
       });
     }
   };
+
+  const metrics = auction.auction_metrics?.[0] || { unique_bidders: 0 };
 
   return (
     <Card className={`hover:shadow-md transition-shadow ${isEndingSoon ? 'border-yellow-500' : ''}`}>
@@ -121,7 +119,7 @@ export function AuctionCard({ auction, onPause, onCancel }: AuctionCardProps) {
           <div className="flex items-center gap-1">
             <Users className="h-4 w-4" />
             <span>
-              {auction.auction_metrics?.[0]?.unique_bidders || 0} bidders
+              {metrics.unique_bidders} bidders
             </span>
           </div>
           <div className="flex items-center gap-1">
