@@ -1003,6 +1003,7 @@ export type Database = {
           full_name: string | null
           id: string
           role: Database["public"]["Enums"]["user_role"]
+          suspended: boolean
           updated_at: string
         }
         Insert: {
@@ -1010,6 +1011,7 @@ export type Database = {
           full_name?: string | null
           id: string
           role?: Database["public"]["Enums"]["user_role"]
+          suspended?: boolean
           updated_at?: string
         }
         Update: {
@@ -1017,6 +1019,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
+          suspended?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1274,6 +1277,8 @@ export type Database = {
         | "create"
         | "update"
         | "delete"
+        | "suspend"
+        | "reinstate"
         | "verify"
         | "reject"
         | "approve"

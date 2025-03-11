@@ -19,6 +19,10 @@ export const getActionBadgeVariant = (action: string) => {
       return "destructive";
     case 'verify':
       return "default";
+    case 'suspend':
+      return "destructive";
+    case 'reinstate':
+      return "default";
     default:
       return "outline";
   }

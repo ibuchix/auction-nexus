@@ -1,7 +1,6 @@
-
 import { DateRange } from "react-day-picker";
 
-export type ActionType = "create" | "update" | "delete" | "login" | "logout" | "approve" | "reject" | "verify";
+export type ActionType = "create" | "update" | "delete" | "login" | "logout" | "approve" | "reject" | "verify" | "suspend" | "reinstate";
 
 export interface LogEntry {
   id: string;
