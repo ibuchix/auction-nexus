@@ -6,17 +6,20 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { DisputeComments } from "./DisputeComments";
 import { useState } from "react";
 import { DisputeResolutionForm } from "./DisputeResolutionForm";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Car, MessageSquare, User } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DisputeHeader } from "./components/DisputeHeader";
+import { SubmittedBySection } from "./components/SubmittedBySection";
+import { RelatedVehicleSection } from "./components/RelatedVehicleSection";
+import { ResolutionSection } from "./components/ResolutionSection";
+import { DisputeActions } from "./components/DisputeActions";
 
 interface DisputeDetailDialogProps {
   dispute: Dispute;
@@ -114,24 +117,11 @@ export function DisputeDetailDialog({ dispute, open, onClose, onDisputeUpdated }
         <div className="grid gap-4 py-4">
           <ScrollArea className="h-[500px] pr-4">
             <div className="flex flex-col gap-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Status</p>
-                  <div>{getStatusBadge(currentStatus)}</div>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Type</p>
-                  <p>{dispute.type.replace('_', ' ')}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Created</p>
-                  <p>{format(new Date(dispute.created_at), 'PPP p')}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Last Updated</p>
-                  <p>{format(new Date(dispute.updated_at), 'PPP p')}</p>
-                </div>
-              </div>
+              <DisputeHeader 
+                dispute={dispute} 
+                currentStatus={currentStatus} 
+                getStatusBadge={getStatusBadge} 
+              />
               
               <div>
                 <h3 className="text-lg font-medium">{dispute.title}</h3>
@@ -140,37 +130,12 @@ export function DisputeDetailDialog({ dispute, open, onClose, onDisputeUpdated }
               
               <Separator />
               
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-gray-400" />
-                  <h4 className="font-medium">Submitted By</h4>
-                </div>
-                <div className="pl-7">
-                  <p>{dispute.submitted_by?.full_name || "Unknown"}</p>
-                </div>
-              </div>
+              <SubmittedBySection dispute={dispute} />
               
               {dispute.car_id && (
                 <>
                   <Separator />
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Car className="h-5 w-5 text-gray-400" />
-                      <h4 className="font-medium">Related Vehicle</h4>
-                    </div>
-                    <div className="pl-7 space-y-2">
-                      <p className="font-medium">{dispute.car_id.title || `${dispute.car_id.make} ${dispute.car_id.model} ${dispute.car_id.year}`}</p>
-                      {dispute.car_id.images && dispute.car_id.images.length > 0 && (
-                        <div className="mt-2">
-                          <img 
-                            src={dispute.car_id.images[0]} 
-                            alt="Vehicle" 
-                            className="w-full max-w-sm rounded-md object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <RelatedVehicleSection dispute={dispute} />
                 </>
               )}
               
@@ -187,51 +152,20 @@ export function DisputeDetailDialog({ dispute, open, onClose, onDisputeUpdated }
               {currentStatus === 'resolved' && dispute.resolution && (
                 <>
                   <Separator />
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Resolution</h4>
-                    <div className="p-4 bg-green-50 rounded-md">
-                      <p className="whitespace-pre-wrap">{dispute.resolution}</p>
-                      <p className="text-sm text-gray-500 mt-2">
-                        Resolved on {format(new Date(dispute.resolved_at!), 'PPP')}
-                      </p>
-                    </div>
-                  </div>
+                  <ResolutionSection dispute={dispute} currentStatus={currentStatus} />
                 </>
               )}
             </div>
           </ScrollArea>
           
-          <div className="flex justify-between mt-6">
-            <div className="space-x-2">
-              {currentStatus === 'open' && (
-                <Button 
-                  variant="secondary" 
-                  onClick={() => handleUpdateStatus('investigating')}
-                >
-                  Begin Investigation
-                </Button>
-              )}
-              
-              {currentStatus === 'investigating' && (
-                <Button 
-                  variant="default" 
-                  onClick={() => setIsResolving(true)}
-                >
-                  Resolve Dispute
-                </Button>
-              )}
-              
-              {!dispute.assigned_to && (
-                <Button variant="outline" onClick={handleAssignToMe}>
-                  Assign to Me
-                </Button>
-              )}
-            </div>
-            
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-          </div>
+          <DisputeActions
+            currentStatus={currentStatus}
+            onUpdateStatus={handleUpdateStatus}
+            onAssignToMe={handleAssignToMe}
+            onStartResolving={() => setIsResolving(true)}
+            assignedTo={dispute.assigned_to}
+            onClose={onClose}
+          />
         </div>
         
         {isResolving && (
