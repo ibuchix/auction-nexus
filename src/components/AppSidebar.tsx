@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   Gavel,
@@ -7,7 +8,12 @@ import {
   ScrollText,
   ChevronDown,
   ChevronRight,
-  Search,
+  Users,
+  ShieldCheck,
+  FileCheck,
+  MessageSquare,
+  History,
+  User
 } from "lucide-react";
 import {
   Sidebar,
@@ -51,6 +57,34 @@ const menuItems = [
     ],
   },
   {
+    title: "User Management",
+    icon: Users,
+    submenu: [
+      {
+        title: "Sellers",
+        path: "/admin/sellers",
+      },
+      {
+        title: "Dealer Verification",
+        path: "/admin/dealers/verification",
+      },
+    ],
+  },
+  {
+    title: "Listing Management",
+    icon: FileCheck,
+    submenu: [
+      {
+        title: "Verify Listings",
+        path: "/admin/listings/verification",
+      },
+      {
+        title: "Purchases",
+        path: "/admin/purchases",
+      }
+    ],
+  },
+  {
     title: "Risk Management",
     icon: AlertTriangle,
     shortcut: "Alt+R",
@@ -82,7 +116,16 @@ const menuItems = [
   {
     title: "System",
     icon: ScrollText,
-    path: "/admin/audit-logs",
+    submenu: [
+      {
+        title: "Audit Logs",
+        path: "/admin/audit-logs",
+      },
+      {
+        title: "System Settings",
+        path: "/admin/settings",
+      },
+    ],
   },
 ];
 

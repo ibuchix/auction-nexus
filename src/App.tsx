@@ -17,6 +17,10 @@ import Compliance from "./pages/admin/Compliance";
 import AuditLogs from "./pages/admin/AuditLogs";
 import SellerManagement from "./pages/admin/SellerManagement";
 import Purchases from "./pages/admin/Purchases";
+import DealerVerification from "./pages/admin/DealerVerification";
+import ListingVerification from "./pages/admin/ListingVerification";
+import SystemSettings from "./pages/admin/SystemSettings";
+import { AdminProtectedRoute } from "./components/admin/AdminProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -28,17 +32,25 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/sellers" element={<SellerManagement />} />
-          <Route path="/admin/auctions/monitor" element={<AuctionMonitoring />} />
-          <Route path="/admin/auctions/manage" element={<AuctionManagement />} />
-          <Route path="/admin/disputes" element={<DisputeResolution />} />
-          <Route path="/admin/analytics" element={<Analytics />} />
-          <Route path="/admin/announcements" element={<Announcements />} />
-          <Route path="/admin/fraud" element={<FraudDetection />} />
-          <Route path="/admin/compliance" element={<Compliance />} />
-          <Route path="/admin/audit-logs" element={<AuditLogs />} />
-          <Route path="/admin/purchases" element={<Purchases />} />
+          
+          {/* Protected Admin Routes */}
+          <Route element={<AdminProtectedRoute />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/sellers" element={<SellerManagement />} />
+            <Route path="/admin/dealers/verification" element={<DealerVerification />} />
+            <Route path="/admin/listings/verification" element={<ListingVerification />} />
+            <Route path="/admin/auctions/monitor" element={<AuctionMonitoring />} />
+            <Route path="/admin/auctions/manage" element={<AuctionManagement />} />
+            <Route path="/admin/disputes" element={<DisputeResolution />} />
+            <Route path="/admin/analytics" element={<Analytics />} />
+            <Route path="/admin/announcements" element={<Announcements />} />
+            <Route path="/admin/fraud" element={<FraudDetection />} />
+            <Route path="/admin/compliance" element={<Compliance />} />
+            <Route path="/admin/audit-logs" element={<AuditLogs />} />
+            <Route path="/admin/purchases" element={<Purchases />} />
+            <Route path="/admin/settings" element={<SystemSettings />} />
+          </Route>
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
