@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,7 +73,9 @@ const Index = () => {
         .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
       if (!results?.length) return 0;
-      const successful = results.filter(result => result.final_price >= (result.reserve_price || 0)).length;
+      
+      // Since we no longer have reserve_price in auction_results, we'll use sale_status
+      const successful = results.filter(result => result.sale_status === 'sold').length;
       return Math.round((successful / results.length) * 100);
     }
   });

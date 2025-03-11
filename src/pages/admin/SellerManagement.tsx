@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,38 +38,49 @@ const SellerManagement = () => {
   const { data: sellers, isLoading, refetch } = useQuery({
     queryKey: ['activeSellers'],
     queryFn: async () => {
-      // First get cars with active sellers
-      const { data: cars, error: carsError } = await supabase
-        .from('cars')
-        .select('seller_id, name, mobile_number, address')
-        .eq('status', 'available');
+      try {
+        // First get profiles with seller role
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, role, created_at')
+          .eq('role', 'seller');
 
-      if (carsError) throw carsError;
-
-      const sellerIds = [...new Set(cars?.map(car => car.seller_id))];
-
-      // Then get seller profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, role, created_at')
-        .in('id', sellerIds)
-        .eq('role', 'seller');
-
-      if (profilesError) throw profilesError;
-
-      // Combine the data
-      return profiles.map(profile => {
-        const details = cars?.find(c => c.seller_id === profile.id);
+        if (profilesError) throw profilesError;
         
-        return {
-          id: profile.id,
-          role: profile.role,
-          created_at: profile.created_at,
-          name: details?.name || 'N/A',
-          mobile_number: details?.mobile_number || 'N/A',
-          address: details?.address || 'N/A',
-        } as Seller;
-      });
+        // For each seller profile, get their listing details
+        const sellersWithDetails = await Promise.all(
+          profiles.map(async (profile) => {
+            const { data: cars } = await supabase
+              .from('cars')
+              .select('seller_id, mobile_number, address')
+              .eq('seller_id', profile.id)
+              .eq('status', 'available')
+              .limit(1);
+            
+            // Find seller name from their latest car listing
+            const { data: nameData } = await supabase
+              .from('cars')
+              .select('title')
+              .eq('seller_id', profile.id)
+              .order('created_at', { ascending: false })
+              .limit(1);
+            
+            return {
+              id: profile.id,
+              role: profile.role,
+              created_at: profile.created_at,
+              name: nameData?.[0]?.title?.split(' ')[0] || 'N/A',
+              mobile_number: cars?.[0]?.mobile_number || 'N/A',
+              address: cars?.[0]?.address || 'N/A',
+            } as Seller;
+          })
+        );
+        
+        return sellersWithDetails.filter(seller => seller !== null);
+      } catch (error) {
+        console.error('Error fetching sellers:', error);
+        throw error;
+      }
     }
   });
 

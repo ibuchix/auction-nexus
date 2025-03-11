@@ -9,6 +9,7 @@ import { Search } from "lucide-react";
 import { AdminAuctionCard } from "@/components/admin/AdminAuctionCard";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { useToast } from "@/hooks/use-toast";
+import { Auction } from "@/types/auction";
 
 const AuctionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,7 +25,8 @@ const AuctionManagement = () => {
         .select(`
           *,
           bids (*),
-          seller:profiles (*)
+          seller:profiles (*),
+          auction_metrics (*)
         `);
       
       if (error) {
@@ -36,7 +38,9 @@ const AuctionManagement = () => {
         });
         throw error;
       }
-      return data;
+      
+      // Convert the data to fit our Auction type
+      return data as unknown as Auction[];
     }
   });
 

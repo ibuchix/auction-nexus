@@ -5,11 +5,12 @@ export type Car = Database['public']['Tables']['cars']['Row'];
 export type Bid = Database['public']['Tables']['bids']['Row'];
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type AuctionMetrics = Database['public']['Tables']['auction_metrics']['Row'];
+export type AuctionResult = Database['public']['Tables']['auction_results']['Row'];
 
 export type Auction = Car & {
   bids: Bid[];
   seller: Profile;
-  auction_metrics: AuctionMetrics[];
+  auction_metrics?: AuctionMetrics[];
   auction_status?: string;
 };
 

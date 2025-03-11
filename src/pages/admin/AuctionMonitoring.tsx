@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import { AuctionMetrics } from "@/components/admin/auction-monitoring/AuctionMetrics";
 import { AuctionFilters } from "@/components/admin/auction-monitoring/AuctionFilters";
 import { AuctionList } from "@/components/admin/auction-monitoring/AuctionList";
+import { Auction } from "@/types/auction";
 
 const AuctionMonitoring = () => {
   const { auctions, isLoading, pauseAuction, cancelAuction } = useAuctionMonitoring();
@@ -18,7 +19,7 @@ const AuctionMonitoring = () => {
 
     return auctions
       .filter(auction => {
-        const matchesSearch = auction.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = auction.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
         const matchesStatus = statusFilter === "all" || auction.auction_status === statusFilter;
         return matchesSearch && matchesStatus;
       })

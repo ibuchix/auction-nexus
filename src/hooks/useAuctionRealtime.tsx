@@ -1,14 +1,12 @@
+
 import { useState, useEffect } from 'react';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { Database } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
+import { Auction, Car, Bid } from '@/types/auction';
 
 type CarRow = Database['public']['Tables']['cars']['Row'];
 type BidRow = Database['public']['Tables']['bids']['Row'];
-type Auction = CarRow & {
-  bids: BidRow[];
-  auction_metrics: Database['public']['Tables']['auction_metrics']['Row'][];
-};
 
 type RealtimeCarPayload = RealtimePostgresChangesPayload<CarRow>;
 type RealtimeBidPayload = RealtimePostgresChangesPayload<BidRow>;
