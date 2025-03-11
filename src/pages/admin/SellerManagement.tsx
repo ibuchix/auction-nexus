@@ -39,13 +39,17 @@ const SellerManagement = () => {
     queryKey: ['activeSellers'],
     queryFn: async () => {
       try {
-        // First get profiles with seller role
+        // First get profiles with seller role - correct the column selection
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, role, created_at')
+          .select('id, role, updated_at')
           .eq('role', 'seller');
 
-        if (profilesError) throw profilesError;
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          throw profilesError;
+        }
+        
         if (!profilesData) return [];
         
         // For each seller profile, get their listing details
@@ -57,28 +61,37 @@ const SellerManagement = () => {
               return null;
             }
 
-            const { data: carsData } = await supabase
+            // Get mobile number from cars table
+            const { data: carsData, error: carsError } = await supabase
               .from('cars')
-              .select('mobile_number, address')
+              .select('mobile_number')
               .eq('seller_id', profile.id)
               .eq('status', 'available')
               .limit(1);
             
+            if (carsError) {
+              console.error('Error fetching car data:', carsError);
+            }
+            
             // Find seller name from their latest car listing
-            const { data: nameData } = await supabase
+            const { data: nameData, error: nameError } = await supabase
               .from('cars')
               .select('title')
               .eq('seller_id', profile.id)
               .order('created_at', { ascending: false })
               .limit(1);
             
+            if (nameError) {
+              console.error('Error fetching name data:', nameError);
+            }
+            
             return {
               id: profile.id,
               role: profile.role,
-              created_at: profile.created_at,
+              created_at: profile.updated_at, // use updated_at as a fallback for created_at
               name: nameData?.[0]?.title?.split(' ')[0] || 'N/A',
               mobile_number: carsData?.[0]?.mobile_number || 'N/A',
-              address: carsData?.[0]?.address || 'N/A',
+              address: 'N/A', // Since address doesn't exist in cars table, default to N/A
             } as Seller;
           })
         );
