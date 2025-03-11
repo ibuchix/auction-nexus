@@ -46,13 +46,9 @@ const menuItems = [
     shortcut: "Alt+A",
     submenu: [
       {
-        title: "Monitor Auctions",
-        path: "/admin/auctions/monitor",
-      },
-      {
         title: "Manage Auctions",
         path: "/admin/auctions/manage",
-      },
+      }
     ],
   },
   {

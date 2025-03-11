@@ -5,15 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import { Search, AlertTriangle, Clock, CheckCircle, PauseCircle, XCircle } from "lucide-react";
 import { AdminAuctionCard } from "@/components/admin/AdminAuctionCard";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { useToast } from "@/hooks/use-toast";
-import { Auction } from "@/types/auction";
+import { Auction, AuctionStatus } from "@/types/auction";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AuctionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<AuctionStatus | "all">("all");
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
@@ -27,7 +30,8 @@ const AuctionManagement = () => {
           bids (*),
           seller:profiles (*),
           auction_metrics (*)
-        `);
+        `)
+        .eq('status', 'approved');
       
       if (error) {
         console.error('Error fetching listings:', error);
@@ -39,7 +43,6 @@ const AuctionManagement = () => {
         throw error;
       }
       
-      // Convert the data to fit our Auction type
       return data as unknown as Auction[];
     }
   });
@@ -78,6 +81,23 @@ const AuctionManagement = () => {
     );
   }
 
+  const getStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'ready':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-600">Ready</Badge>;
+      case 'active':
+        return <Badge variant="default" className="bg-green-100 text-green-700">Active</Badge>;
+      case 'paused':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">Paused</Badge>;
+      case 'ended':
+        return <Badge variant="secondary" className="bg-gray-100 text-gray-700">Ended</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive" className="bg-red-100 text-red-700">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">Not Set</Badge>;
+    }
+  };
+
   const filteredListings = listings?.filter(listing => {
     const matchesSearch = 
       listing.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -90,11 +110,27 @@ const AuctionManagement = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const readyAuctions = filteredListings?.filter(listing => 
+    listing.auction_status === 'ready' || !listing.auction_status
+  );
+  
+  const activeAuctions = filteredListings?.filter(listing => 
+    listing.auction_status === 'active'
+  );
+  
+  const otherAuctions = filteredListings?.filter(listing => 
+    listing.auction_status !== 'ready' && 
+    listing.auction_status !== 'active' && 
+    listing.auction_status !== undefined
+  );
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Auction Management</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Auction Management
+          </h1>
           <div className="flex gap-4">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -107,7 +143,7 @@ const AuctionManagement = () => {
             </div>
             <Select
               value={statusFilter}
-              onValueChange={setStatusFilter}
+              onValueChange={(value) => setStatusFilter(value as AuctionStatus | "all")}
             >
               <option value="all">All Status</option>
               <option value="ready">Ready</option>
@@ -119,23 +155,124 @@ const AuctionManagement = () => {
           </div>
         </div>
 
-        <div className="grid gap-4">
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : filteredListings?.length === 0 ? (
-            <p className="text-center text-gray-500">No vehicles found</p>
-          ) : (
-            filteredListings?.map((listing) => (
-              <AdminAuctionCard
-                key={listing.id}
-                auction={listing}
-                onPause={pauseAuction}
-                onCancel={cancelAuction}
-                onStart={startAuction}
-              />
-            ))
-          )}
-        </div>
+        <Tabs defaultValue="ready" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="ready" className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              Ready for Auction
+              {readyAuctions && readyAuctions.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{readyAuctions.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="active" className="flex items-center gap-1">
+              <CheckCircle className="h-4 w-4" />
+              Active Auctions
+              {activeAuctions && activeAuctions.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{activeAuctions.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="other" className="flex items-center gap-1">
+              <PauseCircle className="h-4 w-4" />
+              Other Auctions
+              {otherAuctions && otherAuctions.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{otherAuctions.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="ready" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                  Listings Ready to Start Auction
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoading ? (
+                  <p className="text-center py-4">Loading...</p>
+                ) : readyAuctions?.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+                    <p>No listings ready for auction</p>
+                  </div>
+                ) : (
+                  readyAuctions?.map((listing) => (
+                    <AdminAuctionCard
+                      key={listing.id}
+                      auction={listing}
+                      onPause={pauseAuction}
+                      onCancel={cancelAuction}
+                      onStart={startAuction}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="active" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  Active Auctions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoading ? (
+                  <p className="text-center py-4">Loading...</p>
+                ) : activeAuctions?.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+                    <p>No active auctions</p>
+                  </div>
+                ) : (
+                  activeAuctions?.map((listing) => (
+                    <AdminAuctionCard
+                      key={listing.id}
+                      auction={listing}
+                      onPause={pauseAuction}
+                      onCancel={cancelAuction}
+                      onStart={startAuction}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="other" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <XCircle className="h-5 w-5 text-gray-600" />
+                  Other Auctions (Paused, Ended, Cancelled)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoading ? (
+                  <p className="text-center py-4">Loading...</p>
+                ) : otherAuctions?.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+                    <p>No other auctions</p>
+                  </div>
+                ) : (
+                  otherAuctions?.map((listing) => (
+                    <AdminAuctionCard
+                      key={listing.id}
+                      auction={listing}
+                      onPause={pauseAuction}
+                      onCancel={cancelAuction}
+                      onStart={startAuction}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

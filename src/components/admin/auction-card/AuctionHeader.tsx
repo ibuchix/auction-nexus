@@ -1,18 +1,8 @@
 
-import { AlertTriangle, Edit2, Ban, Play, Pause } from "lucide-react";
+import { AlertTriangle, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { AuctionStatus } from "@/types/auction";
+import { AuctionStatusActions } from "./AuctionStatusActions";
 
 interface AuctionHeaderProps {
   title: string;
@@ -20,10 +10,12 @@ interface AuctionHeaderProps {
   isDamaged: boolean;
   isEditing: boolean;
   status: AuctionStatus;
+  startTime?: string;
+  endTime?: string;
   onEditToggle: () => void;
-  onCancel: () => void;
-  onStart?: () => void;
-  onPause?: () => void;
+  onCancel: () => Promise<void>;
+  onStart?: () => Promise<void>;
+  onPause?: () => Promise<void>;
 }
 
 export function AuctionHeader({ 
@@ -32,6 +24,8 @@ export function AuctionHeader({
   isDamaged, 
   isEditing, 
   status,
+  startTime,
+  endTime,
   onEditToggle, 
   onCancel,
   onStart,
@@ -56,7 +50,7 @@ export function AuctionHeader({
           Status: {status}
         </p>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col items-end gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -66,53 +60,16 @@ export function AuctionHeader({
           {isEditing ? "Cancel Edit" : "Edit"}
         </Button>
 
-        {onStart && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onStart}
-          >
-            <Play className="h-4 w-4 mr-1" />
-            Start Auction
-          </Button>
+        {onStart && onPause && (
+          <AuctionStatusActions
+            status={status}
+            startTime={startTime}
+            endTime={endTime}
+            onStart={onStart}
+            onPause={onPause}
+            onCancel={onCancel}
+          />
         )}
-
-        {onPause && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onPause}
-          >
-            <Pause className="h-4 w-4 mr-1" />
-            Pause
-          </Button>
-        )}
-
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="destructive"
-              size="sm"
-            >
-              <Ban className="h-4 w-4 mr-1" />
-              Cancel Auction
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Cancel Auction</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to cancel this auction? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>No, keep it</AlertDialogCancel>
-              <AlertDialogAction onClick={onCancel}>
-                Yes, cancel auction
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </div>
   );
