@@ -1,19 +1,18 @@
-
 import { Dispute } from "@/types/disputes";
 import { format } from "date-fns";
+import { StatusBadge } from "./StatusBadge";
 
 interface DisputeHeaderProps {
   dispute: Dispute;
   currentStatus: string;
-  getStatusBadge: (status: string) => JSX.Element;
 }
 
-export function DisputeHeader({ dispute, currentStatus, getStatusBadge }: DisputeHeaderProps) {
+export function DisputeHeader({ dispute, currentStatus }: DisputeHeaderProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-1">
         <p className="text-sm font-medium text-gray-500">Status</p>
-        <div>{getStatusBadge(currentStatus)}</div>
+        <div><StatusBadge status={currentStatus} /></div>
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium text-gray-500">Type</p>
