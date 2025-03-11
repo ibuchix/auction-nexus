@@ -10,6 +10,7 @@ export type Auction = Car & {
   bids: Bid[];
   seller: Profile;
   auction_metrics: AuctionMetrics[];
+  auction_status?: string;
 };
 
 export type AuctionStatus = "active" | "ended" | "paused" | "cancelled" | "sold" | "ready";

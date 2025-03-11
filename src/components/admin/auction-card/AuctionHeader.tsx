@@ -12,9 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Database } from "@/integrations/supabase/types";
-
-type AuctionStatus = Database['public']['Enums']['auction_status'];
+import { AuctionStatus } from "@/types/auction";
 
 interface AuctionHeaderProps {
   title: string;
