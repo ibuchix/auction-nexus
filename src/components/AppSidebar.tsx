@@ -1,132 +1,16 @@
-import {
-  LayoutDashboard,
-  Gavel,
-  AlertTriangle,
-  LineChart,
-  Bell,
-  ScrollText,
-  ChevronDown,
-  ChevronRight,
-  Users,
-  ShieldCheck,
-  FileCheck,
-  MessageSquare,
-  History,
-  User
-} from "lucide-react";
+
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
-  SidebarInput,
 } from "@/components/ui/sidebar";
-import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
-import { cn } from "@/lib/utils";
-
-const menuItems = [
-  {
-    title: "Dashboard",
-    icon: LayoutDashboard,
-    path: "/admin",
-    shortcut: "Alt+H",
-  },
-  {
-    title: "Auctions",
-    icon: Gavel,
-    shortcut: "Alt+A",
-    submenu: [
-      {
-        title: "Manage Auctions",
-        path: "/admin/auctions/manage",
-      }
-    ],
-  },
-  {
-    title: "User Management",
-    icon: Users,
-    submenu: [
-      {
-        title: "Users",
-        path: "/admin/users",
-      },
-      {
-        title: "Sellers",
-        path: "/admin/sellers",
-      },
-      {
-        title: "Dealer Verification",
-        path: "/admin/dealers/verification",
-      },
-    ],
-  },
-  {
-    title: "Listing Management",
-    icon: FileCheck,
-    submenu: [
-      {
-        title: "Verify Listings",
-        path: "/admin/listings/verification",
-      },
-      {
-        title: "Purchases",
-        path: "/admin/purchases",
-      }
-    ],
-  },
-  {
-    title: "Risk Management",
-    icon: AlertTriangle,
-    shortcut: "Alt+R",
-    submenu: [
-      {
-        title: "Disputes",
-        path: "/admin/disputes",
-      },
-      {
-        title: "Fraud Detection",
-        path: "/admin/fraud",
-      },
-      {
-        title: "Compliance",
-        path: "/admin/compliance",
-      },
-    ],
-  },
-  {
-    title: "Insights",
-    icon: LineChart,
-    path: "/admin/analytics",
-  },
-  {
-    title: "Communications",
-    icon: Bell,
-    path: "/admin/announcements",
-  },
-  {
-    title: "System",
-    icon: ScrollText,
-    submenu: [
-      {
-        title: "Audit Logs",
-        path: "/admin/audit-logs",
-      },
-      {
-        title: "System Settings",
-        path: "/admin/settings",
-      },
-    ],
-  },
-];
+import { menuItems } from "@/constants/sidebarMenuItems";
+import { SidebarMenuItemRenderer } from "./sidebar/SidebarMenuItem";
+import { SidebarSearch } from "./sidebar/SidebarSearch";
 
 export function AppSidebar() {
   const [openGroups, setOpenGroups] = useState<string[]>([]);
@@ -158,78 +42,16 @@ export function AppSidebar() {
         </div>
         <SidebarGroup>
           <SidebarGroupContent>
-            <div className="px-2 mb-4">
-              <SidebarInput
-                type="search"
-                placeholder="Search menu..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
-            </div>
+            <SidebarSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
             <SidebarMenu>
               {filteredItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.submenu ? (
-                    <Collapsible
-                      open={openGroups.includes(item.title)}
-                      onOpenChange={() => toggleGroup(item.title)}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton 
-                          className="w-full justify-between hover:bg-iris-light group"
-                          tooltip={item.shortcut}
-                        >
-                          <div className="flex items-center gap-3">
-                            <item.icon className="h-5 w-5 group-hover:text-iris" />
-                            <span>{item.title}</span>
-                          </div>
-                          {openGroups.includes(item.title) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.submenu.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton
-                                asChild
-                                className={cn(
-                                  "hover:bg-iris-light",
-                                  isActive(subItem.path) && "bg-iris-light text-iris font-medium"
-                                )}
-                              >
-                                <Link
-                                  to={subItem.path}
-                                  className="pl-9 flex items-center gap-3"
-                                >
-                                  <span>{subItem.title}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ) : (
-                    <SidebarMenuButton
-                      asChild
-                      className={cn(
-                        "hover:bg-iris-light group",
-                        isActive(item.path) && "bg-iris-light text-iris font-medium"
-                      )}
-                      tooltip={item.shortcut}
-                    >
-                      <Link to={item.path} className="flex items-center gap-3">
-                        <item.icon className="h-5 w-5 group-hover:text-iris" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
+                <SidebarMenuItemRenderer
+                  key={item.title}
+                  item={item}
+                  isActive={isActive}
+                  openGroups={openGroups}
+                  toggleGroup={toggleGroup}
+                />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
