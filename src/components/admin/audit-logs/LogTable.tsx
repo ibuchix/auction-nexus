@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/hover-card";
 import { StatusBadge } from "../disputes/components/StatusBadge";
 import { Info } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 type AuditLog = Tables<"audit_logs"> & {
   user?: { full_name: string } | null;
@@ -133,7 +134,8 @@ function ActionBadge({ action }: { action: string }) {
     }
   };
 
-  return <StatusBadge variant={getVariant()}>{action}</StatusBadge>;
+  // Using Badge component from UI library instead of StatusBadge that doesn't accept children
+  return <Badge variant={getVariant()}>{action}</Badge>;
 }
 
 function LoadingSkeleton() {

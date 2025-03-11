@@ -29,25 +29,30 @@ import { LogTable } from "@/components/admin/audit-logs/LogTable";
 import { useQuery } from "@tanstack/react-query";
 
 type AuditLog = Tables<"audit_logs">;
+type AuditLogAction = Tables<"audit_logs">["action"];
 
 const AuditLogs = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [entityTypeFilter, setEntityTypeFilter] = useState<string[]>([]);
-  const [actionTypeFilter, setActionTypeFilter] = useState<string[]>([]);
+  const [actionTypeFilter, setActionTypeFilter] = useState<AuditLogAction[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // Fetch entity types for filter dropdown
   const { data: entityTypes = [] } = useQuery({
     queryKey: ["entityTypes"],
     queryFn: async () => {
+      // Use select distinct instead of distinctOn
       const { data, error } = await supabase
         .from("audit_logs")
         .select("entity_type")
-        .distinctOn("entity_type");
+        .limit(100);
       
       if (error) throw error;
-      return data.map(item => item.entity_type);
+      
+      // Manually filter for unique values
+      const uniqueTypes = [...new Set(data.map(item => item.entity_type))];
+      return uniqueTypes;
     }
   });
 
@@ -55,13 +60,17 @@ const AuditLogs = () => {
   const { data: actionTypes = [] } = useQuery({
     queryKey: ["actionTypes"],
     queryFn: async () => {
+      // Use select distinct instead of distinctOn
       const { data, error } = await supabase
         .from("audit_logs")
         .select("action")
-        .distinctOn("action");
+        .limit(100);
       
       if (error) throw error;
-      return data.map(item => item.action);
+      
+      // Manually filter for unique values
+      const uniqueActions = [...new Set(data.map(item => item.action))];
+      return uniqueActions as AuditLogAction[];
     }
   });
 
@@ -96,7 +105,7 @@ const AuditLogs = () => {
         query = query.in("entity_type", entityTypeFilter);
       }
 
-      // Apply action type filter
+      // Apply action type filter - with proper typing
       if (actionTypeFilter.length > 0) {
         query = query.in("action", actionTypeFilter);
       }
@@ -199,7 +208,7 @@ const AuditLogs = () => {
     );
   };
 
-  const toggleActionTypeFilter = (actionType: string) => {
+  const toggleActionTypeFilter = (actionType: AuditLogAction) => {
     setActionTypeFilter(prev => 
       prev.includes(actionType)
         ? prev.filter(t => t !== actionType)
