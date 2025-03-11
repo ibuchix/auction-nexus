@@ -13,28 +13,11 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const checkAuthAndRedirect = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profile?.role === 'admin') {
-          navigate('/admin');
-          return;
-        }
-      }
-    };
-    
-    checkAuthAndRedirect();
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, []);
 
   const { data: sellerCount } = useQuery({
     queryKey: ['activeSellers'],
