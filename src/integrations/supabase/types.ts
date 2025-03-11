@@ -419,6 +419,7 @@ export type Database = {
           is_auction: boolean | null
           is_damaged: boolean | null
           is_draft: boolean
+          is_manually_controlled: boolean | null
           make: string | null
           mileage: number | null
           minimum_bid_increment: number | null
@@ -449,6 +450,7 @@ export type Database = {
           is_auction?: boolean | null
           is_damaged?: boolean | null
           is_draft?: boolean
+          is_manually_controlled?: boolean | null
           make?: string | null
           mileage?: number | null
           minimum_bid_increment?: number | null
@@ -479,6 +481,7 @@ export type Database = {
           is_auction?: boolean | null
           is_damaged?: boolean | null
           is_draft?: boolean
+          is_manually_controlled?: boolean | null
           make?: string | null
           mileage?: number | null
           minimum_bid_increment?: number | null
