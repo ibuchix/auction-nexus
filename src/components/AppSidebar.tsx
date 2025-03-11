@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard,
   Gavel,
@@ -60,6 +59,10 @@ const menuItems = [
     title: "User Management",
     icon: Users,
     submenu: [
+      {
+        title: "Users",
+        path: "/admin/users",
+      },
       {
         title: "Sellers",
         path: "/admin/sellers",
