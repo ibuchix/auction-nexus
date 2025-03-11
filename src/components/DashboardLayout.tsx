@@ -1,3 +1,4 @@
+
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { BreadcrumbNav } from "./navigation/Breadcrumb";
@@ -6,10 +7,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useAdmin } from "@/context/AdminContext";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { isAdmin, isLoading } = useAdmin();
 
   // Keyboard shortcuts
   useHotkeys('alt+h', () => navigate('/'), { description: 'Go to Dashboard' });
@@ -21,6 +24,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       description: 'Alt + H: Home\nAlt + A: Auctions\nAlt + D: Disputes\nAlt + R: Reports',
     });
   }, { description: 'Show Keyboard Shortcuts' });
+
+  // Display loading state while checking admin status
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
