@@ -1,28 +1,403 @@
 
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  AlertTriangle, 
+  CheckCircle, 
+  Loader2, 
+  ShieldCheck, 
+  XCircle 
+} from "lucide-react";
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+
+interface DealerVerification {
+  id: string;
+  dealer_id: string;
+  verification_status: 'pending' | 'approved' | 'rejected';
+  submitted_at: string;
+  reviewed_at: string | null;
+  documents: any;
+  notes: string | null;
+  rejection_reason: string | null;
+  dealer: {
+    supervisor_name: string;
+    dealership_name: string;
+    tax_id: string;
+    business_registry_number: string;
+    address: string;
+    license_number: string;
+  };
+}
 
 const DealerVerification = () => {
+  const [selectedDealer, setSelectedDealer] = useState<DealerVerification | null>(null);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("pending");
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const { 
+    data: verifications, 
+    isLoading, 
+    refetch 
+  } = useQuery({
+    queryKey: ['dealerVerifications', activeTab],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('dealer_verifications')
+          .select(`
+            id,
+            dealer_id,
+            verification_status,
+            submitted_at,
+            reviewed_at,
+            documents,
+            notes,
+            rejection_reason,
+            dealers(
+              supervisor_name,
+              dealership_name,
+              tax_id,
+              business_registry_number,
+              address,
+              license_number
+            )
+          `)
+          .eq('verification_status', activeTab)
+          .order('submitted_at', { ascending: false });
+
+        if (error) throw error;
+        
+        return data as DealerVerification[];
+      } catch (error) {
+        console.error('Error fetching dealer verifications:', error);
+        toast.error('Failed to load dealer verifications');
+        return [];
+      }
+    }
+  });
+
+  const handleApproveDealer = async () => {
+    if (!selectedDealer) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      // Get the admin's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated as admin');
+      
+      // Call the RPC function to verify the dealer
+      const { data, error } = await supabase.rpc(
+        'verify_dealer',
+        { 
+          p_dealer_id: selectedDealer.dealer_id,
+          p_admin_id: user.id,
+          p_notes: adminNotes
+        }
+      );
+      
+      if (error) throw error;
+      
+      toast.success(`${selectedDealer.dealer.dealership_name} has been approved`);
+      setIsReviewOpen(false);
+      setSelectedDealer(null);
+      setAdminNotes("");
+      refetch();
+    } catch (error) {
+      console.error('Error approving dealer:', error);
+      toast.error('Failed to approve dealer');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRejectDealer = async () => {
+    if (!selectedDealer || !rejectionReason) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      // Get the admin's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated as admin');
+      
+      // Call the RPC function to reject the dealer
+      const { data, error } = await supabase.rpc(
+        'reject_dealer',
+        { 
+          p_dealer_id: selectedDealer.dealer_id,
+          p_admin_id: user.id,
+          p_rejection_reason: rejectionReason,
+          p_notes: adminNotes
+        }
+      );
+      
+      if (error) throw error;
+      
+      toast.success(`${selectedDealer.dealer.dealership_name} has been rejected`);
+      setIsReviewOpen(false);
+      setSelectedDealer(null);
+      setRejectionReason("");
+      setAdminNotes("");
+      refetch();
+    } catch (error) {
+      console.error('Error rejecting dealer:', error);
+      toast.error('Failed to reject dealer');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+      case 'approved':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Dealer Verification</h1>
-          <Button>
-            <ShieldCheck className="mr-2 h-4 w-4" />
-            Review Queue
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" className="flex items-center gap-2" onClick={() => refetch()}>
+              <Loader2 className="h-4 w-4" />
+              Refresh
+            </Button>
+            {activeTab === "pending" && (
+              <Button className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                Pending <Badge variant="secondary" className="ml-1">{verifications?.length || 0}</Badge>
+              </Button>
+            )}
+          </div>
         </div>
 
-        <div className="grid gap-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold">Pending Dealer Verifications</h2>
-            <p className="text-gray-500 mt-2">The dealer verification interface is coming soon.</p>
-          </Card>
-        </div>
+        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pending" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Pending
+            </TabsTrigger>
+            <TabsTrigger value="approved" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Approved
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="flex items-center gap-2">
+              <XCircle className="h-4 w-4" />
+              Rejected
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value={activeTab} className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>{activeTab === "pending" ? "Pending Verifications" : 
+                           activeTab === "approved" ? "Approved Dealers" : "Rejected Applications"}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Dealership</TableHead>
+                      <TableHead>Contact Person</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {verifications?.length ? (
+                      verifications.map((verification) => (
+                        <TableRow key={verification.id}>
+                          <TableCell className="font-medium">{verification.dealer.dealership_name}</TableCell>
+                          <TableCell>{verification.dealer.supervisor_name}</TableCell>
+                          <TableCell>{new Date(verification.submitted_at).toLocaleDateString()}</TableCell>
+                          <TableCell>{getStatusBadge(verification.verification_status)}</TableCell>
+                          <TableCell>
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                setSelectedDealer(verification);
+                                setIsReviewOpen(true);
+                                setRejectionReason(verification.rejection_reason || "");
+                                setAdminNotes(verification.notes || "");
+                              }}
+                            >
+                              Review
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4">
+                          No {activeTab} verifications found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {selectedDealer && (
+        <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Dealer Verification Review</DialogTitle>
+              <DialogDescription>
+                Review dealer information and approve or reject the application
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-2 gap-6 py-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Dealership Information</h3>
+                  <div className="mt-2 bg-gray-50 p-3 rounded-md">
+                    <p className="text-sm font-semibold">{selectedDealer.dealer.dealership_name}</p>
+                    <p className="text-sm mt-1">{selectedDealer.dealer.address}</p>
+                    <p className="text-sm mt-1">Tax ID: {selectedDealer.dealer.tax_id}</p>
+                    <p className="text-sm mt-1">Business Registry: {selectedDealer.dealer.business_registry_number}</p>
+                    <p className="text-sm mt-1">License Number: {selectedDealer.dealer.license_number}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Contact Person</h3>
+                  <div className="mt-2 bg-gray-50 p-3 rounded-md">
+                    <p className="text-sm font-semibold">{selectedDealer.dealer.supervisor_name}</p>
+                  </div>
+                </div>
+
+                {selectedDealer.verification_status === 'rejected' && selectedDealer.rejection_reason && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Rejection Reason</h3>
+                    <div className="mt-2 bg-red-50 p-3 rounded-md">
+                      <p className="text-sm text-red-700">{selectedDealer.rejection_reason}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Verification Status</h3>
+                  <div className="mt-2">
+                    {getStatusBadge(selectedDealer.verification_status)}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Submitted on {new Date(selectedDealer.submitted_at).toLocaleDateString()}
+                    </p>
+                    {selectedDealer.reviewed_at && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Reviewed on {new Date(selectedDealer.reviewed_at).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Admin Notes</h3>
+                  <Textarea 
+                    value={adminNotes} 
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    placeholder="Add notes about this verification"
+                    className="mt-2"
+                    disabled={selectedDealer.verification_status !== 'pending'}
+                  />
+                </div>
+
+                {selectedDealer.verification_status === 'pending' && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Rejection Reason</h3>
+                    <Textarea 
+                      value={rejectionReason} 
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Required if rejecting the application"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <div className="flex gap-2 justify-end w-full">
+                <Button variant="outline" onClick={() => setIsReviewOpen(false)}>
+                  Close
+                </Button>
+                
+                {selectedDealer.verification_status === 'pending' && (
+                  <>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleRejectDealer}
+                      disabled={isProcessing || !rejectionReason}
+                    >
+                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <XCircle className="h-4 w-4 mr-2" />}
+                      Reject
+                    </Button>
+                    <Button 
+                      onClick={handleApproveDealer}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                      Approve
+                    </Button>
+                  </>
+                )}
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </DashboardLayout>
   );
 };
