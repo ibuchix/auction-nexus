@@ -25,17 +25,17 @@ const DisputeResolution = () => {
     queryFn: async () => {
       let query = supabase.from('disputes').select(`
         *,
-        submitted_by(full_name, avatar_url),
-        assigned_to(full_name, avatar_url),
+        submitted_by:profiles!disputes_submitted_by_fkey(id, full_name, avatar_url),
+        assigned_to:profiles!disputes_assigned_to_fkey(id, full_name, avatar_url),
         car_id(id, title, make, model, year, images)
       `);
 
       if (activeFilters.status) {
-        query = query.eq('status', activeFilters.status);
+        query = query.eq('status', activeFilters.status as Dispute['status']);
       }
 
       if (activeFilters.type) {
-        query = query.eq('type', activeFilters.type);
+        query = query.eq('type', activeFilters.type as Dispute['type']);
       }
 
       query = query.order('created_at', { ascending: false });
@@ -51,7 +51,7 @@ const DisputeResolution = () => {
         return [];
       }
       
-      return data || [];
+      return data as Dispute[];
     }
   });
 

@@ -1,4 +1,3 @@
-
 export interface Dispute {
   id: string;
   title: string;

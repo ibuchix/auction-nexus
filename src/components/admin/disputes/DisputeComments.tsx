@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,14 +31,14 @@ export function DisputeComments({ disputeId, onNewComment }: DisputeCommentsProp
         .from('dispute_comments')
         .select(`
           *,
-          author_id(id, full_name, avatar_url)
+          author_id:profiles!dispute_comments_author_id_fkey(id, full_name, avatar_url)
         `)
         .eq('dispute_id', disputeId)
         .order('created_at', { ascending: true });
         
       if (error) throw error;
       
-      setComments(data || []);
+      setComments(data as DisputeComment[]);
     } catch (error: any) {
       toast({
         title: "Error fetching comments",
