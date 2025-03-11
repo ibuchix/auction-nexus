@@ -118,15 +118,15 @@ function ActionBadge({ action }: { action: string }) {
       case "delete":
         return "destructive";
       case "login":
-        return "success";
+        return "default"; // Changed from "success" to "default"
       case "logout":
         return "secondary";
       case "approve":
-        return "success";
+        return "default"; // Changed from "success" to "default"
       case "reject":
         return "destructive";
       case "verify":
-        return "success";
+        return "default"; // Changed from "success" to "default"
       case "export":
         return "default";
       default:
