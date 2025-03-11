@@ -1,11 +1,13 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button, Link } from "@/components/ui/button";
 import { 
   ShieldCheck, Gavel, Activity, MessageSquare, TrendingUp,
-  Megaphone, Settings, FileText, LogIn, ArrowRight
+  Megaphone, Settings, FileText, LogIn, ArrowRight, History
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "react-query";
+import { supabase } from "@/lib/supabase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AdminCardProps {
   title: string;
@@ -40,6 +42,55 @@ function AdminCard({ title, description, icon: Icon, path, iconColor = "text-pri
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function AuditLogStats() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["auditLogStats"],
+    queryFn: async () => {
+      const today = new Date();
+      const startOfDay = new Date(today);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const { count: todayCount, error: todayError } = await supabase
+        .from("audit_logs")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", startOfDay.toISOString());
+        
+      if (todayError) throw todayError;
+      
+      const { count: totalCount, error: totalError } = await supabase
+        .from("audit_logs")
+        .select("*", { count: "exact", head: true });
+        
+      if (totalError) throw totalError;
+      
+      return { todayCount, totalCount };
+    },
+    refetchInterval: 300000 // Refetch every 5 minutes
+  });
+  
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 gap-4">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+      </div>
+    );
+  }
+  
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="flex flex-col">
+        <span className="text-xs text-muted-foreground">Today</span>
+        <span className="font-medium text-lg">{data?.todayCount || 0}</span>
+      </div>
+      <div className="flex flex-col">
+        <span className="text-xs text-muted-foreground">Total</span>
+        <span className="font-medium text-lg">{data?.totalCount || 0}</span>
+      </div>
+    </div>
   );
 }
 
@@ -89,15 +140,15 @@ export function AdminCardGrid() {
     },
     {
       title: "Audit Logs",
-      description: "View user activity and system logs",
-      icon: LogIn,
+      description: "View system activity and user actions",
+      icon: History,
       path: "/admin/audit-logs",
       iconColor: "text-gray-500"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       {adminCards.map((card) => (
         <AdminCard
           key={card.title}
