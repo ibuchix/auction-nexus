@@ -25,8 +25,11 @@ import { Search, Loader2 } from "lucide-react";
 import { DateRangePicker } from "@/components/admin/audit-logs/DateRangePicker";
 import { DateRange } from "react-day-picker";
 
+// Define the action types
+type ActionType = "create" | "update" | "delete" | "login" | "logout" | "approve" | "reject" | "verify";
+
 export function UserActivityLog() {
-  const [actionFilter, setActionFilter] = useState<string>("all");
+  const [actionFilter, setActionFilter] = useState<ActionType | "all">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(new Date().setDate(new Date().getDate() - 7)),
@@ -133,7 +136,10 @@ export function UserActivityLog() {
             />
           </div>
           
-          <Select value={actionFilter} onValueChange={setActionFilter}>
+          <Select 
+            value={actionFilter} 
+            onValueChange={(value) => setActionFilter(value as ActionType | "all")}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by action" />
             </SelectTrigger>
