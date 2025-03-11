@@ -38,7 +38,7 @@ export const menuItems: SidebarMenuItem[] = [
       {
         title: "Manage Auctions",
         path: "/admin/auctions/manage",
-      }
+      },
     ],
   },
   {
