@@ -40,19 +40,20 @@ const SellerManagement = () => {
     queryFn: async () => {
       try {
         // First get profiles with seller role
-        const { data: profiles, error: profilesError } = await supabase
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, role, created_at')
           .eq('role', 'seller');
 
         if (profilesError) throw profilesError;
+        if (!profilesData) return [];
         
         // For each seller profile, get their listing details
         const sellersWithDetails = await Promise.all(
-          profiles.map(async (profile) => {
-            const { data: cars } = await supabase
+          profilesData.map(async (profile) => {
+            const { data: carsData } = await supabase
               .from('cars')
-              .select('seller_id, mobile_number, address')
+              .select('mobile_number, address')
               .eq('seller_id', profile.id)
               .eq('status', 'available')
               .limit(1);
@@ -70,8 +71,8 @@ const SellerManagement = () => {
               role: profile.role,
               created_at: profile.created_at,
               name: nameData?.[0]?.title?.split(' ')[0] || 'N/A',
-              mobile_number: cars?.[0]?.mobile_number || 'N/A',
-              address: cars?.[0]?.address || 'N/A',
+              mobile_number: carsData?.[0]?.mobile_number || 'N/A',
+              address: carsData?.[0]?.address || 'N/A',
             } as Seller;
           })
         );

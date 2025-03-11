@@ -8,10 +8,11 @@ export type AuctionMetrics = Database['public']['Tables']['auction_metrics']['Ro
 export type AuctionResult = Database['public']['Tables']['auction_results']['Row'];
 
 export type Auction = Car & {
-  bids: Bid[];
-  seller: Profile;
+  bids?: Bid[];
+  seller?: Profile;
   auction_metrics?: AuctionMetrics[];
   auction_status?: string;
+  reserve_price?: number;
 };
 
 export type AuctionStatus = "active" | "ended" | "paused" | "cancelled" | "sold" | "ready";

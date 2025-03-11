@@ -1,3 +1,4 @@
+
 import { Phone, User } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
@@ -15,7 +16,7 @@ export function SellerInfo({ seller, mobileNumber }: SellerInfoProps) {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <User className="h-4 w-4" />
-          <span className="text-sm">{seller?.avatar_url || 'N/A'}</span>
+          <span className="text-sm">{seller?.full_name || 'N/A'}</span>
         </div>
         <div className="flex items-center gap-2">
           <Phone className="h-4 w-4" />
