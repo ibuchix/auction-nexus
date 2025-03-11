@@ -9,19 +9,24 @@ import { AuctionDetails } from "./auction-card/AuctionDetails";
 import { SellerInfo } from "./auction-card/SellerInfo";
 import { VehicleImages } from "./auction-card/VehicleImages";
 import { Auction, AuctionStatus } from "@/types/auction";
+import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 
 interface AdminAuctionCardProps {
   auction: Auction;
-  onPause: (id: string) => Promise<void>;
-  onCancel: (id: string) => Promise<void>;
+  onPause?: (id: string) => Promise<void>;
+  onCancel?: (id: string) => Promise<void>;
   onStart?: (id: string) => Promise<void>;
+  onExtendTime?: (id: string) => Promise<void>;
 }
 
-export function AdminAuctionCard({ auction, onPause, onCancel, onStart }: AdminAuctionCardProps) {
+export function AdminAuctionCard({ auction, onPause, onCancel, onStart, onExtendTime }: AdminAuctionCardProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editedPrice, setEditedPrice] = useState(auction.price?.toString() || "");
   const [editedNotes, setEditedNotes] = useState(auction.seller_notes || "");
+  
+  // Use the hook directly for any operations not passed as props
+  const { pauseAuction, cancelAuction, startAuction, extendAuctionTime } = useAuctionOperations();
 
   const handleSaveChanges = async () => {
     try {
@@ -49,6 +54,12 @@ export function AdminAuctionCard({ auction, onPause, onCancel, onStart }: AdminA
     }
   };
 
+  // Determine which function to use for each action
+  const handlePause = onPause || (async () => await pauseAuction(auction.id));
+  const handleCancel = onCancel || (async () => await cancelAuction(auction.id));
+  const handleStart = onStart || (async () => await startAuction(auction.id));
+  const handleExtendTime = onExtendTime || (async () => await extendAuctionTime(auction.id));
+
   return (
     <Card className={`hover:shadow-md transition-shadow ${auction.is_damaged ? 'border-red-500' : ''}`}>
       <CardHeader className="pb-2">
@@ -58,10 +69,14 @@ export function AdminAuctionCard({ auction, onPause, onCancel, onStart }: AdminA
           isDamaged={auction.is_damaged}
           isEditing={isEditing}
           onEditToggle={() => setIsEditing(!isEditing)}
-          onCancel={() => onCancel(auction.id)}
-          onStart={auction.auction_status === 'ready' ? () => onStart?.(auction.id) : undefined}
-          onPause={auction.auction_status === 'active' ? () => onPause(auction.id) : undefined}
+          onCancel={handleCancel}
+          onStart={auction.auction_status === 'ready' || auction.auction_status === 'paused' ? handleStart : undefined}
+          onPause={auction.auction_status === 'active' ? handlePause : undefined}
+          onExtendTime={auction.auction_status === 'active' ? handleExtendTime : undefined}
           status={auction.auction_status as AuctionStatus}
+          startTime={auction.auction_start_time}
+          endTime={auction.auction_end_time}
+          isManuallyControlled={auction.is_manually_controlled}
         />
       </CardHeader>
       <CardContent>

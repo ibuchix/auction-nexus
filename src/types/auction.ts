@@ -13,6 +13,7 @@ export type Auction = Car & {
   auction_metrics?: AuctionMetrics[];
   auction_status?: string;
   reserve_price?: number;
+  is_manually_controlled?: boolean;
 };
 
 export type AuctionStatus = "active" | "ended" | "paused" | "cancelled" | "sold" | "ready";

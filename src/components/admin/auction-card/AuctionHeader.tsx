@@ -12,10 +12,12 @@ interface AuctionHeaderProps {
   status: AuctionStatus;
   startTime?: string;
   endTime?: string;
+  isManuallyControlled?: boolean;
   onEditToggle: () => void;
   onCancel: () => Promise<void>;
   onStart?: () => Promise<void>;
   onPause?: () => Promise<void>;
+  onExtendTime?: () => Promise<void>;
 }
 
 export function AuctionHeader({ 
@@ -26,10 +28,12 @@ export function AuctionHeader({
   status,
   startTime,
   endTime,
+  isManuallyControlled = false,
   onEditToggle, 
   onCancel,
   onStart,
-  onPause
+  onPause,
+  onExtendTime
 }: AuctionHeaderProps) {
   return (
     <div className="flex justify-between items-start">
@@ -65,9 +69,11 @@ export function AuctionHeader({
             status={status}
             startTime={startTime}
             endTime={endTime}
+            isManuallyControlled={isManuallyControlled}
             onStart={onStart}
             onPause={onPause}
             onCancel={onCancel}
+            onExtendTime={onExtendTime}
           />
         )}
       </div>

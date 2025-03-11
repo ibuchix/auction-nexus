@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { addHours } from "date-fns";
 
 type Auction = Database['public']['Tables']['cars']['Row'] & {
   bids: Database['public']['Tables']['bids']['Row'][];
@@ -13,7 +14,11 @@ export function useAuctionOperations() {
     try {
       const { error } = await supabase
         .from('cars')
-        .update({ auction_status: 'paused' })
+        .update({ 
+          auction_status: 'paused',
+          is_manually_controlled: true,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', auctionId);
 
       if (error) throw error;
@@ -31,6 +36,7 @@ export function useAuctionOperations() {
         .from('cars')
         .update({ 
           auction_status: 'cancelled',
+          is_manually_controlled: true,
           updated_at: new Date().toISOString()
         })
         .eq('id', auctionId);
@@ -46,15 +52,19 @@ export function useAuctionOperations() {
 
   const startAuction = async (auctionId: string): Promise<void> => {
     try {
+      // Set up default end time (24 hours from now) if not specified
+      const endTime = addHours(new Date(), 24).toISOString();
+      
       const { error } = await supabase
         .from('cars')
         .update({ 
           auction_status: 'active',
           auction_start_time: new Date().toISOString(),
-          start_auction_at: new Date().toISOString()
+          auction_end_time: endTime,
+          is_manually_controlled: true,
+          updated_at: new Date().toISOString()
         })
-        .eq('id', auctionId)
-        .eq('auction_status', 'ready');
+        .eq('id', auctionId);
 
       if (error) throw error;
       toast.success("Auction started successfully");
@@ -65,9 +75,65 @@ export function useAuctionOperations() {
     }
   };
 
+  const resumeAuction = async (auctionId: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('cars')
+        .update({ 
+          auction_status: 'active',
+          is_manually_controlled: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', auctionId)
+        .eq('auction_status', 'paused');
+
+      if (error) throw error;
+      toast.success("Auction resumed successfully");
+    } catch (error) {
+      toast.error("Failed to resume auction");
+      console.error('Error resuming auction:', error);
+      throw error;
+    }
+  };
+
+  const extendAuctionTime = async (auctionId: string): Promise<void> => {
+    try {
+      // Get current auction end time
+      const { data: auction, error: fetchError } = await supabase
+        .from('cars')
+        .select('auction_end_time')
+        .eq('id', auctionId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Add 1 hour to the current end time
+      const currentEndTime = new Date(auction.auction_end_time);
+      const newEndTime = addHours(currentEndTime, 1).toISOString();
+      
+      const { error } = await supabase
+        .from('cars')
+        .update({ 
+          auction_end_time: newEndTime,
+          is_manually_controlled: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', auctionId);
+
+      if (error) throw error;
+      toast.success("Auction time extended by 1 hour");
+    } catch (error) {
+      toast.error("Failed to extend auction time");
+      console.error('Error extending auction time:', error);
+      throw error;
+    }
+  };
+
   return {
     pauseAuction,
     cancelAuction,
     startAuction,
+    resumeAuction,
+    extendAuctionTime,
   };
 }
