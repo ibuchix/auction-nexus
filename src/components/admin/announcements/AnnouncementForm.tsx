@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +26,7 @@ export type Announcement = {
   target: "all" | "dealers" | "sellers" | "admins";
   is_active: boolean;
   created_at?: string;
-  created_by?: string;
+  created_by: string;
   expires_at?: string | null;
   published_at?: string | null;
 }
@@ -42,6 +41,8 @@ export function AnnouncementForm({ announcement, onSuccess, onCancel }: Announce
   const { toast } = useToast();
   const isEditing = !!announcement?.id;
   
+  const adminId = "00000000-0000-0000-0000-000000000000";
+  
   const [formData, setFormData] = useState<Announcement>(
     announcement || {
       title: "",
@@ -49,6 +50,7 @@ export function AnnouncementForm({ announcement, onSuccess, onCancel }: Announce
       type: "system",
       target: "all",
       is_active: true,
+      created_by: adminId,
       expires_at: null,
       published_at: null
     }
@@ -79,7 +81,8 @@ export function AnnouncementForm({ announcement, onSuccess, onCancel }: Announce
       const updatedData = {
         ...formData,
         expires_at: expiryDate?.toISOString() || null,
-        published_at: publishDate?.toISOString() || null
+        published_at: publishDate?.toISOString() || null,
+        created_by: adminId
       };
       
       let response;
@@ -92,7 +95,7 @@ export function AnnouncementForm({ announcement, onSuccess, onCancel }: Announce
       } else {
         response = await supabase
           .from('announcements')
-          .insert([updatedData]);
+          .insert(updatedData);
       }
       
       if (response.error) {
