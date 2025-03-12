@@ -1,11 +1,10 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DealerData, VerificationStatus } from "./types";
 import { useAdmin } from "@/context/AdminContext";
+import { approveDealer, rejectDealer, fetchDealers } from "./dealer-verification-operations";
 
 export const useDealerVerification = () => {
   const [selectedDealer, setSelectedDealer] = useState<DealerData | null>(null);
@@ -16,42 +15,14 @@ export const useDealerVerification = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { userId, operations } = useAdmin();
 
+  // Fetch dealers data using React Query
   const { 
     data: dealers, 
     isLoading, 
     refetch 
   } = useQuery({
     queryKey: ['dealersList', activeTab],
-    queryFn: async () => {
-      try {
-        // Fetch all dealers directly from the dealers table
-        let query = adminSupabase
-          .from('dealers')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        // Apply filter if not showing all dealers
-        if (activeTab !== "all") {
-          query = query.eq('verification_status', activeTab);
-        }
-        
-        const { data: dealersData, error: dealersError } = await query;
-
-        if (dealersError) throw dealersError;
-        
-        // Type-safe dealers data with proper verification status type
-        const typedDealers: DealerData[] = dealersData.map(dealer => ({
-          ...dealer,
-          verification_status: dealer.verification_status as VerificationStatus
-        }));
-        
-        return typedDealers;
-      } catch (error) {
-        console.error('Error fetching dealers:', error);
-        toast.error('Failed to load dealers');
-        return [];
-      }
-    }
+    queryFn: () => fetchDealers(activeTab)
   });
 
   const handleApproveDealer = async () => {
@@ -64,7 +35,7 @@ export const useDealerVerification = () => {
     
     try {
       // Use the admin operations utility with admin ID from context
-      const result = await operations.verifyDealer(selectedDealer.id, userId, adminNotes);
+      const result = await approveDealer(selectedDealer.id, userId, adminNotes);
       
       if (!result) throw new Error('Verification failed');
       
@@ -91,7 +62,7 @@ export const useDealerVerification = () => {
     
     try {
       // Use the admin operations utility with admin ID from context
-      const result = await operations.rejectDealer(
+      const result = await rejectDealer(
         selectedDealer.id, 
         userId, 
         rejectionReason,
@@ -125,7 +96,7 @@ export const useDealerVerification = () => {
     try {
       if (newStatus) {
         // Approve using admin operations with admin ID from context
-        const result = await operations.verifyDealer(
+        const result = await approveDealer(
           dealer.id,
           userId,
           "Quick verification via toggle switch"
@@ -135,7 +106,7 @@ export const useDealerVerification = () => {
         toast.success(`${dealer.dealership_name} has been approved`);
       } else {
         // Reject using admin operations with admin ID from context
-        const result = await operations.rejectDealer(
+        const result = await rejectDealer(
           dealer.id,
           userId,
           "Verification revoked",
