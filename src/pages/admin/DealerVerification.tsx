@@ -34,7 +34,8 @@ import {
   Building,
   FileText,
   CreditCard,
-  MapPin
+  MapPin,
+  User
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

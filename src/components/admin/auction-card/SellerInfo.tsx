@@ -1,5 +1,5 @@
 
-import { Phone, User, Mail, BriefCase } from "lucide-react";
+import { Phone, User, Mail, Briefcase } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
