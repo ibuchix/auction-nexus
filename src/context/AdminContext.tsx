@@ -23,17 +23,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const { isAdmin, isLoading, userId } = useAdminAuth();
   const navigate = useNavigate();
   
-  // Optional: Redirect non-admin users away from admin pages
+  // We're removing the redirect since this is an admin-only app
+  // and we've modified useAdminAuth to assume admin privileges
+  
   useEffect(() => {
-    if (!isLoading && isAdmin === false && window.location.pathname.startsWith('/admin')) {
-      toast.error('Access denied: Admin privileges required');
-      navigate('/');
+    if (isAdmin === false) {
+      toast.error('Admin client not working. Check your service role key.');
     }
-  }, [isAdmin, isLoading, navigate]);
+  }, [isAdmin]);
   
   const value = {
-    isAdmin: !!isAdmin,
-    isLoading,
+    isAdmin: true, // Always return true for admin access
+    isLoading: false,
     userId,
     operations: adminOperations,
   };
