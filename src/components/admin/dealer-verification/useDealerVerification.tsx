@@ -55,13 +55,24 @@ export const useDealerVerification = () => {
   });
 
   const handleApproveDealer = async () => {
-    if (!selectedDealer || !userId) return;
+    if (!selectedDealer) return;
     
     setIsProcessing(true);
     
     try {
-      // Use the admin operations utility
-      const result = await operations.verifyDealer(selectedDealer.id, userId, adminNotes);
+      // Get the current admin's UUID from Supabase auth
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Admin authentication error');
+        setIsProcessing(false);
+        return;
+      }
+      
+      const adminId = user.id;
+      
+      // Use the admin operations utility with the real admin ID
+      const result = await operations.verifyDealer(selectedDealer.id, adminId, adminNotes);
       
       if (!result) throw new Error('Verification failed');
       
@@ -79,15 +90,26 @@ export const useDealerVerification = () => {
   };
 
   const handleRejectDealer = async () => {
-    if (!selectedDealer || !rejectionReason || !userId) return;
+    if (!selectedDealer || !rejectionReason) return;
     
     setIsProcessing(true);
     
     try {
-      // Use the admin operations utility
+      // Get the current admin's UUID from Supabase auth
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Admin authentication error');
+        setIsProcessing(false);
+        return;
+      }
+      
+      const adminId = user.id;
+      
+      // Use the admin operations utility with the real admin ID
       const result = await operations.rejectDealer(
         selectedDealer.id, 
-        userId, 
+        adminId, 
         rejectionReason,
         adminNotes
       );
@@ -109,29 +131,35 @@ export const useDealerVerification = () => {
   };
 
   const handleToggleVerification = async (dealer: DealerData, newStatus: boolean) => {
-    if (!userId) {
-      toast.error('Admin ID not available');
-      return;
-    }
-    
     setIsProcessing(true);
     
     try {
+      // Get the current admin's UUID from Supabase auth
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Admin authentication error');
+        setIsProcessing(false);
+        return;
+      }
+      
+      const adminId = user.id;
+      
       if (newStatus) {
-        // Approve using admin operations
+        // Approve using admin operations with the real admin ID
         const result = await operations.verifyDealer(
           dealer.id,
-          userId,
+          adminId,
           "Quick verification via toggle switch"
         );
         
         if (!result) throw new Error('Verification failed');
         toast.success(`${dealer.dealership_name} has been approved`);
       } else {
-        // Reject using admin operations
+        // Reject using admin operations with the real admin ID
         const result = await operations.rejectDealer(
           dealer.id,
-          userId,
+          adminId,
           "Verification revoked",
           "Quick rejection via toggle switch"
         );
