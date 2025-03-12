@@ -17,6 +17,7 @@ import FraudDetection from "./pages/admin/FraudDetection";
 import Compliance from "./pages/admin/Compliance";
 import AuditLogs from "./pages/admin/AuditLogs";
 import SellerManagement from "./pages/admin/SellerManagement";
+import DealerManagement from "./pages/admin/DealerManagement";
 import Purchases from "./pages/admin/Purchases";
 import DealerVerification from "./pages/admin/DealerVerification";
 import ListingVerification from "./pages/admin/ListingVerification";
@@ -38,6 +39,7 @@ const App = () => (
             {/* Admin Routes - No protection since this is an admin app */}
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/sellers" element={<SellerManagement />} />
+            <Route path="/admin/dealers" element={<DealerManagement />} />
             <Route path="/admin/dealers/verification" element={<DealerVerification />} />
             <Route path="/admin/listings/verification" element={<ListingVerification />} />
             <Route path="/admin/auctions/monitor" element={<AuctionMonitoring />} />
