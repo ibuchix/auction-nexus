@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { adminSupabase } from "@/integrations/supabase/adminClient";
 import {
   Table,
   TableBody,
@@ -22,16 +23,23 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { 
   AlertTriangle, 
   CheckCircle, 
   Loader2, 
   ShieldCheck, 
-  XCircle 
+  XCircle,
+  Phone,
+  Building,
+  FileText,
+  CreditCard,
+  MapPin
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Json } from "@/integrations/supabase/types";
 
 // Define a type for verification status
@@ -61,8 +69,7 @@ const DealerVerification = () => {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
-  // Fix type issue - explicitly type activeTab as VerificationStatus
-  const [activeTab, setActiveTab] = useState<VerificationStatus>("pending");
+  const [activeTab, setActiveTab] = useState<VerificationStatus | "all">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const { 
@@ -73,7 +80,7 @@ const DealerVerification = () => {
     queryKey: ['dealerVerifications', activeTab],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
+        let query = adminSupabase
           .from('dealer_verifications')
           .select(`
             id,
@@ -93,8 +100,14 @@ const DealerVerification = () => {
               license_number
             )
           `)
-          .eq('verification_status', activeTab)
           .order('submitted_at', { ascending: false });
+          
+        // Apply filter if not showing all dealers
+        if (activeTab !== "all") {
+          query = query.eq('verification_status', activeTab);
+        }
+        
+        const { data, error } = await query;
 
         if (error) throw error;
         
@@ -124,7 +137,7 @@ const DealerVerification = () => {
       if (!user) throw new Error('Not authenticated as admin');
       
       // Call the RPC function to verify the dealer
-      const { data, error } = await supabase.rpc(
+      const { data, error } = await adminSupabase.rpc(
         'verify_dealer',
         { 
           p_dealer_id: selectedDealer.dealer_id,
@@ -159,7 +172,7 @@ const DealerVerification = () => {
       if (!user) throw new Error('Not authenticated as admin');
       
       // Call the RPC function to reject the dealer
-      const { data, error } = await supabase.rpc(
+      const { data, error } = await adminSupabase.rpc(
         'reject_dealer',
         { 
           p_dealer_id: selectedDealer.dealer_id,
@@ -180,6 +193,52 @@ const DealerVerification = () => {
     } catch (error) {
       console.error('Error rejecting dealer:', error);
       toast.error('Failed to reject dealer');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleToggleVerification = async (dealer: DealerVerification, newStatus: boolean) => {
+    setIsProcessing(true);
+    
+    try {
+      // Get the admin's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated as admin');
+      
+      if (newStatus) {
+        // Approve
+        const { data, error } = await adminSupabase.rpc(
+          'verify_dealer',
+          { 
+            p_dealer_id: dealer.dealer_id,
+            p_admin_id: user.id,
+            p_notes: "Quick verification via toggle switch"
+          }
+        );
+        
+        if (error) throw error;
+        toast.success(`${dealer.dealer.dealership_name} has been approved`);
+      } else {
+        // Reject
+        const { data, error } = await adminSupabase.rpc(
+          'reject_dealer',
+          { 
+            p_dealer_id: dealer.dealer_id,
+            p_admin_id: user.id,
+            p_rejection_reason: "Verification revoked",
+            p_notes: "Quick rejection via toggle switch"
+          }
+        );
+        
+        if (error) throw error;
+        toast.success(`${dealer.dealer.dealership_name} verification has been revoked`);
+      }
+      
+      refetch();
+    } catch (error) {
+      console.error('Error toggling dealer verification:', error);
+      toast.error('Failed to update dealer verification status');
     } finally {
       setIsProcessing(false);
     }
@@ -221,14 +280,18 @@ const DealerVerification = () => {
             {activeTab === "pending" && (
               <Button className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" />
-                Pending <Badge variant="secondary" className="ml-1">{verifications?.length || 0}</Badge>
+                Pending <Badge variant="secondary" className="ml-1">{verifications?.filter(v => v.verification_status === 'pending').length || 0}</Badge>
               </Button>
             )}
           </div>
         </div>
 
-        <Tabs defaultValue="pending" value={activeTab} onValueChange={(value) => setActiveTab(value as VerificationStatus)}>
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="pending" value={activeTab} onValueChange={(value) => setActiveTab(value as VerificationStatus | "all")}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              All Dealers
+            </TabsTrigger>
             <TabsTrigger value="pending" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               Pending
@@ -246,8 +309,11 @@ const DealerVerification = () => {
           <TabsContent value={activeTab} className="mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>{activeTab === "pending" ? "Pending Verifications" : 
-                           activeTab === "approved" ? "Approved Dealers" : "Rejected Applications"}</CardTitle>
+                <CardTitle>
+                  {activeTab === "all" ? "All Dealers" :
+                   activeTab === "pending" ? "Pending Verifications" : 
+                   activeTab === "approved" ? "Approved Dealers" : "Rejected Applications"}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -257,6 +323,7 @@ const DealerVerification = () => {
                       <TableHead>Contact Person</TableHead>
                       <TableHead>Submitted</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Verified</TableHead>
                       <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -268,6 +335,26 @@ const DealerVerification = () => {
                           <TableCell>{verification.dealer.supervisor_name}</TableCell>
                           <TableCell>{new Date(verification.submitted_at).toLocaleDateString()}</TableCell>
                           <TableCell>{getStatusBadge(verification.verification_status)}</TableCell>
+                          <TableCell>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center">
+                                    <Switch 
+                                      checked={verification.verification_status === 'approved'}
+                                      onCheckedChange={(checked) => handleToggleVerification(verification, checked)}
+                                      disabled={isProcessing}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {verification.verification_status === 'approved' 
+                                    ? 'Click to revoke verification' 
+                                    : 'Click to verify dealer'}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
                           <TableCell>
                             <Button 
                               size="sm" 
@@ -285,8 +372,8 @@ const DealerVerification = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
-                          No {activeTab} verifications found
+                        <TableCell colSpan={6} className="text-center py-4">
+                          No {activeTab === "all" ? "" : activeTab} dealers found
                         </TableCell>
                       </TableRow>
                     )}
@@ -313,18 +400,36 @@ const DealerVerification = () => {
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Dealership Information</h3>
                   <div className="mt-2 bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm font-semibold">{selectedDealer.dealer.dealership_name}</p>
-                    <p className="text-sm mt-1">{selectedDealer.dealer.address}</p>
-                    <p className="text-sm mt-1">Tax ID: {selectedDealer.dealer.tax_id}</p>
-                    <p className="text-sm mt-1">Business Registry: {selectedDealer.dealer.business_registry_number}</p>
-                    <p className="text-sm mt-1">License Number: {selectedDealer.dealer.license_number}</p>
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <Building className="h-4 w-4 text-primary" />
+                      {selectedDealer.dealer.dealership_name}
+                    </p>
+                    <p className="text-sm mt-1 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      {selectedDealer.dealer.address}
+                    </p>
+                    <p className="text-sm mt-1 flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      Tax ID: {selectedDealer.dealer.tax_id}
+                    </p>
+                    <p className="text-sm mt-1 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Business Registry: {selectedDealer.dealer.business_registry_number}
+                    </p>
+                    <p className="text-sm mt-1 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      License Number: {selectedDealer.dealer.license_number}
+                    </p>
                   </div>
                 </div>
 
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Contact Person</h3>
                   <div className="mt-2 bg-gray-50 p-3 rounded-md">
-                    <p className="text-sm font-semibold">{selectedDealer.dealer.supervisor_name}</p>
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <User className="h-4 w-4 text-primary" />
+                      {selectedDealer.dealer.supervisor_name}
+                    </p>
                   </div>
                 </div>
 
@@ -336,6 +441,25 @@ const DealerVerification = () => {
                     </div>
                   </div>
                 )}
+                
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Quick Verification</h3>
+                  <div className="mt-2 flex items-center gap-3">
+                    <Switch 
+                      checked={selectedDealer.verification_status === 'approved'}
+                      onCheckedChange={(checked) => {
+                        handleToggleVerification(selectedDealer, checked);
+                        setIsReviewOpen(false);
+                      }}
+                      disabled={isProcessing}
+                    />
+                    <span>
+                      {selectedDealer.verification_status === 'approved' 
+                        ? 'Verified' 
+                        : 'Not Verified'}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4">
