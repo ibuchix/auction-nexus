@@ -27,14 +27,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   // and we've modified useAdminAuth to assume admin privileges
   
   useEffect(() => {
-    if (isAdmin === false) {
-      toast.error('Admin client not working. Check your service role key.');
+    if (isAdmin === false && !isLoading) {
+      toast.error('Admin client not working. Check your service role key or database permissions.');
     }
-  }, [isAdmin]);
+  }, [isAdmin, isLoading]);
   
   const value = {
-    isAdmin: true, // Always return true for admin access
-    isLoading: false,
+    isAdmin, // Use the actual admin status from useAdminAuth
+    isLoading,
     userId,
     operations: adminOperations,
   };
