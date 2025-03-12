@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { adminSupabase } from '@/integrations/supabase/adminClient';
@@ -6,7 +5,7 @@ import { adminSupabase } from '@/integrations/supabase/adminClient';
 export function useAdminAuth() {
   const [isAdmin, setIsAdmin] = useState<boolean>(true); // Assume admin by default
   const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>("admin-user"); // Default admin user ID
+  const [userId, setUserId] = useState<string | null>("00000000-0000-0000-0000-000000000000"); // Default UUID format
   
   useEffect(() => {
     // Since this is an admin app, we'll check if we can access admin data
@@ -28,6 +27,11 @@ export function useAdminAuth() {
           setIsAdmin(false);
         } else {
           console.log('Admin client working successfully');
+          // If we have profile data, use the first profile ID as admin ID
+          // Otherwise, keep using the default UUID
+          if (data && data.length > 0 && data[0].id) {
+            setUserId(data[0].id);
+          }
           setIsAdmin(true);
         }
       } catch (err) {

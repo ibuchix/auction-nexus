@@ -3,6 +3,12 @@ import { adminSupabase } from "@/integrations/supabase/adminClient";
 import { toast } from "sonner";
 import { DealerData } from "./types";
 
+// Helper to validate UUID format
+const isValidUUID = (uuid: string) => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 /**
  * Handles the approval of a dealer's verification request
  */
@@ -12,6 +18,13 @@ export const approveDealer = async (
   notes?: string
 ): Promise<boolean> => {
   try {
+    // Validate UUIDs before making the request
+    if (!isValidUUID(dealerId) || !isValidUUID(adminId)) {
+      console.error('Invalid UUID format', { dealerId, adminId });
+      toast.error('Invalid dealer or admin ID format');
+      return false;
+    }
+
     const { data, error } = await adminSupabase.rpc(
       'verify_dealer',
       { p_dealer_id: dealerId, p_admin_id: adminId, p_notes: notes }
@@ -36,6 +49,13 @@ export const rejectDealer = async (
   notes?: string
 ): Promise<boolean> => {
   try {
+    // Validate UUIDs before making the request
+    if (!isValidUUID(dealerId) || !isValidUUID(adminId)) {
+      console.error('Invalid UUID format', { dealerId, adminId });
+      toast.error('Invalid dealer or admin ID format');
+      return false;
+    }
+    
     const { data, error } = await adminSupabase.rpc(
       'reject_dealer',
       { 

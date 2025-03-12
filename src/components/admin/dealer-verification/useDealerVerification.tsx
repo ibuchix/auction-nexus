@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -15,7 +14,6 @@ export const useDealerVerification = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { userId, operations } = useAdmin();
 
-  // Fetch dealers data using React Query
   const { 
     data: dealers, 
     isLoading, 
@@ -26,15 +24,19 @@ export const useDealerVerification = () => {
   });
 
   const handleApproveDealer = async () => {
-    if (!selectedDealer || !userId) {
-      toast.error('Admin ID not available');
+    if (!selectedDealer) {
+      toast.error('No dealer selected');
+      return;
+    }
+    
+    if (!userId) {
+      toast.error('Admin ID not available. Please ensure you have admin permissions.');
       return;
     }
     
     setIsProcessing(true);
     
     try {
-      // Use the admin operations utility with admin ID from context
       const result = await approveDealer(selectedDealer.id, userId, adminNotes);
       
       if (!result) throw new Error('Verification failed');
@@ -46,22 +48,26 @@ export const useDealerVerification = () => {
       refetch();
     } catch (error) {
       console.error('Error approving dealer:', error);
-      toast.error('Failed to approve dealer');
+      toast.error('Failed to approve dealer: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleRejectDealer = async () => {
-    if (!selectedDealer || !rejectionReason || !userId) {
-      toast.error('Admin ID not available or rejection reason missing');
+    if (!selectedDealer || !rejectionReason) {
+      toast.error('Dealer selection or rejection reason missing');
+      return;
+    }
+    
+    if (!userId) {
+      toast.error('Admin ID not available. Please ensure you have admin permissions.');
       return;
     }
     
     setIsProcessing(true);
     
     try {
-      // Use the admin operations utility with admin ID from context
       const result = await rejectDealer(
         selectedDealer.id, 
         userId, 
@@ -79,7 +85,7 @@ export const useDealerVerification = () => {
       refetch();
     } catch (error) {
       console.error('Error rejecting dealer:', error);
-      toast.error('Failed to reject dealer');
+      toast.error('Failed to reject dealer: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsProcessing(false);
     }
@@ -87,7 +93,7 @@ export const useDealerVerification = () => {
 
   const handleToggleVerification = async (dealer: DealerData, newStatus: boolean) => {
     if (!userId) {
-      toast.error('Admin ID not available');
+      toast.error('Admin ID not available. Please ensure you have admin permissions.');
       return;
     }
     
@@ -95,7 +101,6 @@ export const useDealerVerification = () => {
     
     try {
       if (newStatus) {
-        // Approve using admin operations with admin ID from context
         const result = await approveDealer(
           dealer.id,
           userId,
@@ -105,7 +110,6 @@ export const useDealerVerification = () => {
         if (!result) throw new Error('Verification failed');
         toast.success(`${dealer.dealership_name} has been approved`);
       } else {
-        // Reject using admin operations with admin ID from context
         const result = await rejectDealer(
           dealer.id,
           userId,
@@ -120,7 +124,7 @@ export const useDealerVerification = () => {
       refetch();
     } catch (error) {
       console.error('Error toggling dealer verification:', error);
-      toast.error('Failed to update dealer verification status');
+      toast.error('Failed to update dealer verification status: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsProcessing(false);
     }
@@ -129,7 +133,6 @@ export const useDealerVerification = () => {
   const handleReviewDealer = (dealer: DealerData) => {
     setSelectedDealer(dealer);
     setIsReviewOpen(true);
-    // Initialize rejection reason if dealer was previously rejected
     setRejectionReason(dealer.verification_status === 'rejected' ? "Verification revoked" : "");
     setAdminNotes("");
   };
