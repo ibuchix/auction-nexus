@@ -16,6 +16,13 @@ export const adminSupabase = createClient<Database>(
   {
     auth: {
       persistSession: false, // Don't persist this admin session
+      autoRefreshToken: false, // Don't refresh tokens
+    },
+    global: {
+      headers: {
+        // Special header to identify admin requests in server logs
+        'x-admin-access': 'true'
+      }
     }
   }
 );

@@ -1,7 +1,7 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { adminSupabase } from "@/integrations/supabase/adminClient"; // Changed to adminSupabase
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useState, useEffect } from "react";
@@ -23,7 +23,7 @@ const AuctionManagement = () => {
   const { data: listings, isLoading, error, refetch } = useQuery({
     queryKey: ['adminVehicleListings'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await adminSupabase // Changed to adminSupabase
         .from('cars')
         .select(`
           *,
@@ -37,7 +37,7 @@ const AuctionManagement = () => {
         console.error('Error fetching listings:', error);
         toast({
           title: "Error",
-          description: "Failed to load auction listings. Please try again.",
+          description: "Failed to load auction listings. Please check admin permissions.",
           variant: "destructive",
         });
         throw error;
@@ -49,7 +49,7 @@ const AuctionManagement = () => {
 
   // Set up real-time subscription
   useEffect(() => {
-    const channel = supabase
+    const channel = adminSupabase // Changed to adminSupabase
       .channel('auction-updates')
       .on(
         'postgres_changes',
@@ -65,7 +65,7 @@ const AuctionManagement = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      adminSupabase.removeChannel(channel); // Changed to adminSupabase
     };
   }, [refetch]);
 
