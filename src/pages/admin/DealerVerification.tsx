@@ -80,19 +80,7 @@ interface DealerVerificationInfo {
   documents: any;
   notes: string | null;
   rejection_reason: string | null;
-  dealer: {
-    id: string;
-    supervisor_name: string;
-    dealership_name: string;
-    tax_id: string;
-    business_registry_number: string;
-    address: string;
-    license_number: string;
-    verification_status: VerificationStatus;
-    is_verified: boolean;
-    created_at: string;
-    user_id: string;
-  };
+  dealer: DealerData;
 }
 
 const DealerVerification = () => {
@@ -133,7 +121,13 @@ const DealerVerification = () => {
         });
         
         // Combine dealer and verification data
-        const combinedData: DealerVerificationInfo[] = dealersData.map((dealer: DealerData) => {
+        const combinedData: DealerVerificationInfo[] = dealersData.map((dealer: any) => {
+          // We need to cast the verification_status to our enum type
+          const dealerWithTypedStatus: DealerData = {
+            ...dealer,
+            verification_status: dealer.verification_status as VerificationStatus
+          };
+          
           const verification = verificationMap.get(dealer.id) || {
             id: null,
             dealer_id: dealer.id,
@@ -147,7 +141,7 @@ const DealerVerification = () => {
           
           return {
             ...verification,
-            dealer: dealer
+            dealer: dealerWithTypedStatus
           };
         });
         
@@ -574,6 +568,20 @@ const DealerVerification = () => {
       )}
     </DashboardLayout>
   );
+};
+
+// Helper function to generate status badges
+const getStatusBadge = (status: VerificationStatus) => {
+  switch (status) {
+    case 'pending':
+      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+    case 'approved':
+      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
+    case 'rejected':
+      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
+    default:
+      return <Badge variant="outline">Unknown</Badge>;
+  }
 };
 
 export default DealerVerification;
