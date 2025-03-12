@@ -5,6 +5,7 @@ import { adminSupabase } from "@/integrations/supabase/adminClient";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DealerData, VerificationStatus } from "./types";
+import { useAdmin } from "@/context/AdminContext";
 
 export const useDealerVerification = () => {
   const [selectedDealer, setSelectedDealer] = useState<DealerData | null>(null);
@@ -13,6 +14,7 @@ export const useDealerVerification = () => {
   const [adminNotes, setAdminNotes] = useState("");
   const [activeTab, setActiveTab] = useState<VerificationStatus | "all">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
+  const { userId, operations } = useAdmin();
 
   const { 
     data: dealers, 
@@ -53,26 +55,15 @@ export const useDealerVerification = () => {
   });
 
   const handleApproveDealer = async () => {
-    if (!selectedDealer) return;
+    if (!selectedDealer || !userId) return;
     
     setIsProcessing(true);
     
     try {
-      // Get the admin's ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated as admin');
+      // Use the admin operations utility
+      const result = await operations.verifyDealer(selectedDealer.id, userId, adminNotes);
       
-      // Call the RPC function to verify the dealer
-      const { data, error } = await adminSupabase.rpc(
-        'verify_dealer',
-        { 
-          p_dealer_id: selectedDealer.id,
-          p_admin_id: user.id,
-          p_notes: adminNotes
-        }
-      );
-      
-      if (error) throw error;
+      if (!result) throw new Error('Verification failed');
       
       toast.success(`${selectedDealer.dealership_name} has been approved`);
       setIsReviewOpen(false);
@@ -88,27 +79,20 @@ export const useDealerVerification = () => {
   };
 
   const handleRejectDealer = async () => {
-    if (!selectedDealer || !rejectionReason) return;
+    if (!selectedDealer || !rejectionReason || !userId) return;
     
     setIsProcessing(true);
     
     try {
-      // Get the admin's ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated as admin');
-      
-      // Call the RPC function to reject the dealer
-      const { data, error } = await adminSupabase.rpc(
-        'reject_dealer',
-        { 
-          p_dealer_id: selectedDealer.id,
-          p_admin_id: user.id,
-          p_rejection_reason: rejectionReason,
-          p_notes: adminNotes
-        }
+      // Use the admin operations utility
+      const result = await operations.rejectDealer(
+        selectedDealer.id, 
+        userId, 
+        rejectionReason,
+        adminNotes
       );
       
-      if (error) throw error;
+      if (!result) throw new Error('Rejection failed');
       
       toast.success(`${selectedDealer.dealership_name} has been rejected`);
       setIsReviewOpen(false);
@@ -125,39 +109,34 @@ export const useDealerVerification = () => {
   };
 
   const handleToggleVerification = async (dealer: DealerData, newStatus: boolean) => {
+    if (!userId) {
+      toast.error('Admin ID not available');
+      return;
+    }
+    
     setIsProcessing(true);
     
     try {
-      // Get the admin's ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated as admin');
-      
       if (newStatus) {
-        // Approve
-        const { data, error } = await adminSupabase.rpc(
-          'verify_dealer',
-          { 
-            p_dealer_id: dealer.id,
-            p_admin_id: user.id,
-            p_notes: "Quick verification via toggle switch"
-          }
+        // Approve using admin operations
+        const result = await operations.verifyDealer(
+          dealer.id,
+          userId,
+          "Quick verification via toggle switch"
         );
         
-        if (error) throw error;
+        if (!result) throw new Error('Verification failed');
         toast.success(`${dealer.dealership_name} has been approved`);
       } else {
-        // Reject
-        const { data, error } = await adminSupabase.rpc(
-          'reject_dealer',
-          { 
-            p_dealer_id: dealer.id,
-            p_admin_id: user.id,
-            p_rejection_reason: "Verification revoked",
-            p_notes: "Quick rejection via toggle switch"
-          }
+        // Reject using admin operations
+        const result = await operations.rejectDealer(
+          dealer.id,
+          userId,
+          "Verification revoked",
+          "Quick rejection via toggle switch"
         );
         
-        if (error) throw error;
+        if (!result) throw new Error('Rejection failed');
         toast.success(`${dealer.dealership_name} verification has been revoked`);
       }
       
