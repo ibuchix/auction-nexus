@@ -46,7 +46,32 @@ import { Json } from "@/integrations/supabase/types";
 // Define a type for verification status
 type VerificationStatus = "pending" | "approved" | "rejected";
 
-interface DealerVerification {
+interface DealerData {
+  id: string;
+  supervisor_name: string;
+  dealership_name: string;
+  tax_id: string;
+  business_registry_number: string;
+  address: string;
+  license_number: string;
+  verification_status: VerificationStatus;
+  is_verified: boolean;
+  created_at: string;
+  user_id: string;
+}
+
+interface VerificationData {
+  id: string;
+  dealer_id: string;
+  verification_status: VerificationStatus;
+  submitted_at: string;
+  reviewed_at: string | null;
+  documents: any;
+  notes: string | null;
+  rejection_reason: string | null;
+}
+
+interface DealerVerificationInfo {
   id: string;
   dealer_id: string;
   verification_status: VerificationStatus;
@@ -56,17 +81,22 @@ interface DealerVerification {
   notes: string | null;
   rejection_reason: string | null;
   dealer: {
+    id: string;
     supervisor_name: string;
     dealership_name: string;
     tax_id: string;
     business_registry_number: string;
     address: string;
     license_number: string;
+    verification_status: VerificationStatus;
+    is_verified: boolean;
+    created_at: string;
+    user_id: string;
   };
 }
 
 const DealerVerification = () => {
-  const [selectedDealer, setSelectedDealer] = useState<DealerVerification | null>(null);
+  const [selectedDealer, setSelectedDealer] = useState<DealerVerificationInfo | null>(null);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
@@ -81,44 +111,52 @@ const DealerVerification = () => {
     queryKey: ['dealerVerifications', activeTab],
     queryFn: async () => {
       try {
-        let query = adminSupabase
+        // First fetch all dealers
+        const { data: dealersData, error: dealersError } = await adminSupabase
+          .from('dealers')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (dealersError) throw dealersError;
+        
+        // Then fetch all verification records
+        const { data: verificationsData, error: verificationsError } = await adminSupabase
           .from('dealer_verifications')
-          .select(`
-            id,
-            dealer_id,
-            verification_status,
-            submitted_at,
-            reviewed_at,
-            documents,
-            notes,
-            rejection_reason,
-            dealers(
-              supervisor_name,
-              dealership_name,
-              tax_id,
-              business_registry_number,
-              address,
-              license_number
-            )
-          `)
-          .order('submitted_at', { ascending: false });
+          .select('*');
+
+        if (verificationsError) throw verificationsError;
+        
+        // Create a map of verification records by dealer_id
+        const verificationMap = new Map();
+        verificationsData.forEach((verification: VerificationData) => {
+          verificationMap.set(verification.dealer_id, verification);
+        });
+        
+        // Combine dealer and verification data
+        const combinedData: DealerVerificationInfo[] = dealersData.map((dealer: DealerData) => {
+          const verification = verificationMap.get(dealer.id) || {
+            id: null,
+            dealer_id: dealer.id,
+            verification_status: dealer.verification_status as VerificationStatus,
+            submitted_at: dealer.created_at,
+            reviewed_at: null,
+            documents: null,
+            notes: null,
+            rejection_reason: null
+          };
           
+          return {
+            ...verification,
+            dealer: dealer
+          };
+        });
+        
         // Apply filter if not showing all dealers
         if (activeTab !== "all") {
-          query = query.eq('verification_status', activeTab);
+          return combinedData.filter(item => item.dealer.verification_status === activeTab);
         }
         
-        const { data, error } = await query;
-
-        if (error) throw error;
-        
-        // Transform the data to match our expected interface
-        // This fixes the dealers/dealer property name mismatch
-        return (data || []).map(item => ({
-          ...item,
-          dealer: item.dealers,
-          dealers: undefined
-        })) as DealerVerification[];
+        return combinedData;
       } catch (error) {
         console.error('Error fetching dealer verifications:', error);
         toast.error('Failed to load dealer verifications');
@@ -141,7 +179,7 @@ const DealerVerification = () => {
       const { data, error } = await adminSupabase.rpc(
         'verify_dealer',
         { 
-          p_dealer_id: selectedDealer.dealer_id,
+          p_dealer_id: selectedDealer.dealer.id,
           p_admin_id: user.id,
           p_notes: adminNotes
         }
@@ -176,7 +214,7 @@ const DealerVerification = () => {
       const { data, error } = await adminSupabase.rpc(
         'reject_dealer',
         { 
-          p_dealer_id: selectedDealer.dealer_id,
+          p_dealer_id: selectedDealer.dealer.id,
           p_admin_id: user.id,
           p_rejection_reason: rejectionReason,
           p_notes: adminNotes
@@ -199,7 +237,7 @@ const DealerVerification = () => {
     }
   };
 
-  const handleToggleVerification = async (dealer: DealerVerification, newStatus: boolean) => {
+  const handleToggleVerification = async (dealer: DealerVerificationInfo, newStatus: boolean) => {
     setIsProcessing(true);
     
     try {
@@ -212,7 +250,7 @@ const DealerVerification = () => {
         const { data, error } = await adminSupabase.rpc(
           'verify_dealer',
           { 
-            p_dealer_id: dealer.dealer_id,
+            p_dealer_id: dealer.dealer.id,
             p_admin_id: user.id,
             p_notes: "Quick verification via toggle switch"
           }
@@ -225,7 +263,7 @@ const DealerVerification = () => {
         const { data, error } = await adminSupabase.rpc(
           'reject_dealer',
           { 
-            p_dealer_id: dealer.dealer_id,
+            p_dealer_id: dealer.dealer.id,
             p_admin_id: user.id,
             p_rejection_reason: "Verification revoked",
             p_notes: "Quick rejection via toggle switch"
@@ -281,7 +319,7 @@ const DealerVerification = () => {
             {activeTab === "pending" && (
               <Button className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" />
-                Pending <Badge variant="secondary" className="ml-1">{verifications?.filter(v => v.verification_status === 'pending').length || 0}</Badge>
+                Pending <Badge variant="secondary" className="ml-1">{verifications?.filter(v => v.dealer.verification_status === 'pending').length || 0}</Badge>
               </Button>
             )}
           </div>
@@ -331,25 +369,25 @@ const DealerVerification = () => {
                   <TableBody>
                     {verifications?.length ? (
                       verifications.map((verification) => (
-                        <TableRow key={verification.id}>
+                        <TableRow key={verification.dealer.id}>
                           <TableCell className="font-medium">{verification.dealer.dealership_name}</TableCell>
                           <TableCell>{verification.dealer.supervisor_name}</TableCell>
-                          <TableCell>{new Date(verification.submitted_at).toLocaleDateString()}</TableCell>
-                          <TableCell>{getStatusBadge(verification.verification_status)}</TableCell>
+                          <TableCell>{new Date(verification.submitted_at || verification.dealer.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>{getStatusBadge(verification.dealer.verification_status)}</TableCell>
                           <TableCell>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div className="flex items-center">
                                     <Switch 
-                                      checked={verification.verification_status === 'approved'}
+                                      checked={verification.dealer.verification_status === 'approved'}
                                       onCheckedChange={(checked) => handleToggleVerification(verification, checked)}
                                       disabled={isProcessing}
                                     />
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  {verification.verification_status === 'approved' 
+                                  {verification.dealer.verification_status === 'approved' 
                                     ? 'Click to revoke verification' 
                                     : 'Click to verify dealer'}
                                 </TooltipContent>
@@ -434,7 +472,7 @@ const DealerVerification = () => {
                   </div>
                 </div>
 
-                {selectedDealer.verification_status === 'rejected' && selectedDealer.rejection_reason && (
+                {selectedDealer.dealer.verification_status === 'rejected' && selectedDealer.rejection_reason && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Rejection Reason</h3>
                     <div className="mt-2 bg-red-50 p-3 rounded-md">
@@ -447,7 +485,7 @@ const DealerVerification = () => {
                   <h3 className="text-sm font-medium text-gray-500">Quick Verification</h3>
                   <div className="mt-2 flex items-center gap-3">
                     <Switch 
-                      checked={selectedDealer.verification_status === 'approved'}
+                      checked={selectedDealer.dealer.verification_status === 'approved'}
                       onCheckedChange={(checked) => {
                         handleToggleVerification(selectedDealer, checked);
                         setIsReviewOpen(false);
@@ -455,7 +493,7 @@ const DealerVerification = () => {
                       disabled={isProcessing}
                     />
                     <span>
-                      {selectedDealer.verification_status === 'approved' 
+                      {selectedDealer.dealer.verification_status === 'approved' 
                         ? 'Verified' 
                         : 'Not Verified'}
                     </span>
@@ -467,9 +505,9 @@ const DealerVerification = () => {
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Verification Status</h3>
                   <div className="mt-2">
-                    {getStatusBadge(selectedDealer.verification_status)}
+                    {getStatusBadge(selectedDealer.dealer.verification_status)}
                     <p className="text-xs text-gray-500 mt-1">
-                      Submitted on {new Date(selectedDealer.submitted_at).toLocaleDateString()}
+                      Submitted on {new Date(selectedDealer.submitted_at || selectedDealer.dealer.created_at).toLocaleDateString()}
                     </p>
                     {selectedDealer.reviewed_at && (
                       <p className="text-xs text-gray-500 mt-1">
@@ -486,11 +524,11 @@ const DealerVerification = () => {
                     onChange={(e) => setAdminNotes(e.target.value)}
                     placeholder="Add notes about this verification"
                     className="mt-2"
-                    disabled={selectedDealer.verification_status !== 'pending'}
+                    disabled={selectedDealer.dealer.verification_status !== 'pending'}
                   />
                 </div>
 
-                {selectedDealer.verification_status === 'pending' && (
+                {selectedDealer.dealer.verification_status === 'pending' && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Rejection Reason</h3>
                     <Textarea 
@@ -510,7 +548,7 @@ const DealerVerification = () => {
                   Close
                 </Button>
                 
-                {selectedDealer.verification_status === 'pending' && (
+                {selectedDealer.dealer.verification_status === 'pending' && (
                   <>
                     <Button 
                       variant="destructive" 
