@@ -12,10 +12,10 @@ export function useAdminAuth() {
     // Since this is an admin app, we'll just check if we can access admin data
     const checkAdminClient = async () => {
       try {
-        // Test if admin client is working
+        // Test if admin client is working - using a simpler query that doesn't use SQL functions
         const { data, error } = await adminSupabase
           .from('profiles')
-          .select('count(*)')
+          .select('id')
           .limit(1);
         
         if (error) {
