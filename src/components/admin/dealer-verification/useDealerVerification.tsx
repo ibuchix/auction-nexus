@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DealerData, VerificationStatus } from "./types";
 import { useAdmin } from "@/context/AdminContext";
@@ -13,6 +14,7 @@ export const useDealerVerification = () => {
   const [activeTab, setActiveTab] = useState<VerificationStatus | "all">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
   const { userId, operations } = useAdmin();
+  const queryClient = useQueryClient();
 
   const { 
     data: dealers, 
@@ -20,8 +22,14 @@ export const useDealerVerification = () => {
     refetch 
   } = useQuery({
     queryKey: ['dealersList', activeTab],
-    queryFn: () => fetchDealers(activeTab)
+    queryFn: () => fetchDealers(activeTab),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const invalidateDealersCache = async () => {
+    // Invalidate queries for all tabs to ensure consistency
+    await queryClient.invalidateQueries({ queryKey: ['dealersList'] });
+  };
 
   const handleApproveDealer = async () => {
     if (!selectedDealer) {
@@ -45,6 +53,9 @@ export const useDealerVerification = () => {
       setIsReviewOpen(false);
       setSelectedDealer(null);
       setAdminNotes("");
+      
+      // Invalidate and refetch data
+      await invalidateDealersCache();
       refetch();
     } catch (error) {
       console.error('Error approving dealer:', error);
@@ -82,6 +93,9 @@ export const useDealerVerification = () => {
       setSelectedDealer(null);
       setRejectionReason("");
       setAdminNotes("");
+      
+      // Invalidate and refetch data
+      await invalidateDealersCache();
       refetch();
     } catch (error) {
       console.error('Error rejecting dealer:', error);
@@ -121,6 +135,8 @@ export const useDealerVerification = () => {
         toast.success(`${dealer.dealership_name} verification has been revoked`);
       }
       
+      // Invalidate and refetch data to update UI immediately
+      await invalidateDealersCache();
       refetch();
     } catch (error) {
       console.error('Error toggling dealer verification:', error);

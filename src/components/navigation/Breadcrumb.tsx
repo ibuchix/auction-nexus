@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import {
   Breadcrumb,
@@ -20,6 +21,8 @@ const routeLabels: Record<string, string> = {
   fraud: "Fraud Detection",
   compliance: "Compliance",
   "audit-logs": "Audit Logs",
+  dealers: "Dealers",
+  verification: "Verification",
 };
 
 export function BreadcrumbNav() {

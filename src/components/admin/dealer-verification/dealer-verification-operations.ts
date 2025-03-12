@@ -19,22 +19,53 @@ export const approveDealer = async (
 ): Promise<boolean> => {
   try {
     // Validate UUIDs before making the request
-    if (!isValidUUID(dealerId) || !isValidUUID(adminId)) {
-      console.error('Invalid UUID format', { dealerId, adminId });
-      toast.error('Invalid dealer or admin ID format');
+    if (!isValidUUID(dealerId)) {
+      console.error('Invalid dealer ID format', { dealerId });
+      toast.error('Invalid dealer ID format');
+      return false;
+    }
+    
+    if (!isValidUUID(adminId)) {
+      console.error('Invalid admin ID format', { adminId });
+      toast.error('Invalid admin ID format');
       return false;
     }
 
+    console.log('Approving dealer with params:', { dealerId, adminId, notes });
+    
     const { data, error } = await adminSupabase.rpc(
       'verify_dealer',
-      { p_dealer_id: dealerId, p_admin_id: adminId, p_notes: notes }
+      { p_dealer_id: dealerId, p_admin_id: adminId, p_notes: notes || null }
     );
     
-    if (error) throw error;
-    return !!data;
+    if (error) {
+      console.error('RPC error in approveDealer:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      console.error('No data returned from verify_dealer RPC');
+      throw new Error('Verification failed - no response from server');
+    }
+    
+    // Also directly update the dealer record to ensure UI consistency
+    const { error: updateError } = await adminSupabase
+      .from('dealers')
+      .update({ 
+        verification_status: 'approved',
+        is_verified: true
+      })
+      .eq('id', dealerId);
+    
+    if (updateError) {
+      console.error('Error updating dealer record:', updateError);
+      // Don't throw here, as the RPC might have succeeded
+    }
+    
+    return true;
   } catch (error) {
     console.error('Error approving dealer:', error);
-    toast.error('Failed to approve dealer');
+    toast.error('Failed to approve dealer: ' + (error instanceof Error ? error.message : 'Unknown error'));
     return false;
   }
 };
@@ -50,11 +81,24 @@ export const rejectDealer = async (
 ): Promise<boolean> => {
   try {
     // Validate UUIDs before making the request
-    if (!isValidUUID(dealerId) || !isValidUUID(adminId)) {
-      console.error('Invalid UUID format', { dealerId, adminId });
-      toast.error('Invalid dealer or admin ID format');
+    if (!isValidUUID(dealerId)) {
+      console.error('Invalid dealer ID format', { dealerId });
+      toast.error('Invalid dealer ID format');
       return false;
     }
+    
+    if (!isValidUUID(adminId)) {
+      console.error('Invalid admin ID format', { adminId });
+      toast.error('Invalid admin ID format');
+      return false;
+    }
+    
+    if (!rejectionReason) {
+      toast.error('Rejection reason is required');
+      return false;
+    }
+    
+    console.log('Rejecting dealer with params:', { dealerId, adminId, rejectionReason, notes });
     
     const { data, error } = await adminSupabase.rpc(
       'reject_dealer',
@@ -62,15 +106,38 @@ export const rejectDealer = async (
         p_dealer_id: dealerId, 
         p_admin_id: adminId,
         p_rejection_reason: rejectionReason,
-        p_notes: notes 
+        p_notes: notes || null
       }
     );
     
-    if (error) throw error;
-    return !!data;
+    if (error) {
+      console.error('RPC error in rejectDealer:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      console.error('No data returned from reject_dealer RPC');
+      throw new Error('Rejection failed - no response from server');
+    }
+    
+    // Also directly update the dealer record to ensure UI consistency
+    const { error: updateError } = await adminSupabase
+      .from('dealers')
+      .update({ 
+        verification_status: 'rejected',
+        is_verified: false
+      })
+      .eq('id', dealerId);
+    
+    if (updateError) {
+      console.error('Error updating dealer record:', updateError);
+      // Don't throw here, as the RPC might have succeeded
+    }
+    
+    return true;
   } catch (error) {
     console.error('Error rejecting dealer:', error);
-    toast.error('Failed to reject dealer');
+    toast.error('Failed to reject dealer: ' + (error instanceof Error ? error.message : 'Unknown error'));
     return false;
   }
 };
@@ -80,6 +147,8 @@ export const rejectDealer = async (
  */
 export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
   try {
+    console.log('Fetching dealers with status:', status);
+    
     // Fetch all dealers directly from the dealers table
     let query = adminSupabase
       .from('dealers')
@@ -93,7 +162,12 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
     
     const { data: dealersData, error: dealersError } = await query;
 
-    if (dealersError) throw dealersError;
+    if (dealersError) {
+      console.error('Error fetching dealers:', dealersError);
+      throw dealersError;
+    }
+    
+    console.log(`Fetched ${dealersData.length} dealers`);
     
     // Type-safe dealers data with proper verification status type
     const typedDealers: DealerData[] = dealersData.map(dealer => ({
