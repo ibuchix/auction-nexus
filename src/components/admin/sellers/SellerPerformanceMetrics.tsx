@@ -179,7 +179,7 @@ export function SellerPerformanceMetrics({ sellerId }: SellerPerformanceMetricsP
         />
         <StatCard 
           title="Avg Time to Sell" 
-          value={formatAverageTime(metrics.average_time_to_sell) || "N/A"} 
+          value={formatAverageTime(metrics.average_time_to_sell as unknown as string) || "N/A"} 
           icon={Clock}
         />
       </div>
