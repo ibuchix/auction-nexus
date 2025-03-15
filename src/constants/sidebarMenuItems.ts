@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard,
   Gavel,
@@ -9,6 +8,7 @@ import {
   Users,
   FileCheck,
   CalendarClock,
+  Settings,
 } from "lucide-react";
 
 export interface SidebarSubmenuItem {
@@ -30,6 +30,11 @@ export const menuItems: SidebarMenuItem[] = [
     icon: LayoutDashboard,
     path: "/admin",
     shortcut: "Alt+H",
+  },
+  {
+    title: "System Management",
+    icon: Settings,
+    path: "/admin/system",
   },
   {
     title: "Auctions",

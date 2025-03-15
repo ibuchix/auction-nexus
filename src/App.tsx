@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import AdminDashboard from "@/pages/AdminDashboard";
+import Index from "@/pages/Index";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import AuctionManagement from "@/pages/admin/AuctionManagement";
 import AuctionScheduling from "@/pages/admin/AuctionScheduling";
@@ -47,13 +48,23 @@ function App() {
           element={
             <AdminProtectedRoute>
               <DashboardLayout>
-                <AdminDashboard />
+                <Index />
               </DashboardLayout>
             </AdminProtectedRoute>
           } 
         />
         <Route 
           path="/admin" 
+          element={
+            <AdminProtectedRoute>
+              <DashboardLayout>
+                <Index />
+              </DashboardLayout>
+            </AdminProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/system" 
           element={
             <AdminProtectedRoute>
               <DashboardLayout>
