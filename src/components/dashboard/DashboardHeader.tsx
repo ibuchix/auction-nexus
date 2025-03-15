@@ -75,16 +75,16 @@ export function DashboardHeader({
   );
 
   return (
-    <div className="w-full rounded-xl bg-white/90 backdrop-blur-sm shadow-sm p-6">
+    <div className="w-full rounded-xl bg-white/90 backdrop-blur-sm shadow-sm p-4 sm:p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-primary">
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary">
             Dashboard
           </h1>
           <p className="text-subtitle">{formatDate(currentTime)}</p>
         </div>
         
-        <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-center">
+        <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-3 md:items-center">
           <div className="relative group w-full md:w-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtitle h-4 w-4 transition-transform group-hover:scale-110" />
             <Input
@@ -92,11 +92,11 @@ export function DashboardHeader({
               placeholder="Search auctions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full md:w-[300px] transition-all duration-300 border-gray-200 focus:border-iris hover:border-gray-300"
+              className="pl-10 w-full md:w-[250px] transition-all duration-300 border-gray-200 focus:border-iris hover:border-gray-300"
             />
           </div>
           
-          <div className="flex items-center space-x-2 md:border-l md:pl-4">
+          <div className="flex items-center space-x-1 sm:space-x-2 md:border-l md:pl-3">
             <QuickActionButton
               icon={Bell}
               label="Notifications"
@@ -131,6 +131,7 @@ export function DashboardHeader({
           <div className="flex space-x-2">
             <Button 
               variant="default" 
+              size="sm"
               className="shadow-sm hover:shadow-md transition-all duration-300 bg-iris hover:bg-iris/90 text-white"
             >
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -138,6 +139,7 @@ export function DashboardHeader({
             </Button>
             <Button 
               variant="outline" 
+              size="sm"
               className="shadow-sm hover:shadow-md transition-all duration-300 hover:bg-iris-light"
               onClick={() => navigate('/admin/settings')}
             >
