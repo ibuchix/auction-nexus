@@ -111,16 +111,13 @@ export function ProxyBidTable({ searchTerm, sortBy }: ProxyBidTableProps) {
       if (error) throw error;
       
       setProxyBids(proxyBids.filter(bid => bid.id !== id));
-      toast({
-        title: "Proxy Bid Deleted",
-        description: "The proxy bid has been successfully removed.",
+      toast.success("Proxy Bid Deleted", {
+        description: "The proxy bid has been successfully removed."
       });
     } catch (err) {
       console.error('Error deleting proxy bid:', err);
-      toast({
-        title: "Error",
-        description: "Failed to delete the proxy bid.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "Failed to delete the proxy bid."
       });
     }
   };
