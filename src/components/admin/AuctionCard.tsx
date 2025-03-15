@@ -1,9 +1,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Ban, Clock, DollarSign, Pause, Users } from "lucide-react";
+import { Ban, Clock, DollarSign, Pause, Users, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Auction } from "@/types/auction";
+import { useState } from "react";
+import { ProxyBidsList } from "./auction-monitoring/ProxyBidsList";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +26,7 @@ interface AuctionCardProps {
 
 export function AuctionCard({ auction, onPause, onCancel }: AuctionCardProps) {
   const { toast } = useToast();
+  const [showProxyBids, setShowProxyBids] = useState(false);
   const timeLeft = new Date(auction.auction_end_time || '').getTime() - new Date().getTime();
   const isEndingSoon = timeLeft < 3600000; // Less than 1 hour
 
@@ -59,6 +62,10 @@ export function AuctionCard({ auction, onPause, onCancel }: AuctionCardProps) {
     }
   };
 
+  const toggleProxyBids = () => {
+    setShowProxyBids(!showProxyBids);
+  };
+
   const metrics = auction.auction_metrics?.[0] || { unique_bidders: 0 };
 
   return (
@@ -72,6 +79,23 @@ export function AuctionCard({ auction, onPause, onCancel }: AuctionCardProps) {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleProxyBids}
+            >
+              {showProxyBids ? (
+                <>
+                  <EyeOff className="h-4 w-4 mr-1" />
+                  Hide Proxy Bids
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4 mr-1" />
+                  Show Proxy Bids
+                </>
+              )}
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -129,6 +153,13 @@ export function AuctionCard({ auction, onPause, onCancel }: AuctionCardProps) {
             </span>
           </div>
         </div>
+        
+        {showProxyBids && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">Proxy Bids</h4>
+            <ProxyBidsList auctionId={auction.id} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

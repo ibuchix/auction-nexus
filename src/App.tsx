@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +23,7 @@ import DealerVerification from "./pages/admin/DealerVerification";
 import ListingVerification from "./pages/admin/ListingVerification";
 import SystemSettings from "./pages/admin/SystemSettings";
 import UserManagement from "./pages/admin/UserManagement";
+import ProxyBidMonitoring from "./pages/admin/ProxyBidMonitoring";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +46,7 @@ const App = () => (
             <Route path="/admin/listings/verification" element={<ListingVerification />} />
             <Route path="/admin/auctions/monitor" element={<AuctionMonitoring />} />
             <Route path="/admin/auctions/manage" element={<AuctionManagement />} />
+            <Route path="/admin/auctions/proxy-bids" element={<ProxyBidMonitoring />} />
             <Route path="/admin/disputes" element={<DisputeResolution />} />
             <Route path="/admin/analytics" element={<Analytics />} />
             <Route path="/admin/announcements" element={<Announcements />} />

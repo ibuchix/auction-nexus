@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard,
   Gavel,
@@ -43,6 +42,10 @@ export const menuItems: SidebarMenuItem[] = [
         title: "Manage Auctions",
         path: "/admin/auctions/manage",
       },
+      {
+        title: "Proxy Bids",
+        path: "/admin/auctions/proxy-bids",
+      }
     ],
   },
   {
