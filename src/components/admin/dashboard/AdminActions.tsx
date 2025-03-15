@@ -44,9 +44,12 @@ export function AdminActions() {
       
       if (error) throw error;
       
+      // Parse the result to access the properties
+      const result = typeof data === 'string' ? JSON.parse(data) : data;
+      
       toast({
         title: "Success",
-        description: `Processed ${data.bids_processed || 0} bids across ${data.auctions_checked || 0} auctions`,
+        description: `Processed ${result.bids_processed || 0} bids across ${result.auctions_checked || 0} auctions`,
       });
     } catch (error) {
       console.error("Error processing proxy bids:", error);
