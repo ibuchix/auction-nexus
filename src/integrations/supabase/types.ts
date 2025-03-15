@@ -1077,6 +1077,110 @@ export type Database = {
           },
         ]
       }
+      seller_performance_metrics: {
+        Row: {
+          active_listings: number
+          average_price: number | null
+          average_time_to_sell: unknown | null
+          cancelled_listings: number
+          created_at: string
+          highest_price_sold: number | null
+          id: string
+          last_listing_date: string | null
+          last_sale_date: string | null
+          listing_approval_rate: number | null
+          reserve_price_met_rate: number | null
+          seller_id: string
+          sold_listings: number
+          total_earnings: number
+          total_listings: number
+          updated_at: string
+        }
+        Insert: {
+          active_listings?: number
+          average_price?: number | null
+          average_time_to_sell?: unknown | null
+          cancelled_listings?: number
+          created_at?: string
+          highest_price_sold?: number | null
+          id?: string
+          last_listing_date?: string | null
+          last_sale_date?: string | null
+          listing_approval_rate?: number | null
+          reserve_price_met_rate?: number | null
+          seller_id: string
+          sold_listings?: number
+          total_earnings?: number
+          total_listings?: number
+          updated_at?: string
+        }
+        Update: {
+          active_listings?: number
+          average_price?: number | null
+          average_time_to_sell?: unknown | null
+          cancelled_listings?: number
+          created_at?: string
+          highest_price_sold?: number | null
+          id?: string
+          last_listing_date?: string | null
+          last_sale_date?: string | null
+          listing_approval_rate?: number | null
+          reserve_price_met_rate?: number | null
+          seller_id?: string
+          sold_listings?: number
+          total_earnings?: number
+          total_listings?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_performance_metrics_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sellers: {
+        Row: {
+          address: string | null
+          company_name: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          is_verified: boolean
+          tax_id: string | null
+          updated_at: string
+          user_id: string
+          verification_status: string
+        }
+        Insert: {
+          address?: string | null
+          company_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          is_verified?: boolean
+          tax_id?: string | null
+          updated_at?: string
+          user_id: string
+          verification_status?: string
+        }
+        Update: {
+          address?: string | null
+          company_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          is_verified?: boolean
+          tax_id?: string | null
+          updated_at?: string
+          user_id?: string
+          verification_status?: string
+        }
+        Relationships: []
+      }
       vin_reservations: {
         Row: {
           created_at: string | null
@@ -1239,6 +1343,12 @@ export type Database = {
           p_max_proxy_amount?: number
         }
         Returns: Json
+      }
+      register_seller: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: boolean
       }
       reject_dealer: {
         Args: {

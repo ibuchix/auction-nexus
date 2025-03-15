@@ -22,12 +22,23 @@ const routeLabels: Record<string, string> = {
   compliance: "Compliance",
   "audit-logs": "Audit Logs",
   dealers: "Dealers",
+  sellers: "Sellers",
   verification: "Verification",
+  "listing-verification": "Listing Verification",
+  "dealer-verification": "Dealer Verification",
+  listings: "Listings",
+  purchases: "Purchases",
+  users: "Users",
+  settings: "Settings",
+  performance: "Performance",
 };
 
 export function BreadcrumbNav() {
   const location = useLocation();
   const pathSegments = location.pathname.split("/").filter(Boolean);
+
+  // Generate a unique key based on the current path
+  const pathKey = location.pathname;
 
   return (
     <Breadcrumb className="mb-6">
@@ -42,13 +53,14 @@ export function BreadcrumbNav() {
         {pathSegments.map((segment, index) => {
           const path = `/${pathSegments.slice(0, index + 1).join("/")}`;
           const isLast = index === pathSegments.length - 1;
+          const label = routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
 
           return (
-            <BreadcrumbItem key={path}>
+            <BreadcrumbItem key={`${pathKey}-${index}`}>
               <BreadcrumbSeparator />
               {isLast ? (
                 <BreadcrumbPage className="text-foreground">
-                  {routeLabels[segment] || segment}
+                  {label}
                 </BreadcrumbPage>
               ) : (
                 <BreadcrumbLink asChild>
@@ -56,7 +68,7 @@ export function BreadcrumbNav() {
                     to={path}
                     className="text-iris hover:text-iris/90 font-kanit"
                   >
-                    {routeLabels[segment] || segment}
+                    {label}
                   </Link>
                 </BreadcrumbLink>
               )}
