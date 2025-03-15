@@ -32,7 +32,7 @@ export function StatsOverview({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
       <div 
         onClick={onCardClick.sellers}
         className="transform hover:scale-102 transition-transform duration-300 cursor-pointer"
