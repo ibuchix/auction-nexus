@@ -44,7 +44,7 @@ export const menuItems: SidebarMenuItem[] = [
       },
       {
         title: "Proxy Bids",
-        path: "/admin/auctions/proxy-bids",
+        path: "/admin/proxy-bids",
       }
     ],
   },

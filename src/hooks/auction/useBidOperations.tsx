@@ -16,18 +16,12 @@ export function useBidOperations() {
     maxProxyAmount: number | null = null
   ): Promise<void> => {
     try {
-      if (useProxyBidding && maxProxyAmount) {
-        // Validate max proxy amount
-        if (maxProxyAmount < amount) {
-          toast.error("Maximum proxy bid amount must be greater than or equal to bid amount");
-          return;
-        }
-        
-        // Create/update proxy bid first
-        await createProxyBid(auctionId, dealerId, maxProxyAmount);
+      if (useProxyBidding && !maxProxyAmount) {
+        toast.error("Maximum proxy bid amount is required when using proxy bidding");
+        return;
       }
       
-      // Call the placeBid RPC function
+      // Call the placeBid RPC function with proxy bidding parameters
       const { data, error } = await supabase.rpc<PlaceBidResponse>('place_bid', {
         p_car_id: auctionId,
         p_dealer_id: dealerId,

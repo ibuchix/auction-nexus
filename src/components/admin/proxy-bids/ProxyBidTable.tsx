@@ -5,7 +5,7 @@ import { adminSupabase } from "@/integrations/supabase/adminClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Trash2, AlertCircle, AlertTriangle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import {
@@ -41,7 +41,6 @@ export function ProxyBidTable({ searchTerm, sortBy }: ProxyBidTableProps) {
   const [proxyBids, setProxyBids] = useState<ProxyBid[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchProxyBids() {
