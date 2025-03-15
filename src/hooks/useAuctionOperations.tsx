@@ -9,6 +9,14 @@ type Auction = Database['public']['Tables']['cars']['Row'] & {
   auction_metrics: Database['public']['Tables']['auction_metrics']['Row'][];
 };
 
+// Interface for the return type of place_bid RPC function
+interface PlaceBidResponse {
+  success: boolean;
+  error?: string;
+  bid_id?: string;
+  amount?: number;
+}
+
 export function useAuctionOperations() {
   const pauseAuction = async (auctionId: string): Promise<void> => {
     try {
@@ -234,7 +242,7 @@ export function useAuctionOperations() {
       }
       
       // Call the placeBid RPC function
-      const { data, error } = await supabase.rpc('place_bid', {
+      const { data, error } = await supabase.rpc<PlaceBidResponse>('place_bid', {
         p_car_id: auctionId,
         p_dealer_id: dealerId,
         p_amount: amount,
@@ -243,7 +251,7 @@ export function useAuctionOperations() {
       });
       
       if (error) throw error;
-      if (!data.success) {
+      if (data && !data.success) {
         toast.error(data.error || "Failed to place bid");
         return;
       }
