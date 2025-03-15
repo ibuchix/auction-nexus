@@ -12,7 +12,7 @@ import { useAdmin } from "@/context/AdminContext";
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { isAdmin } = useAdmin(); // We'll still use this but won't block rendering
+  const { isAdmin } = useAdmin();
 
   // Keyboard shortcuts
   useHotkeys('alt+h', () => navigate('/'), { description: 'Go to Dashboard' });
@@ -29,9 +29,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
-        <main className="flex-1 p-6 overflow-auto pb-20 md:pb-6">
-          <BreadcrumbNav />
-          {children}
+        <main className="flex-1 px-4 py-6 md:p-6 overflow-auto pb-20 md:pb-6 max-w-full">
+          <div className="max-w-7xl mx-auto w-full">
+            <BreadcrumbNav />
+            {children}
+          </div>
         </main>
         {isMobile && <MobileNav />}
       </div>

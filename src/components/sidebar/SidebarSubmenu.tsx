@@ -26,15 +26,21 @@ export function SidebarSubmenu({
 }: SidebarSubmenuProps) {
   if (!item.submenu) return null;
   
+  // Check if any submenu item is active to highlight parent
+  const isSubmenuActive = item.submenu.some(subItem => isActive(subItem.path));
+  
   return (
     <Collapsible open={isOpen} onOpenChange={onToggle}>
       <CollapsibleTrigger asChild>
         <SidebarMenuButton 
-          className="w-full justify-between hover:bg-iris-light group"
+          className={cn(
+            "w-full justify-between hover:bg-iris-light group",
+            isSubmenuActive && "bg-iris-light text-iris font-medium"
+          )}
           tooltip={item.shortcut}
         >
           <div className="flex items-center gap-3">
-            <item.icon className="h-5 w-5 group-hover:text-iris" />
+            <item.icon className={cn("h-5 w-5", isSubmenuActive ? "text-iris" : "group-hover:text-iris")} />
             <span>{item.title}</span>
           </div>
           {isOpen ? (

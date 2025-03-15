@@ -41,10 +41,47 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<AdminProtectedRoute><DashboardLayout><AdminDashboard /></DashboardLayout></AdminProtectedRoute>} />
-        <Route path="/admin" element={<AdminProtectedRoute><DashboardLayout><AdminDashboard /></DashboardLayout></AdminProtectedRoute>} />
-        <Route path="/admin/auctions/manage" element={<AdminProtectedRoute><DashboardLayout><AuctionManagement /></DashboardLayout></AdminProtectedRoute>} />
-        <Route path="/admin/auctions/scheduling" element={<AdminProtectedRoute><DashboardLayout><AuctionScheduling /></DashboardLayout></AdminProtectedRoute>} />
+        {/* Admin routes */}
+        <Route 
+          path="/" 
+          element={
+            <AdminProtectedRoute>
+              <DashboardLayout>
+                <AdminDashboard />
+              </DashboardLayout>
+            </AdminProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin" 
+          element={
+            <AdminProtectedRoute>
+              <DashboardLayout>
+                <AdminDashboard />
+              </DashboardLayout>
+            </AdminProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/auctions/manage" 
+          element={
+            <AdminProtectedRoute>
+              <DashboardLayout>
+                <AuctionManagement />
+              </DashboardLayout>
+            </AdminProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/auctions/scheduling" 
+          element={
+            <AdminProtectedRoute>
+              <DashboardLayout>
+                <AuctionScheduling />
+              </DashboardLayout>
+            </AdminProtectedRoute>
+          } 
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />

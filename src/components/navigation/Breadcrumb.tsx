@@ -11,10 +11,11 @@ import {
 import { Home } from "lucide-react";
 
 const routeLabels: Record<string, string> = {
-  admin: "Admin",
+  admin: "Admin Dashboard",
   auctions: "Auctions",
   monitor: "Monitor",
   manage: "Manage",
+  scheduling: "Scheduling",
   disputes: "Disputes",
   analytics: "Analytics",
   announcements: "Announcements",
@@ -24,18 +25,21 @@ const routeLabels: Record<string, string> = {
   dealers: "Dealers",
   sellers: "Sellers",
   verification: "Verification",
-  "listing-verification": "Listing Verification",
-  "dealer-verification": "Dealer Verification",
   listings: "Listings",
   purchases: "Purchases",
   users: "Users",
   settings: "Settings",
-  performance: "Performance",
+  "proxy-bids": "Proxy Bids",
 };
 
 export function BreadcrumbNav() {
   const location = useLocation();
   const pathSegments = location.pathname.split("/").filter(Boolean);
+
+  // For the root admin path, don't show redundant breadcrumb
+  if (pathSegments.length === 1 && pathSegments[0] === "admin") {
+    return null;
+  }
 
   // Generate a unique key based on the current path
   const pathKey = location.pathname;

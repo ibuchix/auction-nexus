@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -20,18 +21,19 @@ function AdminCard({ title, description, icon: Icon, path, iconColor = "text-pri
   const navigate = useNavigate();
   
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 group">
+    <Card className="hover:shadow-md transition-all duration-300 group">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-xl font-bold">{title}</CardTitle>
-        <Icon className={`h-6 w-6 ${iconColor} transition-transform group-hover:scale-110`} />
+        <CardTitle className="text-lg font-bold">{title}</CardTitle>
+        <Icon className={`h-5 w-5 ${iconColor} transition-transform group-hover:scale-110`} />
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             {description}
           </p>
           <Button 
             variant="outline" 
+            size="sm"
             className="w-full group"
             onClick={() => navigate(path)}
           >
@@ -137,7 +139,7 @@ export function AdminCardGrid() {
   ];
 
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {adminCards.map((card) => (
         <AdminCard
           key={card.title}
