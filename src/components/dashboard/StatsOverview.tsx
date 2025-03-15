@@ -1,3 +1,4 @@
+
 import { StatCard } from "@/components/StatCard";
 import { Users, Gavel, DollarSign, TrendingUp } from "lucide-react";
 
@@ -31,10 +32,10 @@ export function StatsOverview({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       <div 
         onClick={onCardClick.sellers}
-        className="transform hover:scale-105 transition-transform duration-300 cursor-pointer"
+        className="transform hover:scale-102 transition-transform duration-300 cursor-pointer"
       >
         <StatCard
           title="Active Sellers"
@@ -45,7 +46,7 @@ export function StatsOverview({
       </div>
       <div 
         onClick={onCardClick.dealers}
-        className="transform hover:scale-105 transition-transform duration-300 cursor-pointer"
+        className="transform hover:scale-102 transition-transform duration-300 cursor-pointer"
       >
         <StatCard
           title="Verified Dealers"
@@ -56,7 +57,7 @@ export function StatsOverview({
       </div>
       <div 
         onClick={onCardClick.revenue}
-        className="transform hover:scale-105 transition-transform duration-300 cursor-pointer"
+        className="transform hover:scale-102 transition-transform duration-300 cursor-pointer"
       >
         <StatCard
           title="Monthly Revenue"
@@ -67,7 +68,7 @@ export function StatsOverview({
       </div>
       <div 
         onClick={onCardClick.success}
-        className="transform hover:scale-105 transition-transform duration-300 cursor-pointer"
+        className="transform hover:scale-102 transition-transform duration-300 cursor-pointer"
       >
         <StatCard
           title="Success Rate"

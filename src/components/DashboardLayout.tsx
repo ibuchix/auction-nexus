@@ -29,8 +29,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
-        <main className="flex-1 px-4 py-6 md:p-6 overflow-auto pb-20 md:pb-6 max-w-full">
-          <div className="max-w-7xl mx-auto w-full">
+        <main className="flex-1 overflow-auto pb-20 md:pb-8">
+          <div className="w-full">
             <BreadcrumbNav />
             {children}
           </div>

@@ -1,3 +1,4 @@
+
 import { Search, PlusCircle, Settings, Bell, FileText, Gavel, ShieldCheck, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,74 +75,76 @@ export function DashboardHeader({
   );
 
   return (
-    <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-center md:justify-between bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold text-primary">
-          Dashboard
-        </h1>
-        <p className="text-subtitle">{formatDate(currentTime)}</p>
-      </div>
-      
-      <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4 md:items-center">
-        <div className="relative group">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtitle h-4 w-4 transition-transform group-hover:scale-110" />
-          <Input
-            type="text"
-            placeholder="Search auctions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 w-full md:w-[300px] transition-all duration-300 border-gray-200 focus:border-iris hover:border-gray-300"
-          />
+    <div className="w-full rounded-xl bg-white/90 backdrop-blur-sm shadow-sm p-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold text-primary">
+            Dashboard
+          </h1>
+          <p className="text-subtitle">{formatDate(currentTime)}</p>
         </div>
         
-        <div className="flex items-center space-x-2 border-l pl-4">
-          <QuickActionButton
-            icon={Bell}
-            label="Notifications"
-            onClick={() => navigate('/admin/notifications')}
-            notification={pendingVerifications + suspiciousActivities}
-          />
-          <QuickActionButton
-            icon={Gavel}
-            label="Active Auctions"
-            onClick={() => navigate('/admin/auctions/monitor')}
-          />
-          <QuickActionButton
-            icon={FileText}
-            label="Reports"
-            onClick={() => navigate('/admin/analytics')}
-          />
-          <QuickActionButton
-            icon={ShieldCheck}
-            label="Security"
-            onClick={() => navigate('/admin/fraud')}
-          />
-          <QuickActionButton
-            icon={HelpCircle}
-            label="Help & Support"
-            onClick={() => toast({
-              title: "Help Center",
-              description: "Support resources and documentation will be available soon.",
-            })}
-          />
-        </div>
+        <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-center">
+          <div className="relative group w-full md:w-auto">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtitle h-4 w-4 transition-transform group-hover:scale-110" />
+            <Input
+              type="text"
+              placeholder="Search auctions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 w-full md:w-[300px] transition-all duration-300 border-gray-200 focus:border-iris hover:border-gray-300"
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2 md:border-l md:pl-4">
+            <QuickActionButton
+              icon={Bell}
+              label="Notifications"
+              onClick={() => navigate('/admin/notifications')}
+              notification={pendingVerifications + suspiciousActivities}
+            />
+            <QuickActionButton
+              icon={Gavel}
+              label="Active Auctions"
+              onClick={() => navigate('/admin/auctions/monitor')}
+            />
+            <QuickActionButton
+              icon={FileText}
+              label="Reports"
+              onClick={() => navigate('/admin/analytics')}
+            />
+            <QuickActionButton
+              icon={ShieldCheck}
+              label="Security"
+              onClick={() => navigate('/admin/fraud')}
+            />
+            <QuickActionButton
+              icon={HelpCircle}
+              label="Help & Support"
+              onClick={() => toast({
+                title: "Help Center",
+                description: "Support resources and documentation will be available soon.",
+              })}
+            />
+          </div>
 
-        <div className="flex space-x-2">
-          <Button 
-            variant="default" 
-            className="shadow-sm hover:shadow-md transition-all duration-300 bg-iris hover:bg-iris/90 text-white"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Auction
-          </Button>
-          <Button 
-            variant="outline" 
-            className="shadow-sm hover:shadow-md transition-all duration-300 hover:bg-iris-light"
-            onClick={() => navigate('/admin/settings')}
-          >
-            <Settings className="mr-2 h-4 w-4 text-iris" />
-            Settings
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              variant="default" 
+              className="shadow-sm hover:shadow-md transition-all duration-300 bg-iris hover:bg-iris/90 text-white"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Auction
+            </Button>
+            <Button 
+              variant="outline" 
+              className="shadow-sm hover:shadow-md transition-all duration-300 hover:bg-iris-light"
+              onClick={() => navigate('/admin/settings')}
+            >
+              <Settings className="mr-2 h-4 w-4 text-iris" />
+              Settings
+            </Button>
+          </div>
         </div>
       </div>
     </div>

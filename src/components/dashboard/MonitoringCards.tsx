@@ -1,3 +1,4 @@
+
 import { AlertTriangle, CheckCircle2, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -19,10 +20,10 @@ export function MonitoringCards({
   onCardClick
 }: MonitoringCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
       <div 
         onClick={onCardClick.verifications}
-        className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+        className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-gray-100"
       >
         <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
           <AlertTriangle className="h-5 w-5 text-yellow-500" />
@@ -38,7 +39,7 @@ export function MonitoringCards({
 
       <div 
         onClick={onCardClick.auctions}
-        className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+        className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-gray-100"
       >
         <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
           <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -54,7 +55,7 @@ export function MonitoringCards({
 
       <div 
         onClick={onCardClick.activities}
-        className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+        className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-gray-100"
       >
         <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
           <Activity className="h-5 w-5 text-red-500" />
