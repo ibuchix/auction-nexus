@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   Gavel,
@@ -7,6 +8,7 @@ import {
   ScrollText,
   Users,
   FileCheck,
+  CalendarClock,
 } from "lucide-react";
 
 export interface SidebarSubmenuItem {
@@ -41,6 +43,10 @@ export const menuItems: SidebarMenuItem[] = [
       {
         title: "Manage Auctions",
         path: "/admin/auctions/manage",
+      },
+      {
+        title: "Auction Scheduling",
+        path: "/admin/auctions/scheduling",
       },
       {
         title: "Proxy Bids",

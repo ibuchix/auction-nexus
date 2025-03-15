@@ -41,3 +41,20 @@ export type AuctionClosure = {
   total_bids: number;
   unique_bidders: number;
 };
+
+export type AuctionScheduleStatus = "scheduled" | "running" | "completed" | "cancelled";
+
+export type AuctionSchedule = {
+  id: string;
+  car_id: string;
+  start_time: string;
+  end_time: string;
+  status: AuctionScheduleStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  notes: string | null;
+  is_manually_controlled: boolean;
+  last_status_change: string;
+  car?: Auction;
+};

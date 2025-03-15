@@ -1,11 +1,11 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
-import { adminSupabase } from "@/integrations/supabase/adminClient"; // Changed to adminSupabase
+import { adminSupabase } from "@/integrations/supabase/adminClient"; 
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { Search, AlertTriangle, Clock, CheckCircle, PauseCircle, XCircle } from "lucide-react";
+import { Search, AlertTriangle, Clock, CheckCircle, PauseCircle, XCircle, CalendarClock } from "lucide-react";
 import { AdminAuctionCard } from "@/components/admin/AdminAuctionCard";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { useToast } from "@/hooks/use-toast";
@@ -13,17 +13,21 @@ import { Auction, AuctionStatus } from "@/types/auction";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { AuctionScheduleDialog } from "@/components/admin/auction-scheduling/AuctionScheduleDialog";
 
 const AuctionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<AuctionStatus | "all">("all");
+  const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
   const { data: listings, isLoading, error, refetch } = useQuery({
     queryKey: ['adminVehicleListings'],
     queryFn: async () => {
-      const { data, error } = await adminSupabase // Changed to adminSupabase
+      const { data, error } = await adminSupabase
         .from('cars')
         .select(`
           *,
@@ -49,7 +53,7 @@ const AuctionManagement = () => {
 
   // Set up real-time subscription
   useEffect(() => {
-    const channel = adminSupabase // Changed to adminSupabase
+    const channel = adminSupabase
       .channel('auction-updates')
       .on(
         'postgres_changes',
@@ -65,7 +69,7 @@ const AuctionManagement = () => {
       .subscribe();
 
     return () => {
-      adminSupabase.removeChannel(channel); // Changed to adminSupabase
+      adminSupabase.removeChannel(channel);
     };
   }, [refetch]);
 
@@ -123,6 +127,20 @@ const AuctionManagement = () => {
     listing.auction_status !== 'active' && 
     listing.auction_status !== undefined
   );
+
+  const handleScheduleClick = (auction: Auction) => {
+    setSelectedAuction(auction);
+    setIsScheduleDialogOpen(true);
+  };
+
+  const handleScheduleClose = () => {
+    setIsScheduleDialogOpen(false);
+    setSelectedAuction(null);
+  };
+
+  const handleScheduleSuccess = () => {
+    refetch();
+  };
 
   return (
     <DashboardLayout>
@@ -198,13 +216,24 @@ const AuctionManagement = () => {
                   </div>
                 ) : (
                   readyAuctions?.map((listing) => (
-                    <AdminAuctionCard
-                      key={listing.id}
-                      auction={listing}
-                      onPause={pauseAuction}
-                      onCancel={cancelAuction}
-                      onStart={startAuction}
-                    />
+                    <div key={listing.id} className="relative">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="absolute right-3 top-3 z-10 bg-white"
+                        onClick={() => handleScheduleClick(listing)}
+                      >
+                        <CalendarClock className="h-4 w-4 mr-1" />
+                        Schedule
+                      </Button>
+                      <AdminAuctionCard
+                        key={listing.id}
+                        auction={listing}
+                        onPause={pauseAuction}
+                        onCancel={cancelAuction}
+                        onStart={startAuction}
+                      />
+                    </div>
                   ))
                 )}
               </CardContent>
@@ -274,6 +303,15 @@ const AuctionManagement = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {selectedAuction && (
+        <AuctionScheduleDialog
+          auction={selectedAuction}
+          isOpen={isScheduleDialogOpen}
+          onClose={handleScheduleClose}
+          onScheduled={handleScheduleSuccess}
+        />
+      )}
     </DashboardLayout>
   );
 };

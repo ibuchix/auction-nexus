@@ -247,6 +247,56 @@ export type Database = {
           },
         ]
       }
+      auction_schedules: {
+        Row: {
+          car_id: string
+          created_at: string
+          created_by: string | null
+          end_time: string
+          id: string
+          is_manually_controlled: boolean
+          last_status_change: string
+          notes: string | null
+          start_time: string
+          status: Database["public"]["Enums"]["auction_schedule_status"]
+          updated_at: string
+        }
+        Insert: {
+          car_id: string
+          created_at?: string
+          created_by?: string | null
+          end_time: string
+          id?: string
+          is_manually_controlled?: boolean
+          last_status_change?: string
+          notes?: string | null
+          start_time: string
+          status?: Database["public"]["Enums"]["auction_schedule_status"]
+          updated_at?: string
+        }
+        Update: {
+          car_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_time?: string
+          id?: string
+          is_manually_controlled?: boolean
+          last_status_change?: string
+          notes?: string | null
+          start_time?: string
+          status?: Database["public"]["Enums"]["auction_schedule_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_schedules_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: Database["public"]["Enums"]["audit_log_type"]
@@ -1279,6 +1329,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      complete_scheduled_auctions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       create_dealer_with_profile: {
         Args: {
           p_email: string
@@ -1368,6 +1422,10 @@ export type Database = {
         }
         Returns: Json
       }
+      start_scheduled_auctions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       verify_dealer: {
         Args: {
           p_dealer_id: string
@@ -1392,6 +1450,11 @@ export type Database = {
         | "feature"
         | "promotion"
         | "policy"
+      auction_schedule_status:
+        | "scheduled"
+        | "running"
+        | "completed"
+        | "cancelled"
       audit_log_type:
         | "login"
         | "logout"
