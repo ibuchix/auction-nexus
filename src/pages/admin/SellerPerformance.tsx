@@ -35,7 +35,7 @@ export default function SellerPerformance() {
             <Skeleton className="h-10 w-64 mb-2" />
           ) : (
             <h1 className="text-3xl font-bold">
-              {seller?.full_name || (seller?.sellers && seller.sellers[0]?.full_name) || "Seller"} Performance
+              {seller?.full_name || (seller?.sellers && Array.isArray(seller.sellers) && seller.sellers.length > 0 && seller.sellers[0]?.full_name) || "Seller"} Performance
             </h1>
           )}
           <p className="text-muted-foreground">
