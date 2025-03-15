@@ -1,2 +1,7 @@
 
 project_id = "sdvakfhmoaoucmhbhwvy"
+[build]
+  engine = "deno"
+[functions.start-scheduled-auctions]
+  verify_jwt = false
+  import_map = "./import_map.json"

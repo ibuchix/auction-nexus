@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { CalendarClock, PackageCheck, Wallet } from "lucide-react";
 
 export function AdminActions() {
   const { toast } = useToast();
@@ -38,13 +39,14 @@ export function AdminActions() {
         description: "Processing proxy bids...",
       });
       
-      const { data, error } = await supabase.functions.invoke('process-proxy-bids');
+      // Call the RPC function directly since we now have a cron job
+      const { data, error } = await supabase.rpc('process_pending_proxy_bids');
       
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: data.message || "Proxy bids processed",
+        description: `Processed ${data.bids_processed || 0} bids across ${data.auctions_checked || 0} auctions`,
       });
     } catch (error) {
       console.error("Error processing proxy bids:", error);
@@ -69,7 +71,7 @@ export function AdminActions() {
       
       toast({
         title: "Success",
-        description: data.message || "Scheduled auctions started",
+        description: `${data.result?.auctions_started || 0} auctions started`,
       });
     } catch (error) {
       console.error("Error starting scheduled auctions:", error);
@@ -83,14 +85,17 @@ export function AdminActions() {
 
   return (
     <div className="flex flex-col sm:flex-row gap-2">
-      <Button onClick={handleManualAuctionClose}>
-        Close Ended Auctions
+      <Button onClick={handleManualAuctionClose} className="flex items-center gap-2">
+        <PackageCheck className="h-4 w-4" />
+        <span>Close Ended Auctions</span>
       </Button>
-      <Button onClick={handleProcessProxyBids} variant="outline">
-        Process Proxy Bids
+      <Button onClick={handleProcessProxyBids} variant="outline" className="flex items-center gap-2">
+        <Wallet className="h-4 w-4" />
+        <span>Process Proxy Bids</span>
       </Button>
-      <Button onClick={handleStartScheduledAuctions} variant="secondary">
-        Start Scheduled Auctions
+      <Button onClick={handleStartScheduledAuctions} variant="secondary" className="flex items-center gap-2">
+        <CalendarClock className="h-4 w-4" />
+        <span>Start Scheduled Auctions</span>
       </Button>
     </div>
   );

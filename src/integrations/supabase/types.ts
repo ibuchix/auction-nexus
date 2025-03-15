@@ -1091,6 +1091,7 @@ export type Database = {
           created_at: string
           dealer_id: string
           id: string
+          last_processed_amount: number | null
           max_bid_amount: number
           updated_at: string
         }
@@ -1099,6 +1100,7 @@ export type Database = {
           created_at?: string
           dealer_id: string
           id?: string
+          last_processed_amount?: number | null
           max_bid_amount: number
           updated_at?: string
         }
@@ -1107,6 +1109,7 @@ export type Database = {
           created_at?: string
           dealer_id?: string
           id?: string
+          last_processed_amount?: number | null
           max_bid_amount?: number
           updated_at?: string
         }
@@ -1398,6 +1401,10 @@ export type Database = {
         }
         Returns: Json
       }
+      process_pending_proxy_bids: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       register_seller: {
         Args: {
           p_user_id: string
@@ -1423,6 +1430,10 @@ export type Database = {
         Returns: Json
       }
       start_scheduled_auctions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      update_auction_status: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
