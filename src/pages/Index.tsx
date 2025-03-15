@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -132,7 +133,7 @@ const Index = () => {
           successRate={successRate || 0}
           onCardClick={{
             sellers: () => navigate('/admin/sellers'),
-            dealers: () => navigate('/admin/dealers'),
+            dealers: () => navigate('/admin/dealers/verification'),
             revenue: () => navigate('/admin/analytics'),
             success: () => navigate('/admin/analytics')
           }}
@@ -143,7 +144,7 @@ const Index = () => {
           activeAuctions={activeAuctions || 0}
           suspiciousActivities={suspiciousActivities || 0}
           onCardClick={{
-            verifications: () => navigate('/admin/dealers'),
+            verifications: () => navigate('/admin/dealers/verification'),
             auctions: () => navigate('/admin/auctions/monitor'),
             activities: () => navigate('/admin/fraud')
           }}
