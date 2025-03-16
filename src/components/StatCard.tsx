@@ -18,7 +18,7 @@ export function StatCard({ title, value, icon: Icon, trend }: StatCardProps) {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
-          <h3 className="text-xl font-bold mt-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h3 className="text-2xl font-bold mt-1 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             {value}
           </h3>
           {trend && (
@@ -27,10 +27,10 @@ export function StatCard({ title, value, icon: Icon, trend }: StatCardProps) {
                 trend.isPositive ? "text-green-600" : "text-red-600"
               }`}
             >
-              <span className="inline-block">
+              <span className="inline-block mr-1">
                 {trend.isPositive ? "↗" : "↘"}
               </span>
-              <span className="ml-1">
+              <span>
                 {trend.isPositive ? "+" : "-"}
                 {trend.value}% from last month
               </span>
@@ -39,7 +39,7 @@ export function StatCard({ title, value, icon: Icon, trend }: StatCardProps) {
         </div>
         <div className="relative group">
           <div className="absolute inset-0 bg-primary/5 rounded-full blur-xl transition-all duration-300 group-hover:blur-2xl" />
-          <Icon className="h-7 w-7 text-primary opacity-80 transition-transform duration-300 group-hover:scale-110 relative z-10" />
+          <Icon className="h-8 w-8 text-primary opacity-80 transition-transform duration-300 group-hover:scale-110 relative z-10" />
         </div>
       </div>
     </Card>

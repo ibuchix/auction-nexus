@@ -32,12 +32,12 @@ export function StatsOverview({
   };
 
   return (
-    <div>
+    <div className="mb-8">
       <h2 className="text-lg font-semibold mb-4">Platform Overview</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div 
           onClick={onCardClick.sellers}
-          className="transform hover:scale-102 transition-transform duration-300 cursor-pointer"
+          className="cursor-pointer transform hover:scale-[1.02] transition-transform duration-300"
         >
           <StatCard
             title="Active Sellers"
@@ -48,7 +48,7 @@ export function StatsOverview({
         </div>
         <div 
           onClick={onCardClick.dealers}
-          className="transform hover:scale-102 transition-transform duration-300 cursor-pointer"
+          className="cursor-pointer transform hover:scale-[1.02] transition-transform duration-300"
         >
           <StatCard
             title="Verified Dealers"
@@ -59,7 +59,7 @@ export function StatsOverview({
         </div>
         <div 
           onClick={onCardClick.revenue}
-          className="transform hover:scale-102 transition-transform duration-300 cursor-pointer"
+          className="cursor-pointer transform hover:scale-[1.02] transition-transform duration-300"
         >
           <StatCard
             title="Monthly Revenue"
@@ -70,7 +70,7 @@ export function StatsOverview({
         </div>
         <div 
           onClick={onCardClick.success}
-          className="transform hover:scale-102 transition-transform duration-300 cursor-pointer"
+          className="cursor-pointer transform hover:scale-[1.02] transition-transform duration-300"
         >
           <StatCard
             title="Success Rate"

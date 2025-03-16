@@ -20,7 +20,7 @@ function AdminCard({ title, description, icon: Icon, path, iconColor = "text-pri
   const navigate = useNavigate();
   
   return (
-    <Card className="hover:shadow-md transition-all duration-300 group">
+    <Card className="hover:shadow-md transition-all duration-300 group h-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-bold">{title}</CardTitle>
         <Icon className={`h-5 w-5 ${iconColor} transition-transform group-hover:scale-110`} />
@@ -134,7 +134,7 @@ export function AdminCardGrid() {
   ];
 
   return (
-    <div className="grid gap-4 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
       {adminCards.map((card) => (
         <AdminCard
           key={card.title}

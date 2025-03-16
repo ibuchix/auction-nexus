@@ -19,7 +19,7 @@ export function SearchBar({
 }: SearchBarProps) {
   return (
     <div className="flex items-center gap-2">
-      <div className="relative w-64">
+      <div className="relative w-full max-w-xs">
         <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
         <Input
           type="text"
