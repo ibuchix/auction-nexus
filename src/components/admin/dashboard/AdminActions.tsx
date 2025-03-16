@@ -87,18 +87,29 @@ export function AdminActions() {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2">
-      <Button onClick={handleManualAuctionClose} className="flex items-center gap-2">
+    <div className="flex flex-wrap gap-2">
+      <Button 
+        onClick={handleManualAuctionClose} 
+        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm"
+      >
         <PackageCheck className="h-4 w-4" />
-        <span>Close Ended Auctions</span>
+        <span>Close Auctions</span>
       </Button>
-      <Button onClick={handleProcessProxyBids} variant="outline" className="flex items-center gap-2">
+      <Button 
+        onClick={handleProcessProxyBids} 
+        variant="outline" 
+        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm"
+      >
         <Wallet className="h-4 w-4" />
-        <span>Process Proxy Bids</span>
+        <span>Process Bids</span>
       </Button>
-      <Button onClick={handleStartScheduledAuctions} variant="secondary" className="flex items-center gap-2">
+      <Button 
+        onClick={handleStartScheduledAuctions} 
+        variant="secondary" 
+        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm"
+      >
         <CalendarClock className="h-4 w-4" />
-        <span>Start Scheduled Auctions</span>
+        <span>Start Auctions</span>
       </Button>
     </div>
   );

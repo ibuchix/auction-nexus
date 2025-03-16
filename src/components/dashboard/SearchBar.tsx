@@ -2,9 +2,6 @@
 import { Search } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Bell } from "lucide-react";
 
 interface SearchBarProps {
   searchQuery: string;
@@ -29,20 +26,6 @@ export function SearchBar({
           className="pl-8 w-full h-9 rounded-full"
         />
       </div>
-      
-      {notificationCount > 0 && (
-        <div className="relative">
-          <Button variant="outline" size="icon" className="relative">
-            <Bell className="h-4 w-4" />
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-2 -right-2 px-1.5 min-w-5 h-5 flex items-center justify-center"
-            >
-              {notificationCount}
-            </Badge>
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
