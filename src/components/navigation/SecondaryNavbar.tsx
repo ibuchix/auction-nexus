@@ -1,4 +1,8 @@
 
+// NOTE: This component is currently not in use in the application.
+// It was removed to eliminate duplicate navigation bars.
+// Consider removing this file in a future cleanup if it remains unused.
+
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
