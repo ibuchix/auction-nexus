@@ -8,8 +8,6 @@ import { BreadcrumbNav } from "./navigation/Breadcrumb";
 import { MobileNav } from "./navigation/MobileNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// Make sure SecondaryNavbar is not imported
-
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -28,14 +26,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col w-full bg-gray-50 overflow-x-hidden">
+      {/* Single navigation component for the application */}
       <TopNavbar />
-      {/* Removed any reference to SecondaryNavbar here */}
+      
       <main className="flex-1 w-full pt-4">
         <div className="w-full container mx-auto px-4">
           <BreadcrumbNav />
           {children}
         </div>
       </main>
+      
       {isMobile && <MobileNav />}
     </div>
   );
