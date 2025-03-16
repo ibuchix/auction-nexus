@@ -1234,6 +1234,36 @@ export type Database = {
         }
         Relationships: []
       }
+      system_health: {
+        Row: {
+          component_name: string
+          created_at: string
+          details: Json | null
+          id: string
+          last_check_time: string
+          status: Database["public"]["Enums"]["system_component_health"]
+          updated_at: string
+        }
+        Insert: {
+          component_name: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          last_check_time?: string
+          status?: Database["public"]["Enums"]["system_component_health"]
+          updated_at?: string
+        }
+        Update: {
+          component_name?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          last_check_time?: string
+          status?: Database["public"]["Enums"]["system_component_health"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vin_reservations: {
         Row: {
           created_at: string | null
@@ -1321,6 +1351,10 @@ export type Database = {
           p_price_med: number
         }
         Returns: number
+      }
+      check_auction_system_health: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       check_email_exists: {
         Args: {
@@ -1437,6 +1471,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      update_system_health: {
+        Args: {
+          p_component_name: string
+          p_status: Database["public"]["Enums"]["system_component_health"]
+          p_details?: Json
+        }
+        Returns: string
+      }
       verify_dealer: {
         Args: {
           p_dealer_id: string
@@ -1477,6 +1519,18 @@ export type Database = {
         | "verify"
         | "reject"
         | "approve"
+        | "process_auctions"
+        | "auction_closed"
+        | "auto_proxy_bid"
+        | "start_auction"
+        | "auction_close_failed"
+        | "auction_close_system_error"
+        | "system_reset_failed"
+        | "recovery_failed"
+        | "manual_retry"
+        | "auction_recovery"
+        | "system_health_check"
+        | "system_alert"
       car_transmission_type: "automatic" | "manual"
       dispute_status: "open" | "investigating" | "resolved" | "closed"
       dispute_type:
@@ -1485,6 +1539,7 @@ export type Database = {
         | "listing_accuracy"
         | "auction_process"
         | "other"
+      system_component_health: "healthy" | "degraded" | "failing" | "unknown"
       user_role: "dealer" | "seller" | "admin"
       verification_status: "pending" | "approved" | "rejected"
     }

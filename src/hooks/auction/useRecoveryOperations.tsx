@@ -38,6 +38,9 @@ export function useRecoveryOperations() {
         }
       });
       
+      // Run health check after retry
+      await adminSupabase.rpc('check_auction_system_health');
+      
       toast.success("Operation retried successfully");
     } catch (error) {
       console.error('Error retrying operation:', error);
@@ -74,6 +77,9 @@ export function useRecoveryOperations() {
         }
       });
       
+      // Run health check after recovery
+      await adminSupabase.rpc('check_auction_system_health');
+      
       toast.success("Auction recovered successfully");
     } catch (error) {
       console.error('Error recovering auction:', error);
@@ -91,10 +97,31 @@ export function useRecoveryOperations() {
       
       if (error) throw error;
       
+      // Run health check after system reset
+      await adminSupabase.rpc('check_auction_system_health');
+      
       toast.success("System state reset successfully");
     } catch (error) {
       console.error('Error resetting system state:', error);
       toast.error("Failed to reset system state");
+      throw error;
+    }
+  }, []);
+
+  // Check system health
+  const checkSystemHealth = useCallback(async (): Promise<void> => {
+    try {
+      toast.loading("Checking system health...");
+      
+      const { data, error } = await adminSupabase.rpc('check_auction_system_health');
+      
+      if (error) throw error;
+      
+      toast.success("System health check completed");
+      return data;
+    } catch (error) {
+      console.error('Error checking system health:', error);
+      toast.error("Failed to check system health");
       throw error;
     }
   }, []);
@@ -131,6 +158,7 @@ export function useRecoveryOperations() {
     retryFailedOperation,
     recoverAuction,
     resetSystemState,
+    checkSystemHealth,
     generateAuditReport
   };
 }

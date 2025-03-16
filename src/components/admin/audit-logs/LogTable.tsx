@@ -1,7 +1,5 @@
 
 import { Tables } from "@/integrations/supabase/types";
-import { format } from "date-fns";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -10,24 +8,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { 
-  HoverCard, 
-  HoverCardContent, 
-  HoverCardTrigger 
-} from "@/components/ui/hover-card";
-import { StatusBadge } from "../disputes/components/StatusBadge";
-import { Info } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-type AuditLog = Tables<"audit_logs"> & {
-  user?: { full_name: string } | null;
-};
+type AuditLog = Tables<"audit_logs">;
 
 interface LogTableProps {
   logs: AuditLog[];
@@ -35,121 +26,97 @@ interface LogTableProps {
 }
 
 export function LogTable({ logs, isLoading }: LogTableProps) {
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
-  if (logs.length === 0) {
+  if (isLoading) {
     return (
-      <div className="text-center py-10">
-        <p className="text-gray-500">No audit logs found matching your criteria.</p>
+      <div className="space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Skeleton key={i} className="w-full h-12" />
+        ))}
       </div>
     );
   }
 
+  if (!logs.length) {
+    return (
+      <div className="py-8 text-center border rounded-md">
+        <p className="text-muted-foreground">No logs found</p>
+      </div>
+    );
+  }
+
+  const getBadgeColor = (action: string) => {
+    if (action.includes("failed") || action.includes("error")) return "destructive";
+    if (action.includes("warning") || action.includes("alert")) return "warning";
+    return "secondary";
+  };
+
   return (
-    <div className="overflow-x-auto">
+    <>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Timestamp</TableHead>
             <TableHead>Action</TableHead>
-            <TableHead>Entity Type</TableHead>
-            <TableHead>Entity ID</TableHead>
-            <TableHead>User</TableHead>
+            <TableHead>Entity</TableHead>
             <TableHead>Details</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {logs.map((log) => (
-            <TableRow key={log.id}>
-              <TableCell className="whitespace-nowrap">
-                {format(new Date(log.created_at), "yyyy-MM-dd HH:mm:ss")}
+            <TableRow
+              key={log.id}
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => setSelectedLog(log)}
+            >
+              <TableCell className="font-mono">
+                {new Date(log.created_at).toLocaleString()}
               </TableCell>
               <TableCell>
-                <ActionBadge action={log.action} />
+                <Badge variant={getBadgeColor(log.action)}>
+                  {log.action.replace(/_/g, " ")}
+                </Badge>
               </TableCell>
-              <TableCell className="capitalize">
-                {log.entity_type}
-              </TableCell>
-              <TableCell className="font-mono text-xs">
-                {log.entity_id ? log.entity_id.substring(0, 8) : "-"}
-              </TableCell>
-              <TableCell>
-                {log.user?.full_name || "System"}
-              </TableCell>
-              <TableCell>
-                {log.details ? (
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <button className="flex items-center text-blue-500 hover:text-blue-700">
-                        <Info className="h-4 w-4 mr-1" />
-                        View
-                      </button>
-                    </HoverCardTrigger>
-                    <HoverCardContent className="w-80">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold">Action Details</h4>
-                        <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
-                          {JSON.stringify(log.details, null, 2)}
-                        </pre>
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
-                ) : (
-                  <span className="text-gray-400">-</span>
-                )}
+              <TableCell>{log.entity_type}</TableCell>
+              <TableCell className="truncate max-w-xs">
+                {log.details ? JSON.stringify(log.details).substring(0, 50) + "..." : "N/A"}
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-    </div>
-  );
-}
 
-function ActionBadge({ action }: { action: string }) {
-  const getVariant = () => {
-    switch (action) {
-      case "create":
-        return "default";
-      case "update":
-        return "outline";
-      case "delete":
-        return "destructive";
-      case "login":
-        return "default"; // Changed from "success" to "default"
-      case "logout":
-        return "secondary";
-      case "approve":
-        return "default"; // Changed from "success" to "default"
-      case "reject":
-        return "destructive";
-      case "verify":
-        return "default"; // Changed from "success" to "default"
-      case "export":
-        return "default";
-      default:
-        return "outline";
-    }
-  };
+      <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedLog?.action.replace(/_/g, " ")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium mb-1">Timestamp</h4>
+                <p className="text-sm">
+                  {selectedLog && new Date(selectedLog.created_at).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium mb-1">Entity</h4>
+                <p className="text-sm">
+                  {selectedLog?.entity_type} {selectedLog?.entity_id ? `(${selectedLog.entity_id})` : ""}
+                </p>
+              </div>
+            </div>
 
-  // Using Badge component from UI library instead of StatusBadge that doesn't accept children
-  return <Badge variant={getVariant()}>{action}</Badge>;
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="flex space-x-4">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-8 w-32" />
-        </div>
-      ))}
-    </div>
+            <div>
+              <h4 className="text-sm font-medium mb-1">Details</h4>
+              <pre className="bg-muted p-4 rounded-md overflow-x-auto text-xs">
+                {selectedLog && JSON.stringify(selectedLog.details, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
