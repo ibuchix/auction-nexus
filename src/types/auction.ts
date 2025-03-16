@@ -61,3 +61,18 @@ export type AuctionSchedule = {
   last_status_change: string;
   car?: Auction;
 };
+
+// Add interface for StatsOverviewProps to fix Analytics.tsx errors
+export interface StatsOverviewProps {
+  totalAuctions: number;
+  totalSold: number;
+  totalUnsold: number;
+  totalValue: number;
+  averagePrice: number;
+}
+
+// Add interface for SummaryTableProps to fix Analytics.tsx errors
+export interface SummaryTableProps {
+  data: DailyAuctionSummary[];
+  isLoading?: boolean;
+}
