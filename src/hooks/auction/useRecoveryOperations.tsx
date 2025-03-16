@@ -29,7 +29,7 @@ export function useRecoveryOperations() {
       
       // Log the retry attempt
       await adminSupabase.from('audit_logs').insert({
-        action: 'manual_retry',
+        action: 'manual_retry' as any,
         entity_type: 'auction_operation',
         entity_id: operationId,
         details: {
@@ -68,7 +68,7 @@ export function useRecoveryOperations() {
       
       // Log the recovery action
       await adminSupabase.from('audit_logs').insert({
-        action: 'auction_recovery',
+        action: 'auction_recovery' as any,
         entity_type: 'auction',
         entity_id: auctionId,
         details: {
@@ -109,7 +109,7 @@ export function useRecoveryOperations() {
   }, []);
 
   // Check system health
-  const checkSystemHealth = useCallback(async (): Promise<void> => {
+  const checkSystemHealth = useCallback(async () => {
     try {
       toast.loading("Checking system health...");
       

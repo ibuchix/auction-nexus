@@ -50,7 +50,7 @@ export function AuctionSystemStatus() {
       const { data: logs, error } = await supabase
         .from('audit_logs')
         .select('*')
-        .in('action', ['auto_proxy_bid', 'process_auctions', 'start_auction'])
+        .in('action', ['auto_proxy_bid', 'process_auctions', 'start_auction'] as any[])
         .order('created_at', { ascending: false })
         .limit(30);
       
@@ -80,12 +80,13 @@ export function AuctionSystemStatus() {
         else if (log.action === 'start_auction') category = 'startAuctions';
         
         if (category && (statuses[category].lastRun === 'Unknown' || new Date(log.created_at) > new Date(statuses[category].lastRun))) {
-          const hasError = log.details && typeof log.details === 'object' && log.details.success === false;
+          const details = log.details as Record<string, any> | null;
+          const hasError = details && typeof details === 'object' && details.success === false;
           
           statuses[category] = {
             lastRun: log.created_at,
             status: hasError ? 'error' : 'success',
-            details: hasError ? (log.details.error || 'Unknown error') : undefined
+            details: hasError ? (details?.error || 'Unknown error') : undefined
           };
         }
       });
@@ -175,11 +176,11 @@ export function AuctionSystemStatus() {
       </div>
       
       {hasHealthAlert && (
-        <Alert variant={overallHealth.status === 'failing' ? 'destructive' : 'warning'} className="mb-4">
+        <Alert variant={overallHealth?.status === 'failing' ? 'destructive' : 'default'} className="mb-4">
           <AlertCircle className="h-5 w-5" />
-          <AlertTitle>System {overallHealth.status === 'failing' ? 'Alert' : 'Warning'}</AlertTitle>
+          <AlertTitle>System {overallHealth?.status === 'failing' ? 'Alert' : 'Warning'}</AlertTitle>
           <AlertDescription>
-            {overallHealth.details?.message || 'System health is compromised. Check component status below.'}
+            {overallHealth?.details?.message || 'System health is compromised. Check component status below.'}
           </AlertDescription>
         </Alert>
       )}

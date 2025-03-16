@@ -48,7 +48,7 @@ export function HealthStatusIndicator({
       case 'healthy':
         return 'outline';
       case 'degraded':
-        return 'warning';
+        return 'secondary';
       case 'failing':
         return 'destructive';
       default:

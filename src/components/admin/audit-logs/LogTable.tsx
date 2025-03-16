@@ -48,7 +48,7 @@ export function LogTable({ logs, isLoading }: LogTableProps) {
 
   const getBadgeColor = (action: string) => {
     if (action.includes("failed") || action.includes("error")) return "destructive";
-    if (action.includes("warning") || action.includes("alert")) return "warning";
+    if (action.includes("warning") || action.includes("alert")) return "secondary";
     return "secondary";
   };
 

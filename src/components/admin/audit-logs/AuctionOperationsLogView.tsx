@@ -32,9 +32,19 @@ export function AuctionOperationsLogView() {
         .order('created_at', { ascending: false });
         
       if (view === 'operations') {
-        query = query.in('action', ['process_auctions', 'auction_closed', 'auto_proxy_bid', 'start_auction']);
+        query = query.in('action', [
+          'process_auctions', 
+          'auction_closed', 
+          'auto_proxy_bid', 
+          'start_auction'
+        ] as any[]);
       } else {
-        query = query.in('action', ['auction_close_failed', 'auction_close_system_error', 'system_reset_failed', 'recovery_failed']);
+        query = query.in('action', [
+          'auction_close_failed', 
+          'auction_close_system_error', 
+          'system_reset_failed', 
+          'recovery_failed'
+        ] as any[]);
       }
       
       const { data, error } = await query.limit(100);
