@@ -8,15 +8,15 @@ interface StatusBadgeProps {
 export function StatusBadge({ status }: StatusBadgeProps) {
   switch (status) {
     case 'ready':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-600">Ready</Badge>;
+      return <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 font-medium">Ready</Badge>;
     case 'active':
-      return <Badge variant="default" className="bg-green-100 text-green-700">Active</Badge>;
+      return <Badge variant="default" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-medium border-none">Active</Badge>;
     case 'paused':
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">Paused</Badge>;
+      return <Badge variant="secondary" className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white font-medium border-none">Paused</Badge>;
     case 'ended':
-      return <Badge variant="secondary" className="bg-gray-100 text-gray-700">Ended</Badge>;
+      return <Badge variant="secondary" className="bg-gray-200 text-gray-800 font-medium">Ended</Badge>;
     case 'cancelled':
-      return <Badge variant="destructive" className="bg-red-100 text-red-700">Cancelled</Badge>;
+      return <Badge variant="destructive" className="bg-gradient-to-r from-red-500 to-rose-500 text-white font-medium border-none">Cancelled</Badge>;
     default:
       return <Badge variant="outline">Not Set</Badge>;
   }

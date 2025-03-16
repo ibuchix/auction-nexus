@@ -16,7 +16,7 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon: Icon, trend, className }: StatCardProps) {
   return (
-    <Card className={cn("p-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 h-full", className)}>
+    <Card className={cn("p-4 bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all duration-300 h-full border border-gray-100", className)}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
@@ -26,7 +26,7 @@ export function StatCard({ title, value, icon: Icon, trend, className }: StatCar
           {trend && (
             <p
               className={`text-xs mt-2 flex items-center ${
-                trend.isPositive ? "text-green-600" : "text-red-600"
+                trend.isPositive ? "text-emerald-600" : "text-rose-600"
               }`}
             >
               <span className="inline-block mr-1">
@@ -40,8 +40,8 @@ export function StatCard({ title, value, icon: Icon, trend, className }: StatCar
           )}
         </div>
         <div className="relative group">
-          <div className="absolute inset-0 bg-primary/5 rounded-full blur-xl transition-all duration-300 group-hover:blur-2xl" />
-          <Icon className="h-8 w-8 text-primary opacity-80 transition-transform duration-300 group-hover:scale-110 relative z-10" />
+          <div className="absolute inset-0 bg-indigo-100 rounded-full blur-xl transition-all duration-300 group-hover:blur-2xl opacity-70" />
+          <Icon className="h-8 w-8 text-indigo-600 opacity-80 transition-transform duration-300 group-hover:scale-110 relative z-10" />
         </div>
       </div>
     </Card>

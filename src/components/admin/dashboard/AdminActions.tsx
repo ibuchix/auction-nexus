@@ -90,7 +90,7 @@ export function AdminActions() {
     <div className="flex flex-wrap gap-2">
       <Button 
         onClick={handleManualAuctionClose} 
-        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm"
+        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 shadow-sm hover:shadow-md transition-all"
       >
         <PackageCheck className="h-4 w-4" />
         <span>Close Auctions</span>
@@ -98,7 +98,7 @@ export function AdminActions() {
       <Button 
         onClick={handleProcessProxyBids} 
         variant="outline" 
-        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm"
+        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm border-blue-300 text-blue-700 hover:bg-blue-50 shadow-sm hover:shadow-md transition-all"
       >
         <Wallet className="h-4 w-4" />
         <span>Process Bids</span>
@@ -106,7 +106,7 @@ export function AdminActions() {
       <Button 
         onClick={handleStartScheduledAuctions} 
         variant="secondary" 
-        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm"
+        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white shadow-sm hover:shadow-md transition-all"
       >
         <CalendarClock className="h-4 w-4" />
         <span>Start Auctions</span>

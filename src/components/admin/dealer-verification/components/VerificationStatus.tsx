@@ -11,11 +11,11 @@ const VerificationStatus = ({ status, createdAt }: VerificationStatusProps) => {
   const getStatusBadge = (status: VerificationStatusType) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+        return <Badge variant="outline" className="bg-gradient-to-r from-yellow-200 to-amber-200 text-amber-800 border-yellow-300 shadow-sm">Pending</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
+        return <Badge variant="outline" className="bg-gradient-to-r from-green-200 to-emerald-200 text-emerald-800 border-green-300 shadow-sm">Approved</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
+        return <Badge variant="outline" className="bg-gradient-to-r from-red-200 to-rose-200 text-red-800 border-red-300 shadow-sm">Rejected</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
