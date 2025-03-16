@@ -2,7 +2,7 @@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { adminSupabase } from "@/integrations/supabase/adminClient";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, CircleAlert, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,26 +23,31 @@ interface OperationStatus {
   details?: string;
 }
 
+// Define cache TTL in milliseconds (2 minutes)
+const CACHE_TTL = 2 * 60 * 1000;
+
 export function AuctionSystemStatus() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [failedOperations, setFailedOperations] = useState<any[]>([]);
   const [systemHealth, setSystemHealth] = useState<SystemHealth[]>([]);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
   const [operationsStatus, setOperationsStatus] = useState<Record<string, OperationStatus>>({
     closeAuctions: { lastRun: 'Unknown', status: 'unknown' },
     proxyBids: { lastRun: 'Unknown', status: 'unknown' },
     startAuctions: { lastRun: 'Unknown', status: 'unknown' }
   });
 
-  useEffect(() => {
-    fetchSystemData();
-    
-    // Refresh data every 2 minutes
-    const interval = setInterval(fetchSystemData, 2 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // Memoize the fetchSystemData function to prevent unnecessary re-renders
+  const fetchSystemData = useCallback(async (forceRefresh = false) => {
+    // Skip fetching if data is fresh unless forced
+    const now = Date.now();
+    if (!forceRefresh && now - lastRefreshTime < CACHE_TTL) {
+      setIsLoading(false);
+      setIsRefreshing(false);
+      return;
+    }
 
-  const fetchSystemData = async () => {
     try {
       setIsLoading(true);
       
@@ -103,7 +108,7 @@ export function AuctionSystemStatus() {
       
       setOperationsStatus(statuses);
       
-      // Fetch system health data
+      // Use a join to get system health and database performance metrics
       const { data: healthData, error: healthError } = await supabase
         .from('system_health')
         .select('*');
@@ -111,6 +116,7 @@ export function AuctionSystemStatus() {
       if (healthError) throw healthError;
       
       setSystemHealth(healthData || []);
+      setLastRefreshTime(now);
     } catch (error) {
       console.error('Error fetching system data:', error);
       toast.error("Failed to load system status. Could not retrieve the latest system operation data.");
@@ -118,7 +124,21 @@ export function AuctionSystemStatus() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [lastRefreshTime]);
+
+  useEffect(() => {
+    fetchSystemData();
+    
+    // Set up an interval to refresh the cache when it expires
+    const interval = setInterval(() => {
+      const now = Date.now();
+      if (now - lastRefreshTime >= CACHE_TTL) {
+        fetchSystemData();
+      }
+    }, CACHE_TTL / 2); // Check half as often as the TTL
+    
+    return () => clearInterval(interval);
+  }, [fetchSystemData, lastRefreshTime]);
 
   const triggerHealthCheck = async () => {
     try {
@@ -131,12 +151,17 @@ export function AuctionSystemStatus() {
       if (error) throw error;
       
       toast.success("System health check completed");
-      fetchSystemData();
+      fetchSystemData(true); // Force refresh
     } catch (error) {
       console.error('Error running health check:', error);
       toast.error("Failed to run system health check");
       setIsRefreshing(false);
     }
+  };
+
+  const refreshData = () => {
+    setIsRefreshing(true);
+    fetchSystemData(true); // Force refresh
   };
 
   if (isLoading) {
@@ -168,22 +193,44 @@ export function AuctionSystemStatus() {
 
   // Get overall system health status
   const overallHealth = systemHealth.find(h => h.component_name === 'auction_system');
+  const dbPerformance = systemHealth.find(h => h.component_name === 'database_performance');
   const hasHealthAlert = overallHealth && overallHealth.status !== 'healthy';
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">System Status</h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={triggerHealthCheck} 
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Check Health
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refreshData} 
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={triggerHealthCheck} 
+            disabled={isRefreshing}
+          >
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            Check Health
+          </Button>
+        </div>
       </div>
+      
+      {dbPerformance && (
+        <Alert variant="default" className="bg-blue-50 border-blue-200 mb-4">
+          <CheckCircle2 className="h-5 w-5 text-blue-500" />
+          <AlertTitle>Database Optimization Active</AlertTitle>
+          <AlertDescription>
+            Performance optimizations are active. Last update: {new Date(dbPerformance.last_check_time).toLocaleString()}
+          </AlertDescription>
+        </Alert>
+      )}
       
       {hasHealthAlert && (
         <Alert variant={overallHealth?.status === 'failing' ? 'destructive' : 'default'} className="mb-4">
@@ -241,7 +288,7 @@ export function AuctionSystemStatus() {
       <h3 className="text-lg font-medium mt-6">System Health Components</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {systemHealth
-          .filter(h => h.component_name !== 'auction_system') // Skip overall status as we show it in the alert
+          .filter(h => !['auction_system', 'database_performance'].includes(h.component_name)) // Skip overall status as we show it in the alert
           .map(component => (
             <Card key={component.component_name} className={`border-l-4 ${
               component.status === 'healthy' ? 'border-l-green-500' : 
