@@ -1,11 +1,10 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Bell } from "lucide-react";
 
 interface DashboardHeaderProps {
   title?: string;
