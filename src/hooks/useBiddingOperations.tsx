@@ -2,14 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-interface ProxyBid {
-  id: string;
-  car_id: string;
-  dealer_id: string;
-  max_amount: number;
-  created_at: string;
-}
+import { ProxyBid } from "@/types/auction";
 
 export function useBiddingOperations(carId: string, dealerId: string) {
   const [isPlacingBid, setIsPlacingBid] = useState(false);
@@ -36,7 +29,8 @@ export function useBiddingOperations(carId: string, dealerId: string) {
         return;
       }
 
-      setExistingProxyBid(data);
+      // Map the response data to the ProxyBid type
+      setExistingProxyBid(data as ProxyBid);
     } catch (error) {
       console.error("Error in fetchProxyBid:", error);
     } finally {

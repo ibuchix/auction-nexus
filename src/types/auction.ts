@@ -62,6 +62,17 @@ export type AuctionSchedule = {
   car?: Auction;
 };
 
+// Define the ProxyBid interface to match the database structure
+export type ProxyBid = {
+  id: string;
+  car_id: string;
+  dealer_id: string;
+  max_bid_amount: number; // Changing from max_amount to max_bid_amount to match the database
+  created_at: string;
+  updated_at: string;
+  last_processed_amount?: number;
+};
+
 // Define the props for StatsOverview component
 export interface StatsOverviewProps {
   stats: {

@@ -5,7 +5,7 @@ import { BidHistoryList } from "./BidHistoryList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBiddingOperations } from "@/hooks/useBiddingOperations";
-import { Bid } from "@/types/auction";
+import { Bid, ProxyBid } from "@/types/auction";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -83,7 +83,7 @@ export function BiddingPanel({
                 dealerId={dealerId}
                 currentBid={currentBid}
                 bidIncrement={bidIncrement}
-                existingProxyBid={existingProxyBid}
+                existingProxyBid={existingProxyBid ? existingProxyBid.max_bid_amount : null}
                 onPlaceBid={handlePlaceBid}
                 onDeleteProxyBid={handleDeleteProxyBid}
                 className={!isAuctionActive ? "opacity-50 pointer-events-none" : ""}

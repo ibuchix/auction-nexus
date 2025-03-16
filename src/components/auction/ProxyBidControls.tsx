@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -71,7 +70,6 @@ export function ProxyBidControls({
         useProxyBidding ? maxProxyAmount : null
       );
       
-      // Reset form after successful bid
       setBidAmount(currentBid + bidIncrement);
     } catch (error) {
       console.error("Bid placement error:", error);
