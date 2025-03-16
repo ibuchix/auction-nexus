@@ -35,7 +35,7 @@ export function MainNavigationMenu() {
     },
     {
       name: "User Management",
-      items: menuItems.filter(item => item.title === ["User Management", "Listing Management"].includes(item.title))
+      items: menuItems.filter(item => ["User Management", "Listing Management"].includes(item.title))
     },
     {
       name: "Risk & Insights",
