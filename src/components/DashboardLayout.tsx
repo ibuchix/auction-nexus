@@ -1,13 +1,12 @@
 
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "./AppSidebar";
-import { BreadcrumbNav } from "./navigation/Breadcrumb";
-import { MobileNav } from "./navigation/MobileNav";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAdmin } from "@/context/AdminContext";
+import { TopNavbar } from "./navigation/TopNavbar";
+import { BreadcrumbNav } from "./navigation/Breadcrumb";
+import { MobileNav } from "./navigation/MobileNav";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
@@ -26,17 +25,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   }, { description: 'Show Keyboard Shortcuts' });
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50 overflow-x-hidden">
-        <AppSidebar />
-        <main className="flex-1 w-full">
-          <div className="w-full">
-            <BreadcrumbNav />
-            {children}
-          </div>
-        </main>
-        {isMobile && <MobileNav />}
-      </div>
-    </SidebarProvider>
+    <div className="min-h-screen flex flex-col w-full bg-gray-50 overflow-x-hidden">
+      <TopNavbar />
+      <main className="flex-1 w-full pt-4">
+        <div className="w-full container mx-auto px-4">
+          <BreadcrumbNav />
+          {children}
+        </div>
+      </main>
+      {isMobile && <MobileNav />}
+    </div>
   );
 }
