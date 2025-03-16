@@ -13,4 +13,12 @@ export interface PlaceBidResponse {
   error?: string;
   bid_id?: string;
   amount?: number;
+  is_proxy?: boolean;
+  max_proxy_amount?: number;
+}
+
+// Extended bid type with proxy information
+export interface EnhancedBid extends Database['public']['Tables']['bids']['Row'] {
+  is_proxy?: boolean;
+  dealer_name?: string;
 }

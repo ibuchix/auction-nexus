@@ -5,8 +5,6 @@ import { PlaceBidResponse } from "@/types/auctionOperations";
 import { useProxyBidOperations } from "./useProxyBidOperations";
 
 export function useBidOperations() {
-  const { createProxyBid } = useProxyBidOperations();
-
   // Place a bid with optional proxy bidding
   const placeBid = async (
     auctionId: string, 
