@@ -41,6 +41,15 @@ export function BiddingPanel({
     fetchProxyBid();
   }, [auctionId, dealerId]);
 
+  // Create wrapper functions to adapt return types
+  const handlePlaceBid = async (amount: number, useProxy: boolean, maxProxyAmount: number): Promise<void> => {
+    await submitBid(amount, useProxy, maxProxyAmount);
+  };
+
+  const handleDeleteProxyBid = async (): Promise<void> => {
+    await cancelProxyBid();
+  };
+
   return (
     <Card className={className}>
       <CardHeader>
@@ -74,8 +83,8 @@ export function BiddingPanel({
                 currentBid={currentBid}
                 bidIncrement={bidIncrement}
                 existingProxyBid={existingProxyBid}
-                onPlaceBid={submitBid}
-                onDeleteProxyBid={cancelProxyBid}
+                onPlaceBid={handlePlaceBid}
+                onDeleteProxyBid={handleDeleteProxyBid}
                 className={!isAuctionActive ? "opacity-50 pointer-events-none" : ""}
               />
             )}

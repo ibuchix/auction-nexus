@@ -3,11 +3,12 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bid } from "@/types/auction";
+import { EnhancedBid } from "@/types/auctionOperations";
 import { User, Clock, ArrowDown, ArrowUp, Zap, Bot } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface BidHistoryListProps {
-  bids: Bid[];
+  bids: (Bid & { is_proxy?: boolean })[];
   currentUserId?: string;
   maxItems?: number;
 }

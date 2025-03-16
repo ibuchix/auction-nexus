@@ -29,7 +29,7 @@ export function useBiddingOperations(auctionId: string, dealerId: string) {
     amount: number, 
     useProxyBidding: boolean = false, 
     maxProxyAmount: number | null = null
-  ) => {
+  ): Promise<boolean> => {
     try {
       setIsLoading(true);
       const success = await placeBid(auctionId, dealerId, amount, useProxyBidding, maxProxyAmount);
@@ -56,7 +56,7 @@ export function useBiddingOperations(auctionId: string, dealerId: string) {
   };
 
   // Cancel proxy bid
-  const cancelProxyBid = async () => {
+  const cancelProxyBid = async (): Promise<boolean> => {
     try {
       setIsLoading(true);
       const success = await deleteProxyBid(auctionId, dealerId);

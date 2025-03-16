@@ -12,6 +12,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAnalyticsData, DateRange } from "@/hooks/useAnalyticsData";
 import { addDays, addMonths, startOfMonth, endOfMonth } from "date-fns";
 
+// Define prop interfaces for components to match their expected props
+interface AnalyticsHeaderProps {
+  title: string;
+  subtitle: string;
+  metrics: {
+    totalAuctions: number;
+    totalValue: number;
+    averagePrice: number;
+  };
+}
+
+interface DateRangeSelectorProps {
+  dateRange: DateRange;
+  onChange: (range: DateRange) => void;
+  presets: { label: string; range: DateRange }[];
+}
+
+interface StatsOverviewProps {
+  stats: {
+    totalAuctions: number;
+    totalSold: number;
+    totalUnsold: number;
+    totalValue: number;
+    averagePrice: number;
+  };
+}
+
+interface SummaryTableProps {
+  data: any[];
+  loading: boolean;
+}
+
 const Analytics = () => {
   const now = new Date();
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -30,14 +62,18 @@ const Analytics = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <AnalyticsHeader 
-          totalAuctions={totals.totalAuctions}
-          totalValue={totals.totalValue}
-          averagePrice={averageSalePrice}
+          title="Auction Analytics"
+          subtitle="Performance overview and metrics"
+          metrics={{
+            totalAuctions: totals.totalAuctions,
+            totalValue: totals.totalValue,
+            averagePrice: averageSalePrice
+          }}
         />
         
         <DateRangeSelector
           dateRange={dateRange}
-          onRangeChange={setDateRange}
+          onChange={setDateRange}
           presets={[
             { label: "Last 7 days", range: { from: addDays(now, -7), to: now } },
             { label: "Last 30 days", range: { from: addDays(now, -30), to: now } },
@@ -47,11 +83,13 @@ const Analytics = () => {
         />
         
         <StatsOverview
-          totalAuctions={totals.totalAuctions}
-          totalSold={totals.totalSold}
-          totalUnsold={totals.totalUnsold}
-          totalValue={totals.totalValue}
-          averagePrice={averageSalePrice}
+          stats={{
+            totalAuctions: totals.totalAuctions,
+            totalSold: totals.totalSold,
+            totalUnsold: totals.totalUnsold,
+            totalValue: totals.totalValue,
+            averagePrice: averageSalePrice
+          }}
         />
         
         <Tabs defaultValue="charts" className="space-y-4">
@@ -74,7 +112,7 @@ const Analytics = () => {
                 <CardDescription>Detailed summary of auction performance over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <SummaryTable data={summaries || []} isLoading={isLoading} />
+                <SummaryTable data={summaries || []} loading={isLoading} />
               </CardContent>
             </Card>
           </TabsContent>
