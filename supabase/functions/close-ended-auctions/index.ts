@@ -20,6 +20,27 @@ Deno.serve(async (req) => {
 
     console.log('Closing ended auctions...')
     
+    // Log the operation start
+    const { data: logEntry, error: logError } = await supabaseClient
+      .from('audit_logs')
+      .insert({
+        action: 'process_auctions',
+        entity_type: 'system',
+        entity_id: '00000000-0000-0000-0000-000000000000',
+        details: {
+          operation_start: new Date().toISOString(),
+          status: 'in_progress'
+        }
+      })
+      .select()
+      .single()
+    
+    if (logError) {
+      console.error('Error logging operation start:', logError)
+    }
+    
+    const logId = logEntry?.id
+    
     // Find auctions that have ended but still have 'active' status
     const { data: endedAuctions, error: auctionsError } = await supabaseClient
       .from('cars')
@@ -42,10 +63,40 @@ Deno.serve(async (req) => {
 
     if (auctionsError) {
       console.error('Error fetching ended auctions:', auctionsError)
+      
+      // Update log entry with error
+      if (logId) {
+        await supabaseClient
+          .from('audit_logs')
+          .update({
+            details: {
+              operation_start: new Date().toISOString(),
+              status: 'failed',
+              error: auctionsError.message
+            }
+          })
+          .eq('id', logId)
+      }
+      
       throw auctionsError
     }
 
     if (!endedAuctions?.length) {
+      // Update log entry with success but no auctions
+      if (logId) {
+        await supabaseClient
+          .from('audit_logs')
+          .update({
+            details: {
+              operation_start: new Date().toISOString(),
+              status: 'completed',
+              auctions_processed: 0,
+              message: 'No ended auctions to process'
+            }
+          })
+          .eq('id', logId)
+      }
+      
       return new Response(
         JSON.stringify({ message: 'No ended auctions to process' }),
         {
@@ -58,6 +109,7 @@ Deno.serve(async (req) => {
     console.log(`Found ${endedAuctions.length} auctions to close`)
     
     const processedResults = []
+    const errors = []
     
     // Process each auction individually for better error handling
     for (const auction of endedAuctions) {
@@ -136,6 +188,23 @@ Deno.serve(async (req) => {
           // Continue processing other auctions even if results update fails
         }
         
+        // Log individual auction processing
+        await supabaseClient
+          .from('audit_logs')
+          .insert({
+            action: 'auction_closed',
+            entity_type: 'auction',
+            entity_id: auction.id,
+            details: {
+              title: auction.title,
+              status: newStatus,
+              reserve_met: reserveMet,
+              highest_bid: highestBid?.amount || null,
+              unique_bidders: uniqueBidders,
+              total_bids: bids.length
+            }
+          })
+        
         // Add to processed results
         processedResults.push({
           auction_id: auction.id,
@@ -148,18 +217,50 @@ Deno.serve(async (req) => {
         console.log(`Successfully closed auction ${auction.id} with status ${newStatus}`)
       } catch (auctionError) {
         console.error(`Error processing auction ${auction.id}:`, auctionError)
-        processedResults.push({
+        
+        // Log the error
+        await supabaseClient
+          .from('audit_logs')
+          .insert({
+            action: 'auction_close_failed',
+            entity_type: 'auction',
+            entity_id: auction.id,
+            details: {
+              title: auction.title,
+              error: auctionError.message
+            }
+          })
+        
+        errors.push({
           auction_id: auction.id,
           error: auctionError.message,
           success: false
         })
       }
     }
+    
+    // Update the main log entry with final results
+    if (logId) {
+      await supabaseClient
+        .from('audit_logs')
+        .update({
+          details: {
+            operation_start: new Date().toISOString(),
+            status: 'completed',
+            auctions_processed: processedResults.length,
+            errors_count: errors.length,
+            completed_at: new Date().toISOString(),
+            success: errors.length === 0
+          }
+        })
+        .eq('id', logId)
+    }
 
     return new Response(
       JSON.stringify({ 
         message: 'Successfully processed auction results',
-        processed: processedResults
+        processed: processedResults,
+        errors: errors
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -168,6 +269,28 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     console.error('Error processing auction results:', error)
+    
+    // Try to log the error
+    try {
+      const supabaseErrorLog = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      
+      await supabaseErrorLog
+        .from('audit_logs')
+        .insert({
+          action: 'auction_close_system_error',
+          entity_type: 'system',
+          entity_id: '00000000-0000-0000-0000-000000000000',
+          details: {
+            error: error.message
+          }
+        })
+    } catch (logError) {
+      console.error('Failed to log error:', logError)
+    }
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {

@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -19,7 +20,28 @@ Deno.serve(async (req) => {
     
     console.log('Processing pending proxy bids...')
     
-    // Get active auctions with proxy bids that have not yet been processed
+    // Log the operation start
+    const { data: logEntry, error: logError } = await supabaseClient
+      .from('audit_logs')
+      .insert({
+        action: 'process_proxy_bids',
+        entity_type: 'system',
+        entity_id: '00000000-0000-0000-0000-000000000000',
+        details: {
+          operation_start: new Date().toISOString(),
+          status: 'in_progress'
+        }
+      })
+      .select()
+      .single()
+    
+    if (logError) {
+      console.error('Error logging operation start:', logError)
+    }
+    
+    const logId = logEntry?.id
+    
+    // Get active auctions with proxy bids
     const { data: activeAuctions, error: auctionsError } = await supabaseClient
       .from('cars')
       .select(`
@@ -38,12 +60,41 @@ Deno.serve(async (req) => {
       .order('auction_end_time', { ascending: true })
       
     if (auctionsError) {
+      // Update log entry with error
+      if (logId) {
+        await supabaseClient
+          .from('audit_logs')
+          .update({
+            details: {
+              operation_start: new Date().toISOString(),
+              status: 'failed',
+              error: auctionsError.message
+            }
+          })
+          .eq('id', logId)
+      }
+      
       throw auctionsError
     }
     
     console.log(`Found ${activeAuctions?.length || 0} auctions with pending proxy bids`)
     
     if (!activeAuctions?.length) {
+      // Update log entry with success but no auctions
+      if (logId) {
+        await supabaseClient
+          .from('audit_logs')
+          .update({
+            details: {
+              operation_start: new Date().toISOString(),
+              status: 'completed',
+              auctions_processed: 0,
+              message: 'No proxy bids to process'
+            }
+          })
+          .eq('id', logId)
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -58,6 +109,8 @@ Deno.serve(async (req) => {
 
     // Process each auction's proxy bids
     const results = []
+    const errors = []
+    let processedBidsCount = 0
     
     for (const auction of activeAuctions) {
       try {
@@ -100,12 +153,26 @@ Deno.serve(async (req) => {
             
             if (bidError) {
               console.error('Error placing proxy bid:', bidError)
-              results.push({
+              errors.push({
                 auction_id: auction.id,
                 proxy_bid_id: proxyBid.id,
-                success: false,
                 error: bidError.message
               })
+              
+              // Log individual bid failure
+              await supabaseClient
+                .from('audit_logs')
+                .insert({
+                  action: 'proxy_bid_failed',
+                  entity_type: 'proxy_bid',
+                  entity_id: proxyBid.id,
+                  details: {
+                    auction_id: auction.id,
+                    amount: nextBidAmount,
+                    error: bidError.message
+                  }
+                })
+              
               continue
             }
             
@@ -126,13 +193,43 @@ Deno.serve(async (req) => {
               bid_result: bidResult
             })
             
+            // Log successful bid
+            await supabaseClient
+              .from('audit_logs')
+              .insert({
+                action: 'auto_proxy_bid',
+                entity_type: 'auction',
+                entity_id: auction.id,
+                details: {
+                  proxy_bid_id: proxyBid.id,
+                  amount: nextBidAmount,
+                  dealer_id: proxyBid.dealer_id,
+                  success: true
+                }
+              })
+            
+            processedBidsCount++
+            
             // Update current high bid for subsequent processing
             currentHighBid = nextBidAmount
           }
         }
       } catch (auctionError) {
         console.error(`Error processing auction ${auction.id}:`, auctionError)
-        results.push({
+        
+        // Log auction error
+        await supabaseClient
+          .from('audit_logs')
+          .insert({
+            action: 'proxy_processing_failed',
+            entity_type: 'auction',
+            entity_id: auction.id,
+            details: {
+              error: auctionError.message
+            }
+          })
+        
+        errors.push({
           auction_id: auction.id,
           success: false,
           error: auctionError.message
@@ -140,11 +237,32 @@ Deno.serve(async (req) => {
       }
     }
     
+    // Update the main log entry with final results
+    if (logId) {
+      await supabaseClient
+        .from('audit_logs')
+        .update({
+          details: {
+            operation_start: new Date().toISOString(),
+            status: 'completed',
+            auctions_processed: activeAuctions.length,
+            bids_processed: processedBidsCount,
+            errors_count: errors.length,
+            completed_at: new Date().toISOString(),
+            success: errors.length === 0
+          }
+        })
+        .eq('id', logId)
+    }
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Processed proxy bids', 
-        results 
+        results,
+        errors,
+        auctions_processed: activeAuctions.length,
+        bids_processed: processedBidsCount 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -153,6 +271,27 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     console.error('Error processing proxy bids:', error)
+    
+    // Try to log the error
+    try {
+      const supabaseErrorLog = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      
+      await supabaseErrorLog
+        .from('audit_logs')
+        .insert({
+          action: 'proxy_system_error',
+          entity_type: 'system',
+          entity_id: '00000000-0000-0000-0000-000000000000',
+          details: {
+            error: error.message
+          }
+        })
+    } catch (logError) {
+      console.error('Failed to log error:', logError)
+    }
     
     return new Response(
       JSON.stringify({ 

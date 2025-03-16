@@ -2,6 +2,7 @@
 import { DashboardHeader } from "@/components/admin/dashboard/DashboardHeader";
 import { AdminCardGrid } from "@/components/admin/dashboard/AdminCardGrid";
 import { AdminActions } from "@/components/admin/dashboard/AdminActions";
+import { AuctionSystemStatus } from "@/components/admin/dashboard/AuctionSystemStatus";
 
 const AdminDashboard = () => {
   return (
@@ -10,6 +11,8 @@ const AdminDashboard = () => {
         <DashboardHeader title="System Management" />
         <AdminActions />
       </div>
+
+      <AuctionSystemStatus />
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
         <AdminCardGrid />
