@@ -32,17 +32,20 @@ export function useBiddingOperations(auctionId: string, dealerId: string) {
   ) => {
     try {
       setIsLoading(true);
-      await placeBid(auctionId, dealerId, amount, useProxyBidding, maxProxyAmount);
-      setLastBidAmount(amount);
+      const success = await placeBid(auctionId, dealerId, amount, useProxyBidding, maxProxyAmount);
       
-      // Update proxy bid status after placing a bid
-      if (useProxyBidding && maxProxyAmount) {
-        setExistingProxyBid(maxProxyAmount);
-      } else {
-        setExistingProxyBid(null);
+      if (success) {
+        setLastBidAmount(amount);
+        
+        // Update proxy bid status after placing a bid
+        if (useProxyBidding && maxProxyAmount) {
+          setExistingProxyBid(maxProxyAmount);
+        } else {
+          setExistingProxyBid(null);
+        }
       }
       
-      return true;
+      return success;
     } catch (error) {
       console.error("Error placing bid:", error);
       toast.error("Failed to place bid. Please try again.");
@@ -56,9 +59,13 @@ export function useBiddingOperations(auctionId: string, dealerId: string) {
   const cancelProxyBid = async () => {
     try {
       setIsLoading(true);
-      await deleteProxyBid(auctionId, dealerId);
-      setExistingProxyBid(null);
-      return true;
+      const success = await deleteProxyBid(auctionId, dealerId);
+      
+      if (success) {
+        setExistingProxyBid(null);
+      }
+      
+      return success;
     } catch (error) {
       console.error("Error cancelling proxy bid:", error);
       toast.error("Failed to cancel proxy bid");

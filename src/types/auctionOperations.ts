@@ -18,7 +18,7 @@ export interface PlaceBidResponse {
 }
 
 // Extended bid type with proxy information
-export interface EnhancedBid extends Database['public']['Tables']['bids']['Row'] {
+export type EnhancedBid = Database['public']['Tables']['bids']['Row'] & {
   is_proxy?: boolean;
   dealer_name?: string;
-}
+};

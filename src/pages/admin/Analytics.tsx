@@ -1,92 +1,84 @@
 
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { useState } from "react";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { AnalyticsHeader } from "@/components/analytics/AnalyticsHeader";
-import { StatsOverview } from "@/components/analytics/StatsOverview";
-import { SalesVolumeChart } from "@/components/analytics/SalesVolumeChart";
 import { PriceTrendChart } from "@/components/analytics/PriceTrendChart";
+import { SalesVolumeChart } from "@/components/analytics/SalesVolumeChart";
 import { SummaryTable } from "@/components/analytics/SummaryTable";
-import { useAnalyticsData } from "@/hooks/useAnalyticsData";
-import { Moon, Sun } from "lucide-react";
-import { Toggle } from "@/components/ui/toggle";
-import { toast } from "sonner";
+import { StatsOverview } from "@/components/analytics/StatsOverview";
+import { DateRangeSelector } from "@/components/analytics/DateRangeSelector";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAnalyticsData, DateRange } from "@/hooks/useAnalyticsData";
+import { addDays, addMonths, startOfMonth, endOfMonth } from "date-fns";
 
 const Analytics = () => {
-  const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-    to: new Date()
+  const now = new Date();
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: startOfMonth(addMonths(now, -1)),
+    to: endOfMonth(now)
   });
   
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const { summaries, isLoading, refetch, totals, averageSalePrice } = useAnalyticsData(dateRange);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark');
-    toast.success(`${!isDarkMode ? 'Dark' : 'Light'} mode enabled`);
-  };
+  const { 
+    summaries,
+    isLoading,
+    totals,
+    averageSalePrice
+  } = useAnalyticsData(dateRange);
 
   return (
     <DashboardLayout>
-      <div className={`space-y-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300 min-h-screen pb-10`}>
-        <div className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'} p-6 rounded-lg shadow-sm transition-colors duration-300`}>
-          <div className="flex justify-between items-center mb-6">
-            <AnalyticsHeader 
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-              onRefresh={() => refetch()}
-            />
-            <Toggle 
-              pressed={isDarkMode} 
-              onPressedChange={toggleDarkMode}
-              aria-label="Toggle dark mode"
-              className="ml-2"
-            >
-              {isDarkMode ? 
-                <Moon className="h-5 w-5 transition-transform duration-300 rotate-0" /> : 
-                <Sun className="h-5 w-5 transition-transform duration-300 rotate-90" />
-              }
-            </Toggle>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center h-60">
-            <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDarkMode ? 'border-white' : 'border-primary'}`}></div>
-          </div>
-        ) : (
-          <div className="grid gap-6 animate-fade-in">
-            <div className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'} p-6 rounded-lg shadow-sm transition-colors duration-300 transform hover:shadow-md hover:translate-y-[-2px]`}>
-              <StatsOverview
-                totalAuctions={totals.totalAuctions}
-                totalSold={totals.totalSold}
-                totalValue={totals.totalValue}
-                averageSalePrice={averageSalePrice}
-              />
+      <div className="space-y-6">
+        <AnalyticsHeader 
+          totalAuctions={totals.totalAuctions}
+          totalValue={totals.totalValue}
+          averagePrice={averageSalePrice}
+        />
+        
+        <DateRangeSelector
+          dateRange={dateRange}
+          onRangeChange={setDateRange}
+          presets={[
+            { label: "Last 7 days", range: { from: addDays(now, -7), to: now } },
+            { label: "Last 30 days", range: { from: addDays(now, -30), to: now } },
+            { label: "This month", range: { from: startOfMonth(now), to: now } },
+            { label: "Last month", range: { from: startOfMonth(addMonths(now, -1)), to: endOfMonth(addMonths(now, -1)) } },
+          ]}
+        />
+        
+        <StatsOverview
+          totalAuctions={totals.totalAuctions}
+          totalSold={totals.totalSold}
+          totalUnsold={totals.totalUnsold}
+          totalValue={totals.totalValue}
+          averagePrice={averageSalePrice}
+        />
+        
+        <Tabs defaultValue="charts" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="charts">Charts</TabsTrigger>
+            <TabsTrigger value="data">Data</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="charts" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PriceTrendChart data={summaries || []} />
+              <SalesVolumeChart data={summaries || []} />
             </div>
-
-            <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-              <div className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'} p-6 rounded-lg shadow-sm h-full transition-colors duration-300 transform hover:shadow-md hover:translate-y-[-2px]`}>
-                <h2 className="text-xl font-semibold mb-4 text-primary">Sales Volume Trend</h2>
-                <div className="h-[350px]">
-                  <SalesVolumeChart data={summaries || []} />
-                </div>
-              </div>
-              
-              <div className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'} p-6 rounded-lg shadow-sm h-full transition-colors duration-300 transform hover:shadow-md hover:translate-y-[-2px]`}>
-                <h2 className="text-xl font-semibold mb-4 text-primary">Price Trend Analysis</h2>
-                <div className="h-[350px]">
-                  <PriceTrendChart data={summaries || []} />
-                </div>
-              </div>
-            </div>
-
-            <div className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'} p-6 rounded-lg shadow-sm transition-colors duration-300 transform hover:shadow-md hover:translate-y-[-2px]`}>
-              <h2 className="text-xl font-semibold mb-4 text-primary">Summary Performance</h2>
-              <SummaryTable data={summaries || []} />
-            </div>
-          </div>
-        )}
+          </TabsContent>
+          
+          <TabsContent value="data">
+            <Card>
+              <CardHeader>
+                <CardTitle>Auction Summary Data</CardTitle>
+                <CardDescription>Detailed summary of auction performance over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SummaryTable data={summaries || []} isLoading={isLoading} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
