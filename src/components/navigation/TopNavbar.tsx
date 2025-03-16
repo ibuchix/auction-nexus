@@ -77,7 +77,7 @@ export function TopNavbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background">
+    <header className="sticky top-0 z-40 w-full border-b bg-background shadow-sm">
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-2">
           {isMobile && (
@@ -89,9 +89,6 @@ export function TopNavbar() {
               </SheetTrigger>
               <SheetContent side="left" className="w-[250px] sm:w-[300px]">
                 <div className="py-4">
-                  <h2 className="text-lg font-semibold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                    Auction Manager
-                  </h2>
                   <nav className="flex flex-col gap-2">
                     {navigationGroups.map(group => (
                       <div key={group.name} className="mb-4">
@@ -143,66 +140,64 @@ export function TopNavbar() {
           
           <Link to="/admin" className="flex items-center">
             <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Auction Manager
+              Auction
             </h1>
           </Link>
         </div>
         
-        {!isMobile && (
-          <NavigationMenu className="hidden md:flex">
-            <NavigationMenuList>
-              {navigationGroups.map(group => (
-                <NavigationMenuItem key={group.name}>
-                  <NavigationMenuTrigger className="h-9 px-4">
-                    {group.name}
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid min-w-[200px] gap-1 p-4">
-                      {group.items.map(item => (
-                        <div key={item.title}>
-                          {item.path ? (
-                            <NavigationMenuLink asChild>
-                              <Link
-                                to={item.path}
-                                className="flex items-center gap-2 py-2 px-3 rounded-md hover:bg-accent"
-                              >
-                                <item.icon className="h-4 w-4" />
-                                <span>{item.title}</span>
-                              </Link>
-                            </NavigationMenuLink>
-                          ) : (
-                            <>
-                              <div className="font-medium text-sm px-3 py-2 flex items-center gap-2">
-                                <item.icon className="h-4 w-4" />
-                                <span>{item.title}</span>
-                              </div>
-                              {item.submenu && (
-                                <DropdownMenu>
-                                  <div className="ml-6 space-y-1">
-                                    {item.submenu.map(subItem => (
-                                      <NavigationMenuLink asChild key={subItem.title}>
-                                        <Link
-                                          to={subItem.path}
-                                          className="flex items-center py-2 px-3 rounded-md hover:bg-accent text-sm"
-                                        >
-                                          {subItem.title}
-                                        </Link>
-                                      </NavigationMenuLink>
-                                    ))}
-                                  </div>
-                                </DropdownMenu>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              ))}
-            </NavigationMenuList>
-          </NavigationMenu>
-        )}
+        <NavigationMenu className="hidden md:flex">
+          <NavigationMenuList>
+            {navigationGroups.map(group => (
+              <NavigationMenuItem key={group.name}>
+                <NavigationMenuTrigger className="h-9 px-4">
+                  {group.name}
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid min-w-[200px] gap-1 p-4">
+                    {group.items.map(item => (
+                      <div key={item.title}>
+                        {item.path ? (
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={item.path}
+                              className="flex items-center gap-2 py-2 px-3 rounded-md hover:bg-accent"
+                            >
+                              <item.icon className="h-4 w-4" />
+                              <span>{item.title}</span>
+                            </Link>
+                          </NavigationMenuLink>
+                        ) : (
+                          <>
+                            <div className="font-medium text-sm px-3 py-2 flex items-center gap-2">
+                              <item.icon className="h-4 w-4" />
+                              <span>{item.title}</span>
+                            </div>
+                            {item.submenu && (
+                              <DropdownMenu>
+                                <div className="ml-6 space-y-1">
+                                  {item.submenu.map(subItem => (
+                                    <NavigationMenuLink asChild key={subItem.title}>
+                                      <Link
+                                        to={subItem.path}
+                                        className="flex items-center py-2 px-3 rounded-md hover:bg-accent text-sm"
+                                      >
+                                        {subItem.title}
+                                      </Link>
+                                    </NavigationMenuLink>
+                                  ))}
+                                </div>
+                              </DropdownMenu>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            ))}
+          </NavigationMenuList>
+        </NavigationMenu>
         
         <div className="flex items-center gap-4">
           <div className="hidden sm:block max-w-xs">
