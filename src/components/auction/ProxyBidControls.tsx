@@ -1,25 +1,13 @@
+
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { 
-  Calculator, 
-  AlertCircle, 
-  Info, 
-  CheckCircle2, 
-  DollarSign,
-  Zap
-} from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { BidAmountInput } from "./BidAmountInput";
+import { ProxyBidAmount } from "./ProxyBidAmount";
+import { ProxyBidInfo, ProxyBidBenefits } from "./ProxyBidInfo";
+import { ExistingProxyBid } from "./ExistingProxyBid";
 
 interface ProxyBidControlsProps {
   auctionId: string;
@@ -97,55 +85,20 @@ export function ProxyBidControls({
   return (
     <div className={`space-y-4 ${className}`}>
       {hasExistingProxy && (
-        <div className="bg-blue-50 p-3 rounded-md flex items-start gap-3 mb-4">
-          <Zap className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-          <div>
-            <h4 className="font-medium text-blue-800 flex items-center gap-2">
-              Active Proxy Bid
-              <Badge variant="outline" className="bg-blue-100">
-                Up to {existingProxyBid?.toLocaleString()}
-              </Badge>
-            </h4>
-            <p className="text-sm text-blue-700 mt-1">
-              Your proxy will automatically outbid others up to your maximum amount
-            </p>
-            {onDeleteProxyBid && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleCancelProxyBid}
-                disabled={isSubmitting}
-                className="mt-2 text-blue-700 border-blue-300 hover:bg-blue-100"
-              >
-                Cancel Proxy Bid
-              </Button>
-            )}
-          </div>
-        </div>
+        <ExistingProxyBid 
+          amount={existingProxyBid as number}
+          onCancel={handleCancelProxyBid}
+          isSubmitting={isSubmitting}
+        />
       )}
       
       <form onSubmit={handleBidSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="bidAmount" className="text-sm font-medium">
-            Bid Amount
-          </Label>
-          <div className="mt-1.5 relative">
-            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-            <Input
-              id="bidAmount"
-              type="number"
-              min={currentBid + bidIncrement}
-              step={bidIncrement}
-              value={bidAmount}
-              onChange={(e) => setBidAmount(Number(e.target.value))}
-              className="pl-9"
-              required
-            />
-            <div className="text-xs text-muted-foreground mt-1">
-              Current bid: {currentBid.toLocaleString()} • Minimum increment: {bidIncrement.toLocaleString()}
-            </div>
-          </div>
-        </div>
+        <BidAmountInput 
+          bidAmount={bidAmount}
+          currentBid={currentBid}
+          bidIncrement={bidIncrement}
+          onChange={setBidAmount}
+        />
         
         <div className="flex items-center space-x-2">
           <Switch
@@ -156,49 +109,19 @@ export function ProxyBidControls({
           <Label htmlFor="proxy-bidding" className="font-medium cursor-pointer">
             Use Proxy Bidding
           </Label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>Proxy bidding automatically places bids on your behalf up to your maximum amount.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <ProxyBidInfo />
         </div>
         
         {useProxyBidding && (
           <div className="pl-6 border-l-2 border-blue-200 space-y-3">
-            <div>
-              <Label htmlFor="maxProxyAmount" className="text-sm font-medium">
-                Maximum Proxy Bid Amount
-              </Label>
-              <div className="mt-1.5 relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <Input
-                  id="maxProxyAmount"
-                  type="number"
-                  min={bidAmount}
-                  step={bidIncrement}
-                  value={maxProxyAmount}
-                  onChange={(e) => setMaxProxyAmount(Number(e.target.value))}
-                  className="pl-9"
-                  required={useProxyBidding}
-                />
-              </div>
-            </div>
+            <ProxyBidAmount
+              maxProxyAmount={maxProxyAmount}
+              bidAmount={bidAmount}
+              bidIncrement={bidIncrement}
+              onChange={setMaxProxyAmount}
+            />
             
-            <div className="bg-blue-50 p-3 rounded-md text-sm text-blue-700">
-              <div className="flex gap-2 items-center">
-                <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                <span>System will bid automatically up to your maximum</span>
-              </div>
-              <div className="flex gap-2 items-center mt-1">
-                <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                <span>You'll only pay the minimum needed to win</span>
-              </div>
-            </div>
+            <ProxyBidBenefits />
           </div>
         )}
         
