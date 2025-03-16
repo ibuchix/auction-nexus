@@ -12,38 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAnalyticsData, DateRange } from "@/hooks/useAnalyticsData";
 import { addDays, addMonths, startOfMonth, endOfMonth } from "date-fns";
 
-// Define prop interfaces for components to match their expected props
-interface AnalyticsHeaderProps {
-  title: string;
-  subtitle: string;
-  metrics: {
-    totalAuctions: number;
-    totalValue: number;
-    averagePrice: number;
-  };
-}
-
-interface DateRangeSelectorProps {
-  dateRange: DateRange;
-  onChange: (range: DateRange) => void;
-  presets: { label: string; range: DateRange }[];
-}
-
-interface StatsOverviewProps {
-  stats: {
-    totalAuctions: number;
-    totalSold: number;
-    totalUnsold: number;
-    totalValue: number;
-    averagePrice: number;
-  };
-}
-
-interface SummaryTableProps {
-  data: any[];
-  loading: boolean;
-}
-
 const Analytics = () => {
   const now = new Date();
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -57,6 +25,11 @@ const Analytics = () => {
     totals,
     averageSalePrice
   } = useAnalyticsData(dateRange);
+
+  // Create a handler that properly converts the DateRange type
+  const handleDateRangeChange = (range: DateRange) => {
+    setDateRange(range);
+  };
 
   return (
     <DashboardLayout>
@@ -73,7 +46,7 @@ const Analytics = () => {
         
         <DateRangeSelector
           dateRange={dateRange}
-          onChange={setDateRange}
+          onChange={handleDateRangeChange}
           presets={[
             { label: "Last 7 days", range: { from: addDays(now, -7), to: now } },
             { label: "Last 30 days", range: { from: addDays(now, -30), to: now } },
@@ -106,15 +79,7 @@ const Analytics = () => {
           </TabsContent>
           
           <TabsContent value="data">
-            <Card>
-              <CardHeader>
-                <CardTitle>Auction Summary Data</CardTitle>
-                <CardDescription>Detailed summary of auction performance over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SummaryTable data={summaries || []} loading={isLoading} />
-              </CardContent>
-            </Card>
+            <SummaryTable data={summaries || []} loading={isLoading} />
           </TabsContent>
         </Tabs>
       </div>

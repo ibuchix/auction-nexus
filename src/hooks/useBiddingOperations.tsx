@@ -1,14 +1,55 @@
 
-// Fix the error in useBiddingOperations.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+interface ProxyBid {
+  id: string;
+  car_id: string;
+  dealer_id: string;
+  max_amount: number;
+  created_at: string;
+}
 
 export function useBiddingOperations(carId: string, dealerId: string) {
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [isCancellingBid, setIsCancellingBid] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingProxyBid, setIsLoadingProxyBid] = useState(true);
+  const [existingProxyBid, setExistingProxyBid] = useState<ProxyBid | null>(null);
 
-  const placeBid = async (
+  const fetchProxyBid = async () => {
+    try {
+      setIsLoadingProxyBid(true);
+      const { data, error } = await supabase
+        .from("proxy_bids")
+        .select("*")
+        .eq("car_id", carId)
+        .eq("dealer_id", dealerId)
+        .single();
+
+      if (error) {
+        if (error.code !== 'PGRST116') { // Not found error code
+          console.error("Error fetching proxy bid:", error);
+        }
+        setExistingProxyBid(null);
+        return;
+      }
+
+      setExistingProxyBid(data);
+    } catch (error) {
+      console.error("Error in fetchProxyBid:", error);
+    } finally {
+      setIsLoadingProxyBid(false);
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProxyBid();
+  }, [carId, dealerId]);
+
+  const submitBid = async (
     amount: number,
     useProxyBidding = false,
     maxProxyAmount: number | null = null
@@ -56,6 +97,11 @@ export function useBiddingOperations(carId: string, dealerId: string) {
           : `Bid of ${amount} placed successfully!`
       );
       
+      // Refresh the proxy bid state if needed
+      if (useProxyBidding) {
+        await fetchProxyBid();
+      }
+      
       return true;
     } catch (error) {
       console.error("Error in placeBid:", error);
@@ -83,6 +129,7 @@ export function useBiddingOperations(carId: string, dealerId: string) {
       }
 
       toast.success("Proxy bid cancelled successfully");
+      setExistingProxyBid(null);
       return true;
     } catch (error) {
       console.error("Error in cancelProxyBid:", error);
@@ -94,9 +141,14 @@ export function useBiddingOperations(carId: string, dealerId: string) {
   };
 
   return {
-    placeBid,
+    placeBid: submitBid,
     cancelProxyBid,
     isPlacingBid,
-    isCancellingBid
+    isCancellingBid,
+    isLoading,
+    isLoadingProxyBid,
+    existingProxyBid,
+    fetchProxyBid,
+    submitBid
   };
 }

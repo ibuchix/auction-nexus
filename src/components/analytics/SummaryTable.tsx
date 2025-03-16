@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -6,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { format } from "date-fns";
+import { DailyAuctionSummary } from "@/types/auction";
 
 export interface SummaryTableProps {
   data: DailyAuctionSummary[];

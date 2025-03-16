@@ -62,17 +62,19 @@ export type AuctionSchedule = {
   car?: Auction;
 };
 
-// Add interface for StatsOverviewProps to fix Analytics.tsx errors
+// Define the props for StatsOverview component
 export interface StatsOverviewProps {
-  totalAuctions: number;
-  totalSold: number;
-  totalUnsold: number;
-  totalValue: number;
-  averagePrice: number;
+  stats: {
+    totalAuctions: number;
+    totalSold: number;
+    totalUnsold: number;
+    totalValue: number;
+    averagePrice: number;
+  };
 }
 
-// Add interface for SummaryTableProps to fix Analytics.tsx errors
+// Define the props for SummaryTable component
 export interface SummaryTableProps {
   data: DailyAuctionSummary[];
-  isLoading?: boolean;
+  loading: boolean;
 }

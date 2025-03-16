@@ -29,7 +29,8 @@ export function BiddingPanel({
   className
 }: BiddingPanelProps) {
   const {
-    isLoading,
+    isPlacingBid,
+    isCancellingBid,
     isLoadingProxyBid,
     existingProxyBid,
     submitBid,
