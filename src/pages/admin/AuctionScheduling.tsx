@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { CalendarClock, Search, Plus } from "lucide-react";
+import { CalendarClock, Search, Plus, Car } from "lucide-react";
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { AuctionSchedulesTable } from "@/components/admin/auction-scheduling/AuctionSchedulesTable";
@@ -13,10 +13,14 @@ import { Auction, AuctionSchedule } from "@/types/auction";
 import { Select } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { AvailableCarsTable } from "@/components/admin/auction-scheduling/AvailableCarsTable";
+import { AuctionScheduleDialog } from "@/components/admin/auction-scheduling/AuctionScheduleDialog";
 
 const AuctionScheduling = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: availableAuctions, isLoading, error, refetch } = useQuery({
@@ -47,6 +51,20 @@ const AuctionScheduling = () => {
 
   const handleRefresh = () => {
     refetch();
+  };
+
+  const handleScheduleAuction = (auction: Auction) => {
+    setSelectedAuction(auction);
+    setIsScheduleDialogOpen(true);
+  };
+
+  const handleCloseScheduleDialog = () => {
+    setIsScheduleDialogOpen(false);
+    setSelectedAuction(null);
+  };
+
+  const handleScheduleSuccess = () => {
+    handleRefresh();
   };
 
   return (
@@ -85,6 +103,10 @@ const AuctionScheduling = () => {
               <CalendarClock className="h-4 w-4" />
               Auction Schedules
             </TabsTrigger>
+            <TabsTrigger value="available-cars" className="flex items-center gap-1">
+              <Car className="h-4 w-4" />
+              Available Cars
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="schedules" className="space-y-4">
@@ -100,8 +122,35 @@ const AuctionScheduling = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="available-cars" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Car className="h-5 w-5 text-green-600" />
+                  Available Cars for Scheduling
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <AvailableCarsTable 
+                  auctions={availableAuctions || []} 
+                  isLoading={isLoading} 
+                  onSchedule={handleScheduleAuction}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
+
+      {selectedAuction && (
+        <AuctionScheduleDialog
+          auction={selectedAuction}
+          isOpen={isScheduleDialogOpen}
+          onClose={handleCloseScheduleDialog}
+          onScheduled={handleScheduleSuccess}
+        />
+      )}
     </DashboardLayout>
   );
 };
