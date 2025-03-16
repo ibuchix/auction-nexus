@@ -97,7 +97,20 @@ export function useSystemStatus() {
         
       if (healthError) throw healthError;
       
-      setSystemHealth(healthData || []);
+      // Transform the data to match the SystemHealth type
+      const transformedHealthData: SystemHealth[] = healthData?.map(item => ({
+        id: item.id,
+        component_name: item.component_name,
+        status: item.status as SystemHealth['status'],
+        last_check_time: item.last_check_time,
+        details: typeof item.details === 'string' 
+          ? { message: item.details } 
+          : item.details as SystemHealth['details'],
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      })) || [];
+      
+      setSystemHealth(transformedHealthData);
       setLastRefreshTime(now);
     } catch (error) {
       console.error('Error fetching system data:', error);
