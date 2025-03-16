@@ -8,11 +8,11 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ title }: DashboardHeaderProps) {
   return (
-    <div className="mb-8">
+    <div className="mb-6">
       <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
         {title}
       </h1>
-      <p className="text-muted-foreground mt-2">
+      <p className="text-muted-foreground mt-1">
         Manage and monitor your auction platform effectively.
       </p>
     </div>

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAdmin } from "@/context/AdminContext";
 import { TopNavbar } from "./navigation/TopNavbar";
+import { SecondaryNavbar } from "./navigation/SecondaryNavbar";
 import { BreadcrumbNav } from "./navigation/Breadcrumb";
 import { MobileNav } from "./navigation/MobileNav";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -27,6 +28,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col w-full bg-gray-50 overflow-x-hidden">
       <TopNavbar />
+      <SecondaryNavbar />
       <main className="flex-1 w-full pt-4">
         <div className="w-full container mx-auto px-4">
           <BreadcrumbNav />
