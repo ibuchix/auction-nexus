@@ -5,3 +5,12 @@ project_id = "sdvakfhmoaoucmhbhwvy"
 [functions.start-scheduled-auctions]
   verify_jwt = false
   import_map = "./import_map.json"
+[functions.process-proxy-bids]
+  verify_jwt = false
+  import_map = "./import_map.json"
+[functions.proxy-bid-scheduler]
+  verify_jwt = false
+  import_map = "./import_map.json"
+  # Schedule the proxy bid processor to run every 2 minutes
+  [functions.proxy-bid-scheduler.schedule]
+    cron = "*/2 * * * *"

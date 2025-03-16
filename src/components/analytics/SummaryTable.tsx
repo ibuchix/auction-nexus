@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -8,11 +7,12 @@ import {
 } from "@/components/ui/card";
 import { format } from "date-fns";
 
-interface SummaryTableProps {
-  data: any[];
+export interface SummaryTableProps {
+  data: DailyAuctionSummary[];
+  loading: boolean;
 }
 
-export function SummaryTable({ data }: SummaryTableProps) {
+export function SummaryTable({ data, loading }: SummaryTableProps) {
   return (
     <Card>
       <CardHeader>

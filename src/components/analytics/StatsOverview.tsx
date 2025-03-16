@@ -1,21 +1,23 @@
-
 import { StatCard } from "@/components/StatCard";
 import { CalendarIcon, DollarSign, TrendingUp, BarChart2 } from "lucide-react";
 
-interface StatsOverviewProps {
-  totalAuctions: number;
-  totalSold: number;
-  totalValue: number;
-  averageSalePrice: number;
+export interface StatsOverviewProps {
+  stats: {
+    totalAuctions: number;
+    totalSold: number;
+    totalUnsold: number;
+    totalValue: number;
+    averagePrice: number;
+  };
 }
 
-export function StatsOverview({ totalAuctions, totalSold, totalValue, averageSalePrice }: StatsOverviewProps) {
+export function StatsOverview({ stats }: StatsOverviewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div className="animate-slide-up" style={{ animationDelay: "0ms" }}>
         <StatCard
           title="Total Auctions"
-          value={totalAuctions}
+          value={stats.totalAuctions}
           icon={CalendarIcon}
           className="card-hover"
         />
@@ -24,10 +26,10 @@ export function StatsOverview({ totalAuctions, totalSold, totalValue, averageSal
       <div className="animate-slide-up" style={{ animationDelay: "100ms" }}>
         <StatCard
           title="Vehicles Sold"
-          value={Number(totalSold)}
+          value={Number(stats.totalSold)}
           icon={BarChart2}
           trend={{
-            value: Number(((totalSold) / (totalAuctions || 1) * 100).toFixed(1)),
+            value: Number(((stats.totalSold) / (stats.totalAuctions || 1) * 100).toFixed(1)),
             isPositive: true
           }}
           className="card-hover"
@@ -37,7 +39,7 @@ export function StatsOverview({ totalAuctions, totalSold, totalValue, averageSal
       <div className="animate-slide-up" style={{ animationDelay: "200ms" }}>
         <StatCard
           title="Total Value"
-          value={`$${(totalValue).toLocaleString()}`}
+          value={`$${(stats.totalValue).toLocaleString()}`}
           icon={DollarSign}
           className="card-hover"
         />
@@ -46,7 +48,7 @@ export function StatsOverview({ totalAuctions, totalSold, totalValue, averageSal
       <div className="animate-slide-up" style={{ animationDelay: "300ms" }}>
         <StatCard
           title="Average Sale Price"
-          value={`$${averageSalePrice.toLocaleString()}`}
+          value={`$${stats.averagePrice.toLocaleString()}`}
           icon={TrendingUp}
           className="card-hover"
         />

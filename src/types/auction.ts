@@ -2,7 +2,10 @@
 import { Database } from "@/integrations/supabase/types";
 
 export type Car = Database['public']['Tables']['cars']['Row'];
-export type Bid = Database['public']['Tables']['bids']['Row'];
+export type Bid = Database['public']['Tables']['bids']['Row'] & {
+  is_proxy?: boolean;
+  dealer_name?: string;
+};
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type AuctionMetrics = Database['public']['Tables']['auction_metrics']['Row'];
 export type AuctionResult = Database['public']['Tables']['auction_results']['Row'];
