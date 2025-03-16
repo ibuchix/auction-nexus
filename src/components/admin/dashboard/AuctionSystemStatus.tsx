@@ -57,11 +57,18 @@ export function AuctionSystemStatus() {
       if (error) throw error;
       
       // Look for failed operations
-      const failed = logs?.filter(log => 
-        log.details && 
-        typeof log.details === 'object' && 
-        log.details.success === false
-      ) || [];
+      const failed = logs?.filter(log => {
+        // Check if details exists and is an object
+        if (log.details && typeof log.details === 'object') {
+          // Handle both object notation and array notation
+          if (Array.isArray(log.details)) {
+            return false; // Arrays don't have a success property in our case
+          } else {
+            return log.details.success === false;
+          }
+        }
+        return false;
+      }) || [];
       
       setFailedOperations(failed);
       
@@ -81,7 +88,10 @@ export function AuctionSystemStatus() {
         
         if (category && (statuses[category].lastRun === 'Unknown' || new Date(log.created_at) > new Date(statuses[category].lastRun))) {
           const details = log.details as Record<string, any> | null;
-          const hasError = details && typeof details === 'object' && details.success === false;
+          const hasError = details && 
+                           typeof details === 'object' && 
+                           !Array.isArray(details) && 
+                           details.success === false;
           
           statuses[category] = {
             lastRun: log.created_at,
