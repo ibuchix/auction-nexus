@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -77,7 +76,7 @@ export function TopNavbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background shadow-sm">
+    <header className="sticky top-0 z-40 w-full border-b bg-background shadow-md">
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-2">
           {isMobile && (
@@ -139,9 +138,7 @@ export function TopNavbar() {
           )}
           
           <Link to="/admin" className="flex items-center">
-            <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Auction
-            </h1>
+            <h1 className="font-bold text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"></h1>
           </Link>
         </div>
         
