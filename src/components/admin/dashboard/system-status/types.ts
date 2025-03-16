@@ -1,16 +1,22 @@
 
-import { ActionType } from "@/components/admin/users/activity-log/types";
+export type SystemComponentHealth = 'healthy' | 'degraded' | 'failing' | 'unknown';
 
 export interface SystemHealth {
+  id: string;
   component_name: string;
-  status: 'healthy' | 'degraded' | 'failing' | 'unknown';
+  status: SystemComponentHealth;
   last_check_time: string;
-  details: any;
+  details?: {
+    message?: string;
+    [key: string]: any;
+  };
+  created_at: string;
+  updated_at: string;
 }
 
 export interface OperationStatus {
   lastRun: string;
-  status: 'success' | 'warning' | 'error' | 'unknown';
+  status: 'success' | 'error' | 'warning' | 'unknown';
   details?: string;
 }
 

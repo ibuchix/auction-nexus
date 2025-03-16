@@ -1,164 +1,52 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { adminSupabase } from "@/integrations/supabase/adminClient";
 import { toast } from "sonner";
-import { useCallback } from "react";
 
 export function useRecoveryOperations() {
-  // Retry a failed auction operation
-  const retryFailedOperation = useCallback(async (
-    operationId: string, 
-    operationType: 'close' | 'proxy' | 'start'
-  ): Promise<void> => {
+  const recoverAuction = async (auctionId: string, action: 'reset' | 'force_complete' | 'force_start' | 'reset_bids') => {
     try {
-      toast.loading("Retrying operation...");
+      // Call Supabase Edge Function
+      const { data, error } = await adminSupabase.functions.invoke('recover-auction', {
+        body: { auctionId, action }
+      });
       
-      let result;
+      if (error) throw error;
       
-      switch (operationType) {
-        case 'close':
-          result = await adminSupabase.functions.invoke('close-ended-auctions');
-          break;
-        case 'proxy':
-          result = await adminSupabase.rpc('process_pending_proxy_bids');
-          break;
-        case 'start':
-          result = await adminSupabase.functions.invoke('start-scheduled-auctions');
-          break;
+      if (!data?.success) {
+        throw new Error(data?.message || 'Recovery operation failed');
       }
       
-      // Log the retry attempt
-      await adminSupabase.from('audit_logs').insert({
-        action: 'manual_retry' as any,
-        entity_type: 'auction_operation',
-        entity_id: operationId,
-        details: {
-          operation_type: operationType,
-          result: result.data
-        }
-      });
-      
-      // Run health check after retry
-      await adminSupabase.rpc('check_auction_system_health');
-      
-      toast.success("Operation retried successfully");
-    } catch (error) {
-      console.error('Error retrying operation:', error);
-      toast.error("Failed to retry operation");
-      throw error;
-    }
-  }, []);
-
-  // Manually recover an auction
-  const recoverAuction = useCallback(async (
-    auctionId: string, 
-    action: 'reset' | 'force_complete' | 'force_start' | 'reset_bids'
-  ): Promise<void> => {
-    try {
-      toast.loading("Recovering auction...");
-      
-      const { data, error } = await adminSupabase.functions.invoke('recover-auction', {
-        body: { 
-          auctionId, 
-          action 
-        }
-      });
-      
-      if (error) throw error;
-      
-      // Log the recovery action
-      await adminSupabase.from('audit_logs').insert({
-        action: 'auction_recovery' as any,
-        entity_type: 'auction',
-        entity_id: auctionId,
-        details: {
-          recovery_action: action,
-          result: data
-        }
-      });
-      
-      // Run health check after recovery
-      await adminSupabase.rpc('check_auction_system_health');
-      
-      toast.success("Auction recovered successfully");
-    } catch (error) {
-      console.error('Error recovering auction:', error);
-      toast.error("Failed to recover auction");
-      throw error;
-    }
-  }, []);
-
-  // Reset system state after critical failure
-  const resetSystemState = useCallback(async (): Promise<void> => {
-    try {
-      toast.loading("Resetting system state...");
-      
-      const { error } = await adminSupabase.functions.invoke('reset-auction-system');
-      
-      if (error) throw error;
-      
-      // Run health check after system reset
-      await adminSupabase.rpc('check_auction_system_health');
-      
-      toast.success("System state reset successfully");
-    } catch (error) {
-      console.error('Error resetting system state:', error);
-      toast.error("Failed to reset system state");
-      throw error;
-    }
-  }, []);
-
-  // Check system health
-  const checkSystemHealth = useCallback(async () => {
-    try {
-      toast.loading("Checking system health...");
-      
-      const { data, error } = await adminSupabase.rpc('check_auction_system_health');
-      
-      if (error) throw error;
-      
-      toast.success("System health check completed");
       return data;
     } catch (error) {
-      console.error('Error checking system health:', error);
-      toast.error("Failed to check system health");
+      console.error('Error in recoverAuction:', error);
+      toast.error('Failed to recover auction: ' + (error as Error).message);
       throw error;
     }
-  }, []);
-
-  // Generate audit report for specific period
-  const generateAuditReport = useCallback(async (
-    startDate: Date,
-    endDate: Date,
-    filterType?: string
-  ): Promise<string> => {
+  };
+  
+  const resetSystemState = async () => {
     try {
-      toast.loading("Generating audit report...");
-      
-      const { data, error } = await adminSupabase.functions.invoke('generate-audit-report', {
-        body: { 
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-          filterType
-        }
+      // Call Supabase Edge Function
+      const { data, error } = await adminSupabase.functions.invoke('reset-auction-system', {
+        body: {}
       });
       
       if (error) throw error;
       
-      toast.success("Audit report generated");
-      return data.reportUrl;
+      if (!data?.success) {
+        throw new Error(data?.message || 'System reset failed');
+      }
+      
+      return data;
     } catch (error) {
-      console.error('Error generating audit report:', error);
-      toast.error("Failed to generate audit report");
+      console.error('Error in resetSystemState:', error);
+      toast.error('Failed to reset auction system: ' + (error as Error).message);
       throw error;
     }
-  }, []);
+  };
 
   return {
-    retryFailedOperation,
     recoverAuction,
-    resetSystemState,
-    checkSystemHealth,
-    generateAuditReport
+    resetSystemState
   };
 }
