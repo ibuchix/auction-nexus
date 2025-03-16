@@ -1,10 +1,12 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StatsOverview } from "@/components/dashboard/StatsOverview";
-import { MonitoringCards } from "@/components/dashboard/MonitoringCards";
+import { AdminActions } from "@/components/admin/dashboard/AdminActions";
+import { AdminCardGrid } from "@/components/dashboard/AdminCardGrid";
 import { useNavigate } from "react-router-dom";
 
 const Index = () => {
@@ -116,15 +118,19 @@ const Index = () => {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
       </div>
 
-      <div className="w-full py-6 relative z-10">
-        <DashboardHeader
-          title="Admin Dashboard"
-          currentTime={currentTime}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          pendingVerifications={pendingVerifications}
-          suspiciousActivities={suspiciousActivities}
-        />
+      <div className="w-full py-6 px-6 relative z-10 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <DashboardHeader
+            title="Admin Dashboard"
+            currentTime={currentTime}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            pendingVerifications={pendingVerifications}
+            suspiciousActivities={suspiciousActivities}
+          />
+          
+          <AdminActions />
+        </div>
 
         <StatsOverview
           sellerCount={sellerCount || 0}
@@ -139,16 +145,10 @@ const Index = () => {
           }}
         />
 
-        <MonitoringCards
-          pendingVerifications={pendingVerifications || 0}
-          activeAuctions={activeAuctions || 0}
-          suspiciousActivities={suspiciousActivities || 0}
-          onCardClick={{
-            verifications: () => navigate('/admin/dealers/verification'),
-            auctions: () => navigate('/admin/auctions/monitor'),
-            activities: () => navigate('/admin/fraud')
-          }}
-        />
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-4">Management Console</h2>
+          <AdminCardGrid />
+        </div>
       </div>
     </DashboardLayout>
   );
