@@ -1,8 +1,5 @@
-
 import { useState } from "react";
 import { CalendarClock, Search, Plus, Car } from "lucide-react";
-
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { AuctionSchedulesTable } from "@/components/admin/auction-scheduling/AuctionSchedulesTable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -68,80 +65,78 @@ const AuctionScheduling = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Auction Scheduling
-          </h1>
-          <div className="flex gap-4">
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search schedules..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value)}
-            >
-              <option value="all">All Status</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="running">Running</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </Select>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Auction Scheduling
+        </h1>
+        <div className="flex gap-4">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search schedules..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value)}
+          >
+            <option value="all">All Status</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="running">Running</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </Select>
         </div>
-
-        <Tabs defaultValue="schedules" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="schedules" className="flex items-center gap-1">
-              <CalendarClock className="h-4 w-4" />
-              Auction Schedules
-            </TabsTrigger>
-            <TabsTrigger value="available-cars" className="flex items-center gap-1">
-              <Car className="h-4 w-4" />
-              Available Cars
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="schedules" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <CalendarClock className="h-5 w-5 text-blue-600" />
-                  All Auction Schedules
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <AuctionSchedulesTable onRefresh={handleRefresh} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="available-cars" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Car className="h-5 w-5 text-green-600" />
-                  Available Cars for Scheduling
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <AvailableCarsTable 
-                  auctions={availableAuctions || []} 
-                  isLoading={isLoading} 
-                  onSchedule={handleScheduleAuction}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </div>
+
+      <Tabs defaultValue="schedules" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="schedules" className="flex items-center gap-1">
+            <CalendarClock className="h-4 w-4" />
+            Auction Schedules
+          </TabsTrigger>
+          <TabsTrigger value="available-cars" className="flex items-center gap-1">
+            <Car className="h-4 w-4" />
+            Available Cars
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="schedules" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CalendarClock className="h-5 w-5 text-blue-600" />
+                All Auction Schedules
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <AuctionSchedulesTable onRefresh={handleRefresh} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="available-cars" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Car className="h-5 w-5 text-green-600" />
+                Available Cars for Scheduling
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <AvailableCarsTable 
+                auctions={availableAuctions || []} 
+                isLoading={isLoading} 
+                onSchedule={handleScheduleAuction}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {selectedAuction && (
         <AuctionScheduleDialog
@@ -151,7 +146,7 @@ const AuctionScheduling = () => {
           onScheduled={handleScheduleSuccess}
         />
       )}
-    </DashboardLayout>
+    </div>
   );
 };
 

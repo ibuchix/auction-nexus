@@ -1,5 +1,3 @@
-
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { useAuctionMonitoring } from "@/hooks/useAuctionMonitoring";
 import { useState, useMemo } from "react";
 import { AuctionMetrics } from "@/components/admin/auction-monitoring/AuctionMetrics";
@@ -13,7 +11,6 @@ const AuctionMonitoring = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("end_time");
 
-  // Memoized filtering and sorting logic
   const filteredAndSortedAuctions = useMemo(() => {
     if (!auctions) return [];
 
@@ -38,30 +35,28 @@ const AuctionMonitoring = () => {
   }, [auctions, searchTerm, statusFilter, sortBy]);
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          Auction Monitoring
-        </h1>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        Auction Monitoring
+      </h1>
 
-        <AuctionMetrics auctions={auctions} />
+      <AuctionMetrics auctions={auctions} />
 
-        <AuctionFilters
-          statusFilter={statusFilter}
-          sortBy={sortBy}
-          onStatusChange={setStatusFilter}
-          onSortChange={setSortBy}
-          onSearch={setSearchTerm}
-        />
+      <AuctionFilters
+        statusFilter={statusFilter}
+        sortBy={sortBy}
+        onStatusChange={setStatusFilter}
+        onSortChange={setSortBy}
+        onSearch={setSearchTerm}
+      />
 
-        <AuctionList
-          auctions={filteredAndSortedAuctions}
-          isLoading={isLoading}
-          onPause={pauseAuction}
-          onCancel={cancelAuction}
-        />
-      </div>
-    </DashboardLayout>
+      <AuctionList
+        auctions={filteredAndSortedAuctions}
+        isLoading={isLoading}
+        onPause={pauseAuction}
+        onCancel={cancelAuction}
+      />
+    </div>
   );
 };
 

@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { SellerPerformanceMetrics } from "@/components/admin/sellers/SellerPerformanceMetrics";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,27 +27,25 @@ export default function SellerPerformance() {
   });
 
   return (
-    <DashboardLayout>
-      <div className="container mx-auto px-4 py-6">
-        <div className="mb-8">
-          {isLoading ? (
-            <Skeleton className="h-10 w-64 mb-2" />
-          ) : (
-            <h1 className="text-3xl font-bold">
-              {seller?.full_name || (seller?.sellers && Array.isArray(seller.sellers) && seller.sellers.length > 0 && seller.sellers[0]?.full_name) || "Seller"} Performance
-            </h1>
-          )}
-          <p className="text-muted-foreground">
-            Detailed metrics and performance analysis
-          </p>
-        </div>
-
-        {sellerId ? (
-          <SellerPerformanceMetrics sellerId={sellerId} />
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-8">
+        {isLoading ? (
+          <Skeleton className="h-10 w-64 mb-2" />
         ) : (
-          <p>Select a seller to view performance metrics</p>
+          <h1 className="text-3xl font-bold">
+            {seller?.full_name || (seller?.sellers && Array.isArray(seller.sellers) && seller.sellers.length > 0 && seller.sellers[0]?.full_name) || "Seller"} Performance
+          </h1>
         )}
+        <p className="text-muted-foreground">
+          Detailed metrics and performance analysis
+        </p>
       </div>
-    </DashboardLayout>
+
+      {sellerId ? (
+        <SellerPerformanceMetrics sellerId={sellerId} />
+      ) : (
+        <p>Select a seller to view performance metrics</p>
+      )}
+    </div>
   );
 }

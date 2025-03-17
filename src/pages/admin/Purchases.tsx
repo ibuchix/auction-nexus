@@ -1,5 +1,3 @@
-
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
@@ -98,40 +96,38 @@ const Purchases = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Dealer Purchases</h1>
-          <PurchaseFilters
-            dateRange={dateRange}
-            setDateRange={setDateRange}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            dealerFilter={dealerFilter}
-            setDealerFilter={setDealerFilter}
-            onRefresh={refetch}
-          />
-        </div>
-
-        {isLoading ? (
-          <div>Loading...</div>
-        ) : (
-          <PurchaseTable
-            purchases={purchases || []}
-            onRefundClick={setSelectedPurchase}
-          />
-        )}
-
-        <RefundDialog
-          purchase={selectedPurchase}
-          isOpen={!!selectedPurchase}
-          onClose={() => setSelectedPurchase(null)}
-          refundReason={refundReason}
-          setRefundReason={setRefundReason}
-          onRefund={handleRefund}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Dealer Purchases</h1>
+        <PurchaseFilters
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          dealerFilter={dealerFilter}
+          setDealerFilter={setDealerFilter}
+          onRefresh={refetch}
         />
       </div>
-    </DashboardLayout>
+
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : (
+        <PurchaseTable
+          purchases={purchases || []}
+          onRefundClick={setSelectedPurchase}
+        />
+      )}
+
+      <RefundDialog
+        purchase={selectedPurchase}
+        isOpen={!!selectedPurchase}
+        onClose={() => setSelectedPurchase(null)}
+        refundReason={refundReason}
+        setRefundReason={setRefundReason}
+        onRefund={handleRefund}
+      />
+    </div>
   );
 };
 

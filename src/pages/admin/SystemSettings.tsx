@@ -1,5 +1,3 @@
-
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,147 +68,145 @@ const SystemSettings = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">System Settings</h1>
-          <Button onClick={handleSaveSettings} disabled={isLoading}>
-            <Save className="mr-2 h-4 w-4" />
-            Save Changes
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">System Settings</h1>
+        <Button onClick={handleSaveSettings} disabled={isLoading}>
+          <Save className="mr-2 h-4 w-4" />
+          Save Changes
+        </Button>
+      </div>
 
-        <div className="grid gap-6">
-          {/* Audit Logging Settings */}
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Audit Logging</h2>
-            <p className="text-gray-500 mb-6">
-              Configure how the system tracks and stores user actions and changes.
-            </p>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="enableLoginAuditing" className="font-medium">
-                    Enable Login Auditing
-                  </Label>
-                  <p className="text-sm text-gray-500">
-                    Record when users log in and out of the system
-                  </p>
-                </div>
-                <Switch
-                  id="enableLoginAuditing"
-                  checked={auditSettings.enableLoginAuditing}
-                  onCheckedChange={(checked) =>
-                    handleAuditSettingChange("enableLoginAuditing", checked)
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="enableDataAuditing" className="font-medium">
-                    Enable Data Auditing
-                  </Label>
-                  <p className="text-sm text-gray-500">
-                    Record when data is created, updated, or deleted
-                  </p>
-                </div>
-                <Switch
-                  id="enableDataAuditing"
-                  checked={auditSettings.enableDataAuditing}
-                  onCheckedChange={(checked) =>
-                    handleAuditSettingChange("enableDataAuditing", checked)
-                  }
-                />
-              </div>
-
-              <Separator />
-
+      <div className="grid gap-6">
+        {/* Audit Logging Settings */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Audit Logging</h2>
+          <p className="text-gray-500 mb-6">
+            Configure how the system tracks and stores user actions and changes.
+          </p>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="retentionPeriod" className="font-medium">
-                  Data Retention Period (Days)
+                <Label htmlFor="enableLoginAuditing" className="font-medium">
+                  Enable Login Auditing
                 </Label>
-                <p className="text-sm text-gray-500 mb-2">
-                  How long audit logs should be kept before automatic deletion
+                <p className="text-sm text-gray-500">
+                  Record when users log in and out of the system
                 </p>
-                <div className="flex items-center gap-4">
-                  <Input
-                    id="retentionPeriod"
-                    type="number"
-                    min={1}
-                    max={3650}
-                    value={auditSettings.retentionPeriodDays}
-                    onChange={(e) =>
-                      handleAuditSettingChange(
-                        "retentionPeriodDays",
-                        parseInt(e.target.value) || 90
-                      )
-                    }
-                    className="max-w-[120px]"
-                  />
-                  <span className="text-sm text-gray-500">days</span>
-                </div>
               </div>
+              <Switch
+                id="enableLoginAuditing"
+                checked={auditSettings.enableLoginAuditing}
+                onCheckedChange={(checked) =>
+                  handleAuditSettingChange("enableLoginAuditing", checked)
+                }
+              />
+            </div>
 
-              <Separator />
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="enableDataAuditing" className="font-medium">
+                  Enable Data Auditing
+                </Label>
+                <p className="text-sm text-gray-500">
+                  Record when data is created, updated, or deleted
+                </p>
+              </div>
+              <Switch
+                id="enableDataAuditing"
+                checked={auditSettings.enableDataAuditing}
+                onCheckedChange={(checked) =>
+                  handleAuditSettingChange("enableDataAuditing", checked)
+                }
+              />
+            </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="enableIPLogging" className="font-medium">
-                    Log IP Addresses
-                  </Label>
-                  <p className="text-sm text-gray-500">
-                    Record IP addresses for audit events
-                  </p>
-                </div>
-                <Switch
-                  id="enableIPLogging"
-                  checked={auditSettings.enableIPLogging}
-                  onCheckedChange={(checked) =>
-                    handleAuditSettingChange("enableIPLogging", checked)
+            <Separator />
+
+            <div>
+              <Label htmlFor="retentionPeriod" className="font-medium">
+                Data Retention Period (Days)
+              </Label>
+              <p className="text-sm text-gray-500 mb-2">
+                How long audit logs should be kept before automatic deletion
+              </p>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="retentionPeriod"
+                  type="number"
+                  min={1}
+                  max={3650}
+                  value={auditSettings.retentionPeriodDays}
+                  onChange={(e) =>
+                    handleAuditSettingChange(
+                      "retentionPeriodDays",
+                      parseInt(e.target.value) || 90
+                    )
                   }
+                  className="max-w-[120px]"
                 />
+                <span className="text-sm text-gray-500">days</span>
               </div>
+            </div>
 
-              <div className="flex items-center justify-between">
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="enableIPLogging" className="font-medium">
+                  Log IP Addresses
+                </Label>
+                <p className="text-sm text-gray-500">
+                  Record IP addresses for audit events
+                </p>
+              </div>
+              <Switch
+                id="enableIPLogging"
+                checked={auditSettings.enableIPLogging}
+                onCheckedChange={(checked) =>
+                  handleAuditSettingChange("enableIPLogging", checked)
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="enableUserAgentLogging" className="font-medium">
+                  Log User Agents
+                </Label>
+                <p className="text-sm text-gray-500">
+                  Record browser and device information
+                </p>
+              </div>
+              <Switch
+                id="enableUserAgentLogging"
+                checked={auditSettings.enableUserAgentLogging}
+                onCheckedChange={(checked) =>
+                  handleAuditSettingChange("enableUserAgentLogging", checked)
+                }
+              />
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mt-4">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-yellow-500 mr-3 mt-0.5" />
                 <div>
-                  <Label htmlFor="enableUserAgentLogging" className="font-medium">
-                    Log User Agents
-                  </Label>
-                  <p className="text-sm text-gray-500">
-                    Record browser and device information
+                  <h4 className="text-sm font-medium text-yellow-800">
+                    Privacy Consideration
+                  </h4>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    IP address and user agent logging may be subject to privacy 
+                    regulations such as GDPR. Ensure you have appropriate privacy 
+                    policies in place.
                   </p>
-                </div>
-                <Switch
-                  id="enableUserAgentLogging"
-                  checked={auditSettings.enableUserAgentLogging}
-                  onCheckedChange={(checked) =>
-                    handleAuditSettingChange("enableUserAgentLogging", checked)
-                  }
-                />
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mt-4">
-                <div className="flex items-start">
-                  <AlertTriangle className="h-5 w-5 text-yellow-500 mr-3 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-medium text-yellow-800">
-                      Privacy Consideration
-                    </h4>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      IP address and user agent logging may be subject to privacy 
-                      regulations such as GDPR. Ensure you have appropriate privacy 
-                      policies in place.
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

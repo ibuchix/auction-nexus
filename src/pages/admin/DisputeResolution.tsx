@@ -1,5 +1,3 @@
-
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DisputeList } from "@/components/admin/disputes/DisputeList";
@@ -66,90 +64,88 @@ const DisputeResolution = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Dispute Resolution</h1>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsFilterOpen(true)}
-              className="flex gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              Filter
-            </Button>
-            <Button onClick={() => {}}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Case
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Dispute Resolution</h1>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsFilterOpen(true)}
+            className="flex gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Filter
+          </Button>
+          <Button onClick={() => {}}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Case
+          </Button>
         </div>
-
-        <DisputeStats disputes={disputes || []} />
-
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="all">All Disputes</TabsTrigger>
-            <TabsTrigger value="open">Open</TabsTrigger>
-            <TabsTrigger value="investigating">Investigating</TabsTrigger>
-            <TabsTrigger value="resolved">Resolved</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all">
-            <DisputeList 
-              disputes={disputes || []} 
-              isLoading={isLoading} 
-              onViewDetail={handleOpenDetail}
-            />
-          </TabsContent>
-          
-          <TabsContent value="open">
-            <DisputeList 
-              disputes={(disputes || []).filter(d => d.status === 'open')} 
-              isLoading={isLoading} 
-              onViewDetail={handleOpenDetail}
-            />
-          </TabsContent>
-          
-          <TabsContent value="investigating">
-            <DisputeList 
-              disputes={(disputes || []).filter(d => d.status === 'investigating')} 
-              isLoading={isLoading} 
-              onViewDetail={handleOpenDetail}
-            />
-          </TabsContent>
-          
-          <TabsContent value="resolved">
-            <DisputeList 
-              disputes={(disputes || []).filter(d => d.status === 'resolved' || d.status === 'closed')} 
-              isLoading={isLoading} 
-              onViewDetail={handleOpenDetail}
-            />
-          </TabsContent>
-        </Tabs>
-        
-        {isFilterOpen && (
-          <DisputeFilters
-            currentFilters={activeFilters}
-            onApplyFilters={(filters) => {
-              setActiveFilters(filters);
-              setIsFilterOpen(false);
-            }}
-            onClose={() => setIsFilterOpen(false)}
-          />
-        )}
-
-        {isDetailOpen && selectedDispute && (
-          <DisputeDetailDialog
-            dispute={selectedDispute}
-            open={isDetailOpen}
-            onClose={() => setIsDetailOpen(false)}
-            onDisputeUpdated={handleDisputeUpdated}
-          />
-        )}
       </div>
-    </DashboardLayout>
+
+      <DisputeStats disputes={disputes || []} />
+
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="all">All Disputes</TabsTrigger>
+          <TabsTrigger value="open">Open</TabsTrigger>
+          <TabsTrigger value="investigating">Investigating</TabsTrigger>
+          <TabsTrigger value="resolved">Resolved</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all">
+          <DisputeList 
+            disputes={disputes || []} 
+            isLoading={isLoading} 
+            onViewDetail={handleOpenDetail}
+          />
+        </TabsContent>
+        
+        <TabsContent value="open">
+          <DisputeList 
+            disputes={(disputes || []).filter(d => d.status === 'open')} 
+            isLoading={isLoading} 
+            onViewDetail={handleOpenDetail}
+          />
+        </TabsContent>
+        
+        <TabsContent value="investigating">
+          <DisputeList 
+            disputes={(disputes || []).filter(d => d.status === 'investigating')} 
+            isLoading={isLoading} 
+            onViewDetail={handleOpenDetail}
+          />
+        </TabsContent>
+        
+        <TabsContent value="resolved">
+          <DisputeList 
+            disputes={(disputes || []).filter(d => d.status === 'resolved' || d.status === 'closed')} 
+            isLoading={isLoading} 
+            onViewDetail={handleOpenDetail}
+          />
+        </TabsContent>
+      </Tabs>
+      
+      {isFilterOpen && (
+        <DisputeFilters
+          currentFilters={activeFilters}
+          onApplyFilters={(filters) => {
+            setActiveFilters(filters);
+            setIsFilterOpen(false);
+          }}
+          onClose={() => setIsFilterOpen(false)}
+        />
+      )}
+
+      {isDetailOpen && selectedDispute && (
+        <DisputeDetailDialog
+          dispute={selectedDispute}
+          open={isDetailOpen}
+          onClose={() => setIsDetailOpen(false)}
+          onDisputeUpdated={handleDisputeUpdated}
+        />
+      )}
+    </div>
   );
 };
 

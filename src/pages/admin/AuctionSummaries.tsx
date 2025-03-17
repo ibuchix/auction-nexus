@@ -1,5 +1,3 @@
-
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -87,9 +85,7 @@ const AuctionSummaries = () => {
       if (exportError) throw exportError;
 
       const csvContent = [
-        // CSV Headers
         ['Title', 'Make', 'Model', 'Year', 'End Time', 'Status', 'Final Price', 'Total Bids', 'Unique Bidders'].join(','),
-        // CSV Data
         ...exportData.map(row => [
           row.title,
           row.make,
@@ -103,18 +99,15 @@ const AuctionSummaries = () => {
         ].join(','))
       ].join('\n');
 
-      // Create blob and download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = `auction-summary-${selectedTab}-${format(dateRange.from, "yyyy-MM-dd")}-to-${format(dateRange.to, "yyyy-MM-dd")}.csv`;
       link.click();
 
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Log export in history
       await supabase
         .from('export_history')
         .insert({
@@ -134,115 +127,113 @@ const AuctionSummaries = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Auction Summaries</h1>
-          <div className="flex gap-4">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(dateRange.from, "PP")} - {format(dateRange.to, "PP")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={dateRange.from}
-                  selected={{
-                    from: dateRange.from,
-                    to: dateRange.to,
-                  }}
-                  onSelect={(range) => {
-                    if (range?.from && range?.to) {
-                      setDateRange({ from: range.from, to: range.to });
-                    }
-                  }}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-            <Button onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button onClick={() => refetch()} size="icon">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Auction Summaries</h1>
+        <div className="flex gap-4">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(dateRange.from, "PP")} - {format(dateRange.to, "PP")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange.from}
+                selected={{
+                  from: dateRange.from,
+                  to: dateRange.to,
+                }}
+                onSelect={(range) => {
+                  if (range?.from && range?.to) {
+                    setDateRange({ from: range.from, to: range.to });
+                  }
+                }}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+          <Button onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button onClick={() => refetch()} size="icon">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         </div>
-
-        <Tabs defaultValue="sold" onValueChange={(v) => setSelectedTab(v as 'sold' | 'unsold')}>
-          <TabsList>
-            <TabsTrigger value="sold">Sold Vehicles</TabsTrigger>
-            <TabsTrigger value="unsold">Unsold Vehicles</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="sold" className="mt-6">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>End Date</TableHead>
-                    <TableHead>Final Price</TableHead>
-                    <TableHead>Total Bids</TableHead>
-                    <TableHead>Unique Bidders</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {closures?.map((closure) => (
-                    <TableRow key={closure.car_id}>
-                      <TableCell>
-                        {closure.year} {closure.make} {closure.model}
-                        <br />
-                        <span className="text-sm text-gray-500">{closure.title}</span>
-                      </TableCell>
-                      <TableCell>{format(new Date(closure.auction_end_time), "PP")}</TableCell>
-                      <TableCell>${closure.final_price?.toLocaleString() || '0'}</TableCell>
-                      <TableCell>{closure.total_bids}</TableCell>
-                      <TableCell>{closure.unique_bidders}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="unsold" className="mt-6">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>End Date</TableHead>
-                    <TableHead>Reserve Price</TableHead>
-                    <TableHead>Total Bids</TableHead>
-                    <TableHead>Unique Bidders</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {closures?.map((closure) => (
-                    <TableRow key={closure.car_id}>
-                      <TableCell>
-                        {closure.year} {closure.make} {closure.model}
-                        <br />
-                        <span className="text-sm text-gray-500">{closure.title}</span>
-                      </TableCell>
-                      <TableCell>{format(new Date(closure.auction_end_time), "PP")}</TableCell>
-                      <TableCell>{closure.total_bids}</TableCell>
-                      <TableCell>{closure.unique_bidders}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-        </Tabs>
       </div>
-    </DashboardLayout>
+
+      <Tabs defaultValue="sold" onValueChange={(v) => setSelectedTab(v as 'sold' | 'unsold')}>
+        <TabsList>
+          <TabsTrigger value="sold">Sold Vehicles</TabsTrigger>
+          <TabsTrigger value="unsold">Unsold Vehicles</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sold" className="mt-6">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead>End Date</TableHead>
+                  <TableHead>Final Price</TableHead>
+                  <TableHead>Total Bids</TableHead>
+                  <TableHead>Unique Bidders</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {closures?.map((closure) => (
+                  <TableRow key={closure.car_id}>
+                    <TableCell>
+                      {closure.year} {closure.make} {closure.model}
+                      <br />
+                      <span className="text-sm text-gray-500">{closure.title}</span>
+                    </TableCell>
+                    <TableCell>{format(new Date(closure.auction_end_time), "PP")}</TableCell>
+                    <TableCell>${closure.final_price?.toLocaleString() || '0'}</TableCell>
+                    <TableCell>{closure.total_bids}</TableCell>
+                    <TableCell>{closure.unique_bidders}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="unsold" className="mt-6">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead>End Date</TableHead>
+                  <TableHead>Reserve Price</TableHead>
+                  <TableHead>Total Bids</TableHead>
+                  <TableHead>Unique Bidders</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {closures?.map((closure) => (
+                  <TableRow key={closure.car_id}>
+                    <TableCell>
+                      {closure.year} {closure.make} {closure.model}
+                      <br />
+                      <span className="text-sm text-gray-500">{closure.title}</span>
+                    </TableCell>
+                    <TableCell>{format(new Date(closure.auction_end_time), "PP")}</TableCell>
+                    <TableCell>{closure.total_bids}</TableCell>
+                    <TableCell>{closure.unique_bidders}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

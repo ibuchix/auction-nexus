@@ -1,5 +1,3 @@
-
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -39,7 +37,6 @@ const SellerManagement = () => {
     queryKey: ['activeSellers'],
     queryFn: async () => {
       try {
-        // First get profiles with seller role - correct the column selection
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, role, updated_at')
@@ -52,16 +49,13 @@ const SellerManagement = () => {
         
         if (!profilesData) return [];
         
-        // For each seller profile, get their listing details
         const sellersWithDetails = await Promise.all(
           profilesData.map(async (profile) => {
-            // Check that profile data is valid
             if (!profile || typeof profile.id !== 'string') {
               console.error('Invalid profile data:', profile);
               return null;
             }
 
-            // Get mobile number from cars table
             const { data: carsData, error: carsError } = await supabase
               .from('cars')
               .select('mobile_number')
@@ -73,7 +67,6 @@ const SellerManagement = () => {
               console.error('Error fetching car data:', carsError);
             }
             
-            // Find seller name from their latest car listing
             const { data: nameData, error: nameError } = await supabase
               .from('cars')
               .select('title')
@@ -88,10 +81,10 @@ const SellerManagement = () => {
             return {
               id: profile.id,
               role: profile.role,
-              created_at: profile.updated_at, // use updated_at as a fallback for created_at
+              created_at: profile.updated_at,
               name: nameData?.[0]?.title?.split(' ')[0] || 'N/A',
               mobile_number: carsData?.[0]?.mobile_number || 'N/A',
-              address: 'N/A', // Since address doesn't exist in cars table, default to N/A
+              address: 'N/A',
             } as Seller;
           })
         );
@@ -127,58 +120,54 @@ const SellerManagement = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin" />
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Active Sellers</h1>
-        </div>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Active Sellers</h1>
+      </div>
 
-        <div className="bg-white rounded-lg shadow">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead>Actions</TableHead>
+      <div className="bg-white rounded-lg shadow">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sellers?.map((seller) => (
+              <TableRow key={seller.id}>
+                <TableCell>{seller.name}</TableCell>
+                <TableCell>{seller.mobile_number}</TableCell>
+                <TableCell>{seller.address}</TableCell>
+                <TableCell>
+                  {new Date(seller.created_at).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedSeller(seller);
+                      setIsDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sellers?.map((seller) => (
-                <TableRow key={seller.id}>
-                  <TableCell>{seller.name}</TableCell>
-                  <TableCell>{seller.mobile_number}</TableCell>
-                  <TableCell>{seller.address}</TableCell>
-                  <TableCell>
-                    {new Date(seller.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedSeller(seller);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -205,7 +194,7 @@ const SellerManagement = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </div>
   );
 };
 

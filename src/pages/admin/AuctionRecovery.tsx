@@ -1,6 +1,4 @@
-
 import { useState } from "react";
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { RefreshCcw, Search, Shield, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -183,101 +181,99 @@ const AuctionRecovery = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          Auction Recovery & Operations
-        </h1>
-        
-        <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-          <Card className="border-l-4 border-l-amber-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-amber-700">
-                <ShieldAlert className="h-5 w-5" />
-                Auction Recovery
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Recover a specific auction that is stuck or in an inconsistent state.
-              </p>
-              
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="Enter auction ID" 
-                  value={searchAuctionId} 
-                  onChange={(e) => setSearchAuctionId(e.target.value)} 
-                />
-                <Button onClick={handleSearchAuction} disabled={!searchAuctionId.trim()}>
-                  Recover
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-l-4 border-l-red-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-red-700">
-                <Shield className="h-5 w-5" />
-                Emergency System Reset
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Reset the entire auction system to fix all inconsistencies. Use only in emergency situations.
-              </p>
-              
-              <Button 
-                variant="destructive" 
-                onClick={handleReset} 
-                disabled={isResetting}
-                className="w-full"
-              >
-                {isResetting ? (
-                  <>
-                    <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
-                    Resetting System...
-                  </>
-                ) : (
-                  <>Reset Auction System</>
-                )}
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        Auction Recovery & Operations
+      </h1>
+      
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-amber-700">
+              <ShieldAlert className="h-5 w-5" />
+              Auction Recovery
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Recover a specific auction that is stuck or in an inconsistent state.
+            </p>
+            
+            <div className="flex gap-2">
+              <Input 
+                placeholder="Enter auction ID" 
+                value={searchAuctionId} 
+                onChange={(e) => setSearchAuctionId(e.target.value)} 
+              />
+              <Button onClick={handleSearchAuction} disabled={!searchAuctionId.trim()}>
+                Recover
               </Button>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <p className="text-xs text-red-700">
-                Warning: This will fix all stuck auctions and schedules.
-              </p>
-            </CardFooter>
-          </Card>
-          
-          <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-blue-700">
-                <Search className="h-5 w-5" />
-                Audit Logs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                View all system operations and audit logs to identify issues.
-              </p>
-              
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => document.getElementById('audit-logs')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                View Audit Logs
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
         
-        <Separator className="my-8" />
+        <Card className="border-l-4 border-l-red-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <Shield className="h-5 w-5" />
+              Emergency System Reset
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Reset the entire auction system to fix all inconsistencies. Use only in emergency situations.
+            </p>
+            
+            <Button 
+              variant="destructive" 
+              onClick={handleReset} 
+              disabled={isResetting}
+              className="w-full"
+            >
+              {isResetting ? (
+                <>
+                  <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                  Resetting System...
+                </>
+              ) : (
+                <>Reset Auction System</>
+              )}
+            </Button>
+          </CardContent>
+          <CardFooter className="pt-0">
+            <p className="text-xs text-red-700">
+              Warning: This will fix all stuck auctions and schedules.
+            </p>
+          </CardFooter>
+        </Card>
         
-        <div id="audit-logs">
-          <AuctionOperationsLogView />
-        </div>
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-blue-700">
+              <Search className="h-5 w-5" />
+              Audit Logs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              View all system operations and audit logs to identify issues.
+            </p>
+            
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => document.getElementById('audit-logs')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              View Audit Logs
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Separator className="my-8" />
+      
+      <div id="audit-logs">
+        <AuctionOperationsLogView />
       </div>
       
       <RecoveryDialog 
@@ -286,7 +282,7 @@ const AuctionRecovery = () => {
         auctionId={auctionId}
         onRecover={recoverAuction}
       />
-    </DashboardLayout>
+    </div>
   );
 };
 

@@ -1,6 +1,4 @@
-
 import { useState } from "react";
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,45 +23,43 @@ const Announcements = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Announcements</h1>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Announcement
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Announcements</h1>
+        <Button onClick={() => setShowCreateDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Announcement
+        </Button>
+      </div>
 
-        <Tabs defaultValue="manage" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="manage">Manage Announcements</TabsTrigger>
-            <TabsTrigger value="settings">Notification Settings</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="manage" className="mt-6">
-            <AnnouncementList onEdit={handleEdit} />
-          </TabsContent>
-          
-          <TabsContent value="settings" className="mt-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <Megaphone className="h-8 w-8 text-primary mt-1" />
-                    <div>
-                      <h3 className="text-lg font-medium">Notification Settings</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Configure how announcements are delivered to users. This section will be available in a future update.
-                      </p>
-                    </div>
+      <Tabs defaultValue="manage" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="manage">Manage Announcements</TabsTrigger>
+          <TabsTrigger value="settings">Notification Settings</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="manage" className="mt-6">
+          <AnnouncementList onEdit={handleEdit} />
+        </TabsContent>
+        
+        <TabsContent value="settings" className="mt-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <Megaphone className="h-8 w-8 text-primary mt-1" />
+                  <div>
+                    <h3 className="text-lg font-medium">Notification Settings</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Configure how announcements are delivered to users. This section will be available in a future update.
+                    </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-[600px]">
@@ -79,7 +75,7 @@ const Announcements = () => {
           />
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </div>
   );
 };
 
