@@ -29,7 +29,7 @@ export const menuItems: SidebarMenuItem[] = [
   {
     title: "Dashboard",
     icon: LayoutDashboard,
-    path: "/admin",
+    path: "/",  // Updated from "/admin" to "/"
     shortcut: "Alt+H",
   },
   {

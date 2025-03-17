@@ -56,7 +56,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Admin routes */}
+        {/* Admin routes - removed duplicate /admin route, keeping just the root path */}
         <Route 
           path="/" 
           element={
@@ -67,16 +67,7 @@ function App() {
             </AdminProtectedRoute>
           } 
         />
-        <Route 
-          path="/admin" 
-          element={
-            <AdminProtectedRoute>
-              <DashboardLayout>
-                <Index />
-              </DashboardLayout>
-            </AdminProtectedRoute>
-          } 
-        />
+        
         <Route 
           path="/admin/system" 
           element={
