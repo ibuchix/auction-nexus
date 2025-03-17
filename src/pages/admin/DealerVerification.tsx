@@ -1,5 +1,4 @@
 
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldCheck } from "lucide-react";
@@ -30,42 +29,38 @@ const DealerVerification = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin" />
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Dealer Verification</h1>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" className="flex items-center gap-2" onClick={() => refetch()}>
-              <Loader2 className="h-4 w-4" />
-              Refresh
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Dealer Verification</h1>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" className="flex items-center gap-2" onClick={() => refetch()}>
+            <Loader2 className="h-4 w-4" />
+            Refresh
+          </Button>
+          {activeTab === "pending" && (
+            <Button className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              Pending <Badge variant="secondary" className="ml-1">{dealers?.filter(d => d.verification_status === 'pending').length || 0}</Badge>
             </Button>
-            {activeTab === "pending" && (
-              <Button className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4" />
-                Pending <Badge variant="secondary" className="ml-1">{dealers?.filter(d => d.verification_status === 'pending').length || 0}</Badge>
-              </Button>
-            )}
-          </div>
+          )}
         </div>
-
-        <DealerVerificationTabs 
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          dealers={dealers}
-          isProcessing={isProcessing}
-          onToggleVerification={handleToggleVerification}
-          onReviewDealer={handleReviewDealer}
-        />
       </div>
+
+      <DealerVerificationTabs 
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        dealers={dealers}
+        isProcessing={isProcessing}
+        onToggleVerification={handleToggleVerification}
+        onReviewDealer={handleReviewDealer}
+      />
 
       <DealerReviewDialog 
         selectedDealer={selectedDealer}
@@ -80,7 +75,7 @@ const DealerVerification = () => {
         onRejectDealer={handleRejectDealer}
         onToggleVerification={handleToggleVerification}
       />
-    </DashboardLayout>
+    </div>
   );
 };
 
