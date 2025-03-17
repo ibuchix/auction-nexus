@@ -1,5 +1,5 @@
 
-import { Routes, Route } from "react-router-dom";
+import { Routes } from "react-router-dom";
 import { MainRoutes } from "./MainRoutes";
 import { AuctionRoutes } from "./AuctionRoutes";
 import { UserManagementRoutes } from "./UserManagementRoutes";
@@ -9,11 +9,11 @@ import { SystemRoutes } from "./SystemRoutes";
 export function AppRoutes() {
   return (
     <Routes>
-      <MainRoutes />
-      <SystemRoutes />
-      <AuctionRoutes />
-      <UserManagementRoutes />
-      <RiskManagementRoutes />
+      {MainRoutes}
+      {SystemRoutes}
+      {AuctionRoutes}
+      {UserManagementRoutes}
+      {RiskManagementRoutes}
     </Routes>
   );
 }

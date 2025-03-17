@@ -1,12 +1,13 @@
 
+import { ReactNode } from "react";
 import { useEffect } from "react";
-import { Navigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 interface AdminProtectedRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
@@ -29,7 +30,9 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
+    return <div className="flex items-center justify-center h-screen">
+      <p className="text-red-600 font-medium">You don't have permission to access this page.</p>
+    </div>;
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;
