@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-api-key',
 };
 
 serve(async (req) => {
@@ -117,6 +117,7 @@ serve(async (req) => {
     // Log action for audit trail
     await logAdminAction(supabaseAdmin, params?.adminId || 'system', action, params);
 
+    // Return success with data and CORS headers
     return new Response(JSON.stringify({ success: true, data: result }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
