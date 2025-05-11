@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { adminSupabase } from "@/integrations/supabase/adminClient";
@@ -19,12 +20,17 @@ export function useAuctionManagement() {
     queryFn: async () => {
       console.log('Fetching car listings with adminSupabase client');
       try {
-        // Verify the adminSupabase client has the service role key in headers
-        const headers = (adminSupabase.rest.headers as any);
-        if (!headers.apikey) {
-          console.warn('apikey not found in adminSupabase headers, this could cause permission issues');
+        // Check if VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables
+        const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+        if (!serviceRoleKey) {
+          console.warn('VITE_SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
+          toast({
+            title: "Warning",
+            description: "Admin API key is missing. Check your environment variables.",
+            variant: "destructive",
+          });
         } else {
-          console.log('adminSupabase client has apikey in headers');
+          console.log('VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables');
         }
         
         // Ensure we're using the admin client's configuration

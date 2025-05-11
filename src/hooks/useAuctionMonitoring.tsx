@@ -13,12 +13,13 @@ export function useAuctionMonitoring() {
       try {
         console.log('Fetching active auctions with adminSupabase client');
         
-        // Verify the adminSupabase client has the service role key in headers
-        const headers = (adminSupabase.rest.headers as any);
-        if (!headers.apikey) {
-          console.warn('apikey not found in adminSupabase headers, this could cause permission issues');
+        // Check if VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables
+        const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+        if (!serviceRoleKey) {
+          console.warn('VITE_SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
+          toast.error('Admin API key is missing. Check your environment variables.');
         } else {
-          console.log('adminSupabase client has apikey in headers');
+          console.log('VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables');
         }
         
         // Using adminSupabase to bypass RLS policies
