@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { adminSupabase } from "@/integrations/supabase/adminClient";
@@ -9,7 +8,7 @@ import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<AuctionStatus | "all">("all");
-  const [showAllCars, setShowAllCars] = useState(true); // New state for toggling all cars
+  const [showAllCars, setShowAllCars] = useState(true); // State for toggling all cars
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
@@ -18,38 +17,52 @@ export function useAuctionManagement() {
   const { data: listings, isLoading, error, refetch } = useQuery({
     queryKey: ['adminVehicleListings', showAllCars],
     queryFn: async () => {
-      let query = adminSupabase
-        .from('cars')
-        .select(`
-          *,
-          bids (*),
-          seller:profiles (*),
-          auction_metrics (*)
-        `);
-      
-      // Only filter by approved status if we're showing all cars
-      if (!showAllCars) {
-        query = query.eq('status', 'approved');
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error('Error fetching listings:', error);
+      console.log('Fetching car listings with adminSupabase client');
+      try {
+        let query = adminSupabase
+          .from('cars')
+          .select(`
+            *,
+            bids (*),
+            seller:profiles (*),
+            auction_metrics (*)
+          `);
+        
+        // Only filter by approved status if we're not showing all cars
+        if (!showAllCars) {
+          query = query.eq('status', 'approved');
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('Error fetching listings with adminSupabase:', error);
+          toast({
+            title: "Error",
+            description: `Failed to load auction listings: ${error.message}`,
+            variant: "destructive",
+          });
+          throw error;
+        }
+        
+        console.log(`Successfully fetched ${data?.length || 0} car listings`);
+        return data as unknown as Auction[];
+      } catch (err) {
+        console.error('Exception in queryFn:', err);
         toast({
           title: "Error",
-          description: "Failed to load auction listings. Please check admin permissions.",
+          description: "An unexpected error occurred while fetching listings",
           variant: "destructive",
         });
-        throw error;
+        throw err;
       }
-      
-      return data as unknown as Auction[];
-    }
+    },
+    retry: 1,
   });
 
   // Set up real-time subscription
   useEffect(() => {
+    console.log('Setting up real-time subscription with adminSupabase');
     const channel = adminSupabase
       .channel('auction-updates')
       .on(
@@ -59,13 +72,15 @@ export function useAuctionManagement() {
           schema: 'public',
           table: 'cars'
         },
-        () => {
+        (payload) => {
+          console.log('Real-time update received:', payload);
           refetch();
         }
       )
       .subscribe();
 
     return () => {
+      console.log('Removing real-time subscription');
       adminSupabase.removeChannel(channel);
     };
   }, [refetch]);

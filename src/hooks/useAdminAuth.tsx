@@ -1,41 +1,46 @@
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { adminSupabase } from '@/integrations/supabase/adminClient';
+import { useToast } from '@/hooks/use-toast';
 
 export function useAdminAuth() {
-  const [isAdmin, setIsAdmin] = useState<boolean>(true); // Assume admin by default
+  const [isAdmin, setIsAdmin] = useState<boolean>(false); 
   const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>("00000000-0000-0000-0000-000000000000"); // Default UUID format
+  const [userId, setUserId] = useState<string | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
-    // Since this is an admin app, we'll check if we can access admin data
+    // Simply check if admin client works by trying a simple database operation
     const checkAdminClient = async () => {
       setIsLoading(true);
       try {
-        // Test if admin client is working with profiles table access
+        // Test if admin client can access the cars table (the one having issues)
         const { data, error } = await adminSupabase
-          .from('profiles')
+          .from('cars')
           .select('id')
           .limit(1);
         
         if (error) {
           console.error('Admin client error:', error);
-          // Check if it's a permission error specifically
-          if (error.code === '42501') {
-            console.warn('Permission denied for profiles table. This likely means RLS is blocking access.');
-          }
+          toast({
+            title: "Admin Access Error",
+            description: "Failed to access data with admin privileges. Check the service role key in environment variables.",
+            variant: "destructive",
+          });
           setIsAdmin(false);
         } else {
           console.log('Admin client working successfully');
-          // If we have profile data, use the first profile ID as admin ID
-          // Otherwise, keep using the default UUID
-          if (data && data.length > 0 && data[0].id) {
-            setUserId(data[0].id);
-          }
+          // Use a placeholder user ID for admin operations
+          setUserId("admin-user");
           setIsAdmin(true);
         }
       } catch (err) {
         console.error('Error testing admin client:', err);
+        toast({
+          title: "Admin Client Error",
+          description: "Error connecting to database with admin privileges",
+          variant: "destructive",
+        });
         setIsAdmin(false);
       } finally {
         setIsLoading(false);
@@ -43,7 +48,7 @@ export function useAdminAuth() {
     };
     
     checkAdminClient();
-  }, []);
+  }, [toast]);
   
   return { isAdmin, isLoading, userId };
 }

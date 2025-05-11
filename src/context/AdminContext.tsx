@@ -23,17 +23,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const { isAdmin, isLoading, userId } = useAdminAuth();
   const navigate = useNavigate();
   
-  // We're removing the redirect since this is an admin-only app
-  // and we've modified useAdminAuth to assume admin privileges
-  
   useEffect(() => {
     if (isAdmin === false && !isLoading) {
-      toast.error('Admin client not working. Check your service role key or database permissions.');
+      toast.error('Admin access error. Check your service role key in .env file or Supabase permissions.');
     }
   }, [isAdmin, isLoading]);
   
   const value = {
-    isAdmin, // Use the actual admin status from useAdminAuth
+    isAdmin,
     isLoading,
     userId,
     operations: adminOperations,
