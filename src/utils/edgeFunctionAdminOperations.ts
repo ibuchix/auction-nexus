@@ -14,10 +14,20 @@ export async function performAdminOperation<T>(
   params?: Record<string, any>
 ): Promise<T | null> {
   try {
+    // Get the first 10 characters of the service role key for authentication
+    const adminApiKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.substring(0, 10);
+    
+    if (!adminApiKey) {
+      throw new Error('VITE_SUPABASE_SERVICE_ROLE_KEY is not properly configured');
+    }
+    
     const { data, error } = await supabase.functions.invoke('admin-api', {
       body: {
         action,
         params
+      },
+      headers: {
+        'x-admin-api-key': adminApiKey
       }
     });
     

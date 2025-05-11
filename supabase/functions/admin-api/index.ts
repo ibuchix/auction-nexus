@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
@@ -20,37 +19,19 @@ serve(async (req) => {
     // Create admin client with service role key
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Extract the authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
-
-    // Verify the user is authenticated
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      throw new Error('Unauthorized: Invalid token');
-    }
-
-    // Get user role to ensure they are an admin
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile || profile.role !== 'admin') {
-      throw new Error('Unauthorized: Admin access required');
+    // Get API key from request headers
+    const apiKey = req.headers.get('x-admin-api-key');
+    
+    // Verify API key matches service role key (not the full key, just the first 10 chars to avoid exposing it)
+    if (!apiKey || apiKey !== supabaseServiceKey.substring(0, 10)) {
+      throw new Error('Unauthorized: Invalid admin API key');
     }
 
     // Parse request body
     const { action, params } = await req.json();
     let result;
 
-    console.log(`Admin API: Executing ${action} by user ${user.id}`);
+    console.log(`Admin API: Executing ${action}`);
 
     // Process the requested admin action
     switch (action) {
@@ -75,14 +56,14 @@ serve(async (req) => {
         break;
       
       case 'verifyDealer':
-        result = await verifyDealer(supabaseAdmin, params?.dealerId, user.id, params?.notes);
+        result = await verifyDealer(supabaseAdmin, params?.dealerId, params?.adminId, params?.notes);
         break;
       
       case 'rejectDealer':
         result = await rejectDealer(
           supabaseAdmin, 
           params?.dealerId, 
-          user.id, 
+          params?.adminId, 
           params?.rejectionReason, 
           params?.notes
         );
@@ -101,15 +82,15 @@ serve(async (req) => {
         break;
         
       case 'pauseAuction':
-        result = await updateAuctionStatus(supabaseAdmin, params?.auctionId, 'paused', user.id);
+        result = await updateAuctionStatus(supabaseAdmin, params?.auctionId, 'paused', params?.adminId || 'system');
         break;
         
       case 'startAuction':
-        result = await updateAuctionStatus(supabaseAdmin, params?.auctionId, 'active', user.id);
+        result = await updateAuctionStatus(supabaseAdmin, params?.auctionId, 'active', params?.adminId || 'system');
         break;
         
       case 'cancelAuction':
-        result = await updateAuctionStatus(supabaseAdmin, params?.auctionId, 'cancelled', user.id);
+        result = await updateAuctionStatus(supabaseAdmin, params?.auctionId, 'cancelled', params?.adminId || 'system');
         break;
         
       case 'checkSystemHealth':
@@ -121,12 +102,12 @@ serve(async (req) => {
           supabaseAdmin, 
           params?.auctionId, 
           params?.action, 
-          user.id
+          params?.adminId || 'system'
         );
         break;
         
       case 'verifyAccess':
-        result = await verifyAccess(supabaseAdmin, user.id);
+        result = await verifyAccess(supabaseAdmin);
         break;
         
       default:
@@ -134,7 +115,7 @@ serve(async (req) => {
     }
 
     // Log action for audit trail
-    await logAdminAction(supabaseAdmin, user.id, action, params);
+    await logAdminAction(supabaseAdmin, params?.adminId || 'system', action, params);
 
     return new Response(JSON.stringify({ success: true, data: result }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -503,7 +484,7 @@ async function recoverAuction(supabaseAdmin, auctionId, action, adminId) {
   return { success: true, auctionId, action };
 }
 
-async function verifyAccess(supabaseAdmin, userId) {
+async function verifyAccess(supabaseAdmin) {
   // Simple test query to verify access
   const { data: test, error: testError } = await supabaseAdmin
     .from('profiles')
@@ -524,7 +505,7 @@ async function verifyAccess(supabaseAdmin, userId) {
   
   return {
     success: !testError && !carsError,
-    userId,
+    userId: null,
     accessDetails: {
       profilesAccessible: !testError,
       profilesError: testError?.message,

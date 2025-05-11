@@ -11,7 +11,7 @@ export function useAdminAuth() {
   const { toast } = useToast();
   
   useEffect(() => {
-    // Check if admin client works by trying a simple database operation
+    // Check if admin access works using the service role key
     const checkAdminAccess = async () => {
       setIsLoading(true);
       setError(null);
@@ -41,8 +41,8 @@ export function useAdminAuth() {
         
         console.log('Admin access via Edge Function verified successfully:', verificationResult);
         
-        // Use the user ID from the verification result
-        setUserId((verificationResult as any)?.userId || "admin-user");
+        // Use a system admin ID since we're not requiring authentication
+        setUserId("admin-system");
         setIsAdmin(true);
         
       } catch (err) {

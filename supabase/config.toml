@@ -4,7 +4,7 @@ project_id = "sdvakfhmoaoucmhbhwvy"
   engine = "deno"
 
 [functions.admin-api]
-  verify_jwt = true
+  verify_jwt = false
   import_map = "./import_map.json"
   
 [functions.start-scheduled-auctions]
