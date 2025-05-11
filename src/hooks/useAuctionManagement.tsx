@@ -9,23 +9,30 @@ import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<AuctionStatus | "all">("all");
+  const [showAllCars, setShowAllCars] = useState(true); // New state for toggling all cars
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
   const { data: listings, isLoading, error, refetch } = useQuery({
-    queryKey: ['adminVehicleListings'],
+    queryKey: ['adminVehicleListings', showAllCars],
     queryFn: async () => {
-      const { data, error } = await adminSupabase
+      let query = adminSupabase
         .from('cars')
         .select(`
           *,
           bids (*),
           seller:profiles (*),
           auction_metrics (*)
-        `)
-        .eq('status', 'approved');
+        `);
+      
+      // Only filter by approved status if we're showing all cars
+      if (!showAllCars) {
+        query = query.eq('status', 'approved');
+      }
+      
+      const { data, error } = await query;
       
       if (error) {
         console.error('Error fetching listings:', error);
@@ -89,6 +96,10 @@ export function useAuctionManagement() {
     listing.auction_status !== undefined
   );
 
+  const notConfiguredListings = filteredListings?.filter(listing =>
+    !listing.auction_status && !listing.is_auction
+  );
+
   const handleScheduleClick = (auction: Auction) => {
     setSelectedAuction(auction);
     setIsScheduleDialogOpen(true);
@@ -108,6 +119,8 @@ export function useAuctionManagement() {
     setSearchTerm,
     statusFilter,
     setStatusFilter,
+    showAllCars,
+    setShowAllCars,
     listings,
     isLoading,
     error,
@@ -116,6 +129,7 @@ export function useAuctionManagement() {
     readyAuctions,
     activeAuctions,
     otherAuctions,
+    notConfiguredListings,
     selectedAuction,
     isScheduleDialogOpen,
     pauseAuction,

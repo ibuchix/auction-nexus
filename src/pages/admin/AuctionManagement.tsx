@@ -1,4 +1,5 @@
-import { Clock, CheckCircle, PauseCircle, XCircle } from "lucide-react";
+
+import { Clock, CheckCircle, PauseCircle, XCircle, Package } from "lucide-react";
 import { useAuctionManagement } from "@/hooks/useAuctionManagement";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,6 +7,8 @@ import { AuctionScheduleDialog } from "@/components/admin/auction-scheduling/Auc
 import { AuctionFilters } from "@/components/admin/auction-management/AuctionFilters";
 import { AuctionTabContent } from "@/components/admin/auction-management/AuctionTabContent";
 import { RecentProxyBidActivity } from "@/components/admin/dashboard/RecentProxyBidActivity";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const AuctionManagement = () => {
   const {
@@ -13,11 +16,14 @@ const AuctionManagement = () => {
     setSearchTerm,
     statusFilter,
     setStatusFilter,
+    showAllCars,
+    setShowAllCars,
     isLoading,
     error,
     readyAuctions,
     activeAuctions,
     otherAuctions,
+    notConfiguredListings,
     selectedAuction,
     isScheduleDialogOpen,
     pauseAuction,
@@ -47,12 +53,22 @@ const AuctionManagement = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="bg-white p-4 rounded-lg border mb-6">
-            <AuctionFilters
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-            />
+            <div className="flex items-center justify-between mb-4">
+              <AuctionFilters
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+              />
+              <div className="flex items-center gap-2">
+                <Switch 
+                  id="show-all-cars" 
+                  checked={showAllCars} 
+                  onCheckedChange={setShowAllCars}
+                />
+                <Label htmlFor="show-all-cars">Show All Cars</Label>
+              </div>
+            </div>
           </div>
 
           <Tabs defaultValue="ready" className="space-y-4">
@@ -76,6 +92,13 @@ const AuctionManagement = () => {
                 Other Auctions
                 {otherAuctions && otherAuctions.length > 0 && (
                   <Badge variant="secondary" className="ml-1">{otherAuctions.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="notConfigured" className="flex items-center gap-1">
+                <Package className="h-4 w-4" />
+                Not Configured
+                {notConfiguredListings && notConfiguredListings.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">{notConfiguredListings.length}</Badge>
                 )}
               </TabsTrigger>
             </TabsList>
@@ -115,6 +138,20 @@ const AuctionManagement = () => {
                 onPause={pauseAuction}
                 onCancel={cancelAuction}
                 onStart={startAuction}
+              />
+            </TabsContent>
+
+            <TabsContent value="notConfigured" className="space-y-4">
+              <AuctionTabContent
+                title="Non-Auction Cars (Needs Configuration)"
+                icon={<Package className="h-5 w-5 text-amber-600" />}
+                auctions={notConfiguredListings}
+                isLoading={isLoading}
+                onPause={pauseAuction}
+                onCancel={cancelAuction}
+                onStart={startAuction}
+                onScheduleClick={handleScheduleClick}
+                showScheduleButton={true}
               />
             </TabsContent>
           </Tabs>
