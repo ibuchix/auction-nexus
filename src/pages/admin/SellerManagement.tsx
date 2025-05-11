@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -144,28 +145,36 @@ const SellerManagement = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sellers?.map((seller) => (
-              <TableRow key={seller.id}>
-                <TableCell>{seller.name}</TableCell>
-                <TableCell>{seller.mobile_number}</TableCell>
-                <TableCell>{seller.address}</TableCell>
-                <TableCell>
-                  {new Date(seller.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedSeller(seller);
-                      setIsDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+            {Array.isArray(sellers) && sellers.length > 0 ? (
+              sellers.map((seller) => (
+                <TableRow key={seller.id}>
+                  <TableCell>{seller.name}</TableCell>
+                  <TableCell>{seller.mobile_number}</TableCell>
+                  <TableCell>{seller.address}</TableCell>
+                  <TableCell>
+                    {new Date(seller.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedSeller(seller);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-4">
+                  No active sellers found
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
