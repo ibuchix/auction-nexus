@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { verifyAdminAccess } from '@/utils/edgeFunctionAdminOperations';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
 
 export function useAdminAuth() {
   const [isAdmin, setIsAdmin] = useState<boolean>(false); 
@@ -34,15 +34,15 @@ export function useAdminAuth() {
         // Use Edge Function to verify access
         const verificationResult = await verifyAdminAccess();
         
-        if (!verificationResult?.success) {
+        if (!verificationResult || (verificationResult as any).success === false) {
           console.error('Admin access verification failed:', verificationResult);
-          throw new Error(`Admin verification failed: ${verificationResult?.error || 'Unknown error'}`);
+          throw new Error(`Admin verification failed: ${(verificationResult as any)?.error || 'Unknown error'}`);
         }
         
         console.log('Admin access via Edge Function verified successfully:', verificationResult);
         
         // Use the user ID from the verification result
-        setUserId(verificationResult.userId || "admin-user");
+        setUserId((verificationResult as any)?.userId || "admin-user");
         setIsAdmin(true);
         
       } catch (err) {

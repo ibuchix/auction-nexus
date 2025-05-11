@@ -2,6 +2,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+interface AdminOperationResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
 // Generic admin operation handler with error handling
 export async function performAdminOperation<T>(
   action: string,
@@ -26,9 +32,10 @@ export async function performAdminOperation<T>(
 }
 
 // Check if the admin API access is working
-export async function verifyAdminAccess() {
+export async function verifyAdminAccess(): Promise<AdminOperationResponse<{userId: string}>> {
   try {
-    return await performAdminOperation('verifyAccess');
+    const result = await performAdminOperation<AdminOperationResponse<{userId: string}>>('verifyAccess');
+    return result || { success: false, error: 'Failed to verify access' };
   } catch (error) {
     console.error('Admin access verification failed:', error);
     return {
@@ -80,7 +87,7 @@ export const edgeFunctionAdminOperations = {
     return performAdminOperation('getActiveAuctions');
   },
   
-  getAuctionListings: async (params = { showAllCars: true, status: null }) => {
+  getAuctionListings: async (params: { showAllCars: boolean, status: string | null } = { showAllCars: true, status: null }) => {
     return performAdminOperation('getAuctionListings', params);
   },
   

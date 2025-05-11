@@ -32,8 +32,9 @@ export function useAuctionMonitoring() {
           return [];
         }
         
-        console.log(`Successfully fetched ${data?.length || 0} active auctions`);
-        return data as Auction[];
+        const auctionsArray = Array.isArray(data) ? data : [];
+        console.log(`Successfully fetched ${auctionsArray.length || 0} active auctions`);
+        return auctionsArray as Auction[];
       } catch (error) {
         console.error('Error in useAuctionMonitoring:', error);
         toast.error('Error monitoring auctions. Please check console for details.');
