@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { adminOperations } from '@/utils/adminOperations';
+import { edgeFunctionAdminOperations } from '@/utils/edgeFunctionAdminOperations';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -9,14 +9,14 @@ type AdminContextType = {
   isAdmin: boolean;
   isLoading: boolean;
   userId: string | null;
-  operations: typeof adminOperations;
+  operations: typeof edgeFunctionAdminOperations;
 };
 
 const AdminContext = createContext<AdminContextType>({
   isAdmin: false,
   isLoading: true,
   userId: null,
-  operations: adminOperations,
+  operations: edgeFunctionAdminOperations,
 });
 
 export function AdminProvider({ children }: { children: ReactNode }) {
@@ -25,7 +25,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (isAdmin === false && !isLoading) {
-      toast.error('Admin access error. Check your service role key in .env file or Supabase permissions.');
+      toast.error('Admin access error. Check your JWT and service role key configuration.');
     }
   }, [isAdmin, isLoading]);
   
@@ -33,7 +33,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isLoading,
     userId,
-    operations: adminOperations,
+    operations: edgeFunctionAdminOperations,
   };
   
   return (

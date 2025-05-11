@@ -1,10 +1,9 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
 import { Auction, AuctionStatus } from "@/types/auction";
 import { useToast } from "@/hooks/use-toast";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
+import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,7 +17,7 @@ export function useAuctionManagement() {
   const { data: listings, isLoading, error, refetch } = useQuery({
     queryKey: ['adminVehicleListings', showAllCars],
     queryFn: async () => {
-      console.log('Fetching car listings with adminSupabase client');
+      console.log('Fetching car listings via Edge Function');
       try {
         // Check if VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables
         const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
@@ -29,35 +28,22 @@ export function useAuctionManagement() {
             description: "Admin API key is missing. Check your environment variables.",
             variant: "destructive",
           });
+          return [];
         } else {
           console.log('VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables');
         }
         
-        // Ensure we're using the admin client's configuration
-        let query = adminSupabase
-          .from('cars')
-          .select(`
-            *,
-            bids (*),
-            seller:profiles (*),
-            auction_metrics (*)
-          `);
+        // Use Edge Function to get auction listings
+        const data = await edgeFunctionAdminOperations.getAuctionListings({ showAllCars });
         
-        // Only filter by approved status if we're not showing all cars
-        if (!showAllCars) {
-          query = query.eq('status', 'approved');
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) {
-          console.error('Error fetching listings with adminSupabase:', error);
+        if (!data) {
+          console.error('Failed to fetch listings from Edge Function');
           toast({
             title: "Error",
-            description: `Failed to load auction listings: ${error.message}`,
+            description: `Failed to load auction listings`,
             variant: "destructive",
           });
-          throw error;
+          return [];
         }
         
         console.log(`Successfully fetched ${data?.length || 0} car listings`);

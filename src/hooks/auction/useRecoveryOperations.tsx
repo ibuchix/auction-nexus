@@ -1,52 +1,59 @@
 
-import { adminSupabase } from "@/integrations/supabase/adminClient";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { edgeFunctionAdminOperations } from '@/utils/edgeFunctionAdminOperations';
 
 export function useRecoveryOperations() {
-  const recoverAuction = async (auctionId: string, action: 'reset' | 'force_complete' | 'force_start' | 'reset_bids') => {
+  const [isRecovering, setIsRecovering] = useState(false);
+
+  const recoverAuction = async (
+    auctionId: string, 
+    action: 'reset' | 'force_complete' | 'force_start' | 'reset_bids'
+  ) => {
+    setIsRecovering(true);
     try {
-      // Call Supabase Edge Function
-      const { data, error } = await adminSupabase.functions.invoke('recover-auction', {
-        body: { auctionId, action }
-      });
+      const result = await edgeFunctionAdminOperations.recoverAuction(auctionId, action);
       
-      if (error) throw error;
-      
-      if (!data?.success) {
-        throw new Error(data?.message || 'Recovery operation failed');
+      if (result) {
+        toast.success(`Auction recovery successful: ${action}`);
+      } else {
+        toast.error('Failed to recover auction');
       }
       
-      return data;
+      return result;
     } catch (error) {
-      console.error('Error in recoverAuction:', error);
-      toast.error('Failed to recover auction: ' + (error as Error).message);
+      console.error('Error recovering auction:', error);
+      toast.error(`Recovery error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
+    } finally {
+      setIsRecovering(false);
     }
   };
-  
+
   const resetSystemState = async () => {
+    setIsRecovering(true);
     try {
-      // Call Supabase Edge Function
-      const { data, error } = await adminSupabase.functions.invoke('reset-auction-system', {
-        body: {}
-      });
+      const result = await edgeFunctionAdminOperations.resetSystemState();
       
-      if (error) throw error;
-      
-      if (!data?.success) {
-        throw new Error(data?.message || 'System reset failed');
+      if (result && result.success) {
+        toast.success('System state reset successfully');
+      } else {
+        toast.error('Failed to reset system state');
       }
       
-      return data;
+      return result;
     } catch (error) {
-      console.error('Error in resetSystemState:', error);
-      toast.error('Failed to reset auction system: ' + (error as Error).message);
+      console.error('Error resetting system state:', error);
+      toast.error(`System reset error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
+    } finally {
+      setIsRecovering(false);
     }
   };
 
   return {
     recoverAuction,
-    resetSystemState
+    resetSystemState,
+    isRecovering
   };
 }

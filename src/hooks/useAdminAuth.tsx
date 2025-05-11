@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { adminSupabase, verifyAdminAccess } from '@/integrations/supabase/adminClient';
+import { verifyAdminAccess } from '@/utils/edgeFunctionAdminOperations';
 import { useToast } from '@/hooks/use-toast';
 
 export function useAdminAuth() {
@@ -12,12 +12,12 @@ export function useAdminAuth() {
   
   useEffect(() => {
     // Check if admin client works by trying a simple database operation
-    const checkAdminClient = async () => {
+    const checkAdminAccess = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
-        console.log('Testing admin client access...');
+        console.log('Testing admin access via Edge Function...');
         
         // First verify that the service_role key is properly set
         if (!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
@@ -31,51 +31,28 @@ export function useAdminAuth() {
 
         console.log('Service role key is present and valid format');
         
-        // Use the verification utility to test admin access
+        // Use Edge Function to verify access
         const verificationResult = await verifyAdminAccess();
         
-        if (!verificationResult.success) {
+        if (!verificationResult?.success) {
           console.error('Admin access verification failed:', verificationResult);
-          throw new Error(`Admin verification failed: ${verificationResult.error}`);
+          throw new Error(`Admin verification failed: ${verificationResult?.error || 'Unknown error'}`);
         }
         
-        console.log('Admin access verified successfully:', verificationResult);
+        console.log('Admin access via Edge Function verified successfully:', verificationResult);
         
-        // Additional test against the cars table to ensure full access
-        const { data, error } = await adminSupabase
-          .from('cars')
-          .select('id')
-          .limit(1);
+        // Use the user ID from the verification result
+        setUserId(verificationResult.userId || "admin-user");
+        setIsAdmin(true);
         
-        if (error) {
-          console.error('Admin client error when querying cars table:', error);
-          setError({
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint
-          });
-          
-          toast({
-            title: "Admin Access Error",
-            description: `Failed to access data with admin privileges: ${error.message}`,
-            variant: "destructive",
-          });
-          setIsAdmin(false);
-        } else {
-          console.log('Admin client working successfully, cars table accessible');
-          // Use a placeholder user ID for admin operations
-          setUserId("admin-user");
-          setIsAdmin(true);
-        }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        console.error('Error testing admin client:', err);
+        console.error('Error testing admin access:', err);
         
         setError(err);
         toast({
-          title: "Admin Client Error",
-          description: `Error connecting to database with admin privileges: ${errorMessage}`,
+          title: "Admin Access Error",
+          description: `Error connecting with admin privileges: ${errorMessage}`,
           variant: "destructive",
         });
         setIsAdmin(false);
@@ -84,7 +61,7 @@ export function useAdminAuth() {
       }
     };
     
-    checkAdminClient();
+    checkAdminAccess();
   }, [toast]);
   
   return { isAdmin, isLoading, userId, error };
