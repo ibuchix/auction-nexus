@@ -1,6 +1,5 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
@@ -20,6 +19,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
+import { useAdmin } from "@/context/AdminContext";
 
 interface Seller {
   id: string;
@@ -33,86 +33,42 @@ interface Seller {
 const SellerManagement = () => {
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { operations, userId } = useAdmin();
 
   const { data: sellers, isLoading, refetch } = useQuery({
     queryKey: ['activeSellers'],
     queryFn: async () => {
       try {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, role, updated_at')
-          .eq('role', 'seller');
-
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          throw profilesError;
+        // Use the admin operations to fetch all sellers
+        const sellersData = await operations.getAllSellers();
+        if (!sellersData) {
+          console.error('Failed to fetch sellers data');
+          return [];
         }
-        
-        if (!profilesData) return [];
-        
-        const sellersWithDetails = await Promise.all(
-          profilesData.map(async (profile) => {
-            if (!profile || typeof profile.id !== 'string') {
-              console.error('Invalid profile data:', profile);
-              return null;
-            }
-
-            const { data: carsData, error: carsError } = await supabase
-              .from('cars')
-              .select('mobile_number')
-              .eq('seller_id', profile.id)
-              .eq('status', 'available')
-              .limit(1);
-            
-            if (carsError) {
-              console.error('Error fetching car data:', carsError);
-            }
-            
-            const { data: nameData, error: nameError } = await supabase
-              .from('cars')
-              .select('title')
-              .eq('seller_id', profile.id)
-              .order('created_at', { ascending: false })
-              .limit(1);
-            
-            if (nameError) {
-              console.error('Error fetching name data:', nameError);
-            }
-            
-            return {
-              id: profile.id,
-              role: profile.role,
-              created_at: profile.updated_at,
-              name: nameData?.[0]?.title?.split(' ')[0] || 'N/A',
-              mobile_number: carsData?.[0]?.mobile_number || 'N/A',
-              address: 'N/A',
-            } as Seller;
-          })
-        );
-        
-        return sellersWithDetails.filter((seller): seller is Seller => seller !== null);
+        return sellersData as Seller[];
       } catch (error) {
         console.error('Error fetching sellers:', error);
+        toast.error('Failed to load sellers data');
         throw error;
       }
     }
   });
 
   const handleDeleteSeller = async () => {
-    if (!selectedSeller) return;
+    if (!selectedSeller || !userId) return;
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', selectedSeller.id);
-
-      if (error) throw error;
-
-      toast.success('Seller account removed successfully');
-      setIsDeleteDialogOpen(false);
-      setSelectedSeller(null);
-      refetch();
+      // Use admin operations to delete the seller
+      const result = await operations.deleteSeller(selectedSeller.id);
+      
+      if (result) {
+        toast.success('Seller account removed successfully');
+        setIsDeleteDialogOpen(false);
+        setSelectedSeller(null);
+        refetch();
+      } else {
+        throw new Error('Failed to delete seller');
+      }
     } catch (error) {
       toast.error('Failed to remove seller account');
       console.error('Error removing seller:', error);
