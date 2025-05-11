@@ -9,7 +9,7 @@ export function useRecoveryOperations() {
   const recoverAuction = async (
     auctionId: string, 
     action: 'reset' | 'force_complete' | 'force_start' | 'reset_bids'
-  ) => {
+  ): Promise<void> => {
     setIsRecovering(true);
     try {
       const result = await edgeFunctionAdminOperations.recoverAuction(auctionId, action);
@@ -19,8 +19,6 @@ export function useRecoveryOperations() {
       } else {
         toast.error('Failed to recover auction');
       }
-      
-      return result;
     } catch (error) {
       console.error('Error recovering auction:', error);
       toast.error(`Recovery error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -30,7 +28,7 @@ export function useRecoveryOperations() {
     }
   };
 
-  const resetSystemState = async () => {
+  const resetSystemState = async (): Promise<any> => {
     setIsRecovering(true);
     try {
       const result = await edgeFunctionAdminOperations.resetSystemState();

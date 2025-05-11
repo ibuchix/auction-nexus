@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { Database } from '@/integrations/supabase/types';
-import { adminSupabase } from '@/integrations/supabase/adminClient'; // Changed to adminSupabase for admin context
+import { supabase } from '@/integrations/supabase/client'; // Changed to standard supabase client
 import { Auction, Car, Bid } from '@/types/auction';
 
 type CarRow = Database['public']['Tables']['cars']['Row'];
@@ -19,7 +19,7 @@ export function useAuctionRealtime(initialAuctions: Auction[]) {
   }, [initialAuctions]);
 
   useEffect(() => {
-    const channel = adminSupabase // Changed to adminSupabase
+    const channel = supabase // Changed to standard supabase client
       .channel('auction-updates')
       .on(
         'postgres_changes',
@@ -75,7 +75,7 @@ export function useAuctionRealtime(initialAuctions: Auction[]) {
       .subscribe();
 
     return () => {
-      adminSupabase.removeChannel(channel); // Changed to adminSupabase
+      supabase.removeChannel(channel); // Changed to standard supabase client
     };
   }, []);
 

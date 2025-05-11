@@ -87,7 +87,8 @@ export const edgeFunctionAdminOperations = {
     return performAdminOperation('getActiveAuctions');
   },
   
-  getAuctionListings: async (params: { showAllCars: boolean, status: string | null } = { showAllCars: true, status: null }) => {
+  // Updated to make status an optional parameter
+  getAuctionListings: async (params: { showAllCars: boolean, status: string | null }) => {
     return performAdminOperation('getAuctionListings', params);
   },
   

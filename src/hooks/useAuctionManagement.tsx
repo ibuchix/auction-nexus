@@ -1,9 +1,11 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Auction, AuctionStatus } from "@/types/auction";
 import { useToast } from "@/hooks/use-toast";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,7 +36,11 @@ export function useAuctionManagement() {
         }
         
         // Use Edge Function to get auction listings
-        const data = await edgeFunctionAdminOperations.getAuctionListings({ showAllCars });
+        // Pass status as null to match the required parameter type
+        const data = await edgeFunctionAdminOperations.getAuctionListings({ 
+          showAllCars, 
+          status: statusFilter === "all" ? null : statusFilter 
+        });
         
         if (!data) {
           console.error('Failed to fetch listings from Edge Function');
@@ -46,7 +52,7 @@ export function useAuctionManagement() {
           return [];
         }
         
-        console.log(`Successfully fetched ${data?.length || 0} car listings`);
+        console.log(`Successfully fetched ${Array.isArray(data) ? data.length : 0} car listings`);
         return data as unknown as Auction[];
       } catch (err) {
         console.error('Exception in queryFn:', err);
@@ -63,8 +69,8 @@ export function useAuctionManagement() {
 
   // Set up real-time subscription
   useEffect(() => {
-    console.log('Setting up real-time subscription with adminSupabase');
-    const channel = adminSupabase
+    console.log('Setting up real-time subscription');
+    const channel = supabase
       .channel('auction-updates')
       .on(
         'postgres_changes',
@@ -82,7 +88,7 @@ export function useAuctionManagement() {
 
     return () => {
       console.log('Removing real-time subscription');
-      adminSupabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [refetch]);
 
