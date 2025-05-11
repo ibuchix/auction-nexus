@@ -19,6 +19,15 @@ export function useAuctionManagement() {
     queryFn: async () => {
       console.log('Fetching car listings with adminSupabase client');
       try {
+        // Verify the adminSupabase client has the service role key in headers
+        const headers = (adminSupabase.rest.headers as any);
+        if (!headers.apikey) {
+          console.warn('apikey not found in adminSupabase headers, this could cause permission issues');
+        } else {
+          console.log('adminSupabase client has apikey in headers');
+        }
+        
+        // Ensure we're using the admin client's configuration
         let query = adminSupabase
           .from('cars')
           .select(`

@@ -17,12 +17,53 @@ export const adminSupabase = createClient<Database>(
     auth: {
       persistSession: false, // Don't persist this admin session
       autoRefreshToken: false, // Don't refresh tokens
+      detectSessionInUrl: false, // Don't detect session in URL
     },
     global: {
       headers: {
         // Special header to identify admin requests in server logs
-        'x-admin-access': 'true'
+        'x-admin-access': 'true',
+        // Explicitly set auth header to ensure it's using the service role
+        'apikey': SUPABASE_SERVICE_ROLE_KEY
       }
     }
   }
 );
+
+// Utility function to test admin access directly
+export async function verifyAdminAccess() {
+  try {
+    // Test if admin client can access the cars table
+    const { data, error } = await adminSupabase
+      .from('cars')
+      .select('id')
+      .limit(1);
+      
+    if (error) {
+      console.error('Admin access verification failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        details: {
+          code: error.code,
+          message: error.message,
+          hint: error.hint,
+          details: error.details
+        }
+      };
+    }
+    
+    return { 
+      success: true, 
+      message: 'Admin access verified successfully',
+      data
+    };
+  } catch (err) {
+    console.error('Exception in admin access verification:', err);
+    return { 
+      success: false, 
+      error: err instanceof Error ? err.message : 'Unknown error',
+      details: err
+    };
+  }
+}

@@ -11,7 +11,7 @@ interface AdminProtectedRouteProps {
 }
 
 export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
-  const { isAdmin, isLoading } = useAdminAuth();
+  const { isAdmin, isLoading, error } = useAdminAuth();
   const { toast } = useToast();
   const location = useLocation();
 
@@ -44,6 +44,15 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
           <li>The service role key has proper permissions in Supabase</li>
           <li>The database connection is working</li>
         </ul>
+        
+        {error && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
+            <h4 className="font-medium mb-2">Error Details:</h4>
+            <pre className="whitespace-pre-wrap text-xs text-left bg-white p-3 rounded overflow-auto max-h-40 border">
+              {JSON.stringify(error, null, 2)}
+            </pre>
+          </div>
+        )}
       </div>
     </div>;
   }
