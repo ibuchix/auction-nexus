@@ -37,12 +37,12 @@ export function useAuctionManagement() {
         
         // Use Edge Function to get auction listings
         // Pass status as null to match the required parameter type
-        const data = await edgeFunctionAdminOperations.getAuctionListings({ 
+        const response = await edgeFunctionAdminOperations.getAuctionListings({ 
           showAllCars, 
           status: statusFilter === "all" ? null : statusFilter 
         });
         
-        if (!data) {
+        if (!response) {
           console.error('Failed to fetch listings from Edge Function');
           toast({
             title: "Error",
@@ -52,8 +52,24 @@ export function useAuctionManagement() {
           return [];
         }
         
-        console.log(`Successfully fetched ${Array.isArray(data) ? data.length : 0} car listings`);
-        return data as unknown as Auction[];
+        // Handle case where response might be an object with data property rather than direct array
+        let auctionData: Auction[] = [];
+        
+        if (Array.isArray(response)) {
+          auctionData = response as Auction[];
+        } else if (response && typeof response === 'object') {
+          // Check if response has a data property that is an array
+          if (response.data && Array.isArray(response.data)) {
+            auctionData = response.data as Auction[];
+          } else {
+            // If response is an object but not in expected format
+            console.error('Unexpected response format:', response);
+            return [];
+          }
+        }
+        
+        console.log(`Successfully fetched ${auctionData.length} car listings`);
+        return auctionData;
       } catch (err) {
         console.error('Exception in queryFn:', err);
         toast({
@@ -92,7 +108,7 @@ export function useAuctionManagement() {
     };
   }, [refetch]);
 
-  const filteredListings = listings?.filter(listing => {
+  const filteredListings = Array.isArray(listings) ? listings.filter(listing => {
     const matchesSearch = 
       listing.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       listing.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,7 +118,7 @@ export function useAuctionManagement() {
     const matchesStatus = statusFilter === "all" || listing.auction_status === statusFilter;
     
     return matchesSearch && matchesStatus;
-  });
+  }) : [];
 
   const readyAuctions = filteredListings?.filter(listing => 
     listing.auction_status === 'ready' || !listing.auction_status
