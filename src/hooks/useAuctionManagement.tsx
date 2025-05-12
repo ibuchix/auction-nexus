@@ -16,7 +16,7 @@ export function useAuctionManagement() {
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
-  const { data: listings, isLoading, error, refetch } = useQuery({
+  const { data: listings = [], isLoading, error, refetch } = useQuery({
     queryKey: ['adminVehicleListings', showAllCars],
     queryFn: async () => {
       console.log('Fetching car listings via Edge Function');
@@ -58,9 +58,10 @@ export function useAuctionManagement() {
         if (Array.isArray(response)) {
           auctionData = response as Auction[];
         } else if (response && typeof response === 'object') {
-          // Check if response has a data property that is an array
-          if (response.data && Array.isArray(response.data)) {
-            auctionData = response.data as Auction[];
+          // Safely check if response has a data property that is an array
+          const responseObj = response as Record<string, any>;
+          if (responseObj.data && Array.isArray(responseObj.data)) {
+            auctionData = responseObj.data as Auction[];
           } else {
             // If response is an object but not in expected format
             console.error('Unexpected response format:', response);
@@ -108,33 +109,35 @@ export function useAuctionManagement() {
     };
   }, [refetch]);
 
-  const filteredListings = Array.isArray(listings) ? listings.filter(listing => {
+  // Ensure filteredListings is always an array, even if listings is undefined
+  const filteredListings = (Array.isArray(listings) ? listings : []).filter(listing => {
     const matchesSearch = 
-      listing.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.vin?.toLowerCase().includes(searchTerm.toLowerCase());
+      (listing.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (listing.make?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (listing.model?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (listing.vin?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     
     const matchesStatus = statusFilter === "all" || listing.auction_status === statusFilter;
     
     return matchesSearch && matchesStatus;
-  }) : [];
+  });
 
-  const readyAuctions = filteredListings?.filter(listing => 
+  // Derived states that depend on filteredListings - now guaranteed to be arrays
+  const readyAuctions = filteredListings.filter(listing => 
     listing.auction_status === 'ready' || !listing.auction_status
   );
   
-  const activeAuctions = filteredListings?.filter(listing => 
+  const activeAuctions = filteredListings.filter(listing => 
     listing.auction_status === 'active'
   );
   
-  const otherAuctions = filteredListings?.filter(listing => 
+  const otherAuctions = filteredListings.filter(listing => 
     listing.auction_status !== 'ready' && 
     listing.auction_status !== 'active' && 
     listing.auction_status !== undefined
   );
 
-  const notConfiguredListings = filteredListings?.filter(listing =>
+  const notConfiguredListings = filteredListings.filter(listing =>
     !listing.auction_status && !listing.is_auction
   );
 
