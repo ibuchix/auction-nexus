@@ -10,7 +10,7 @@ import { SellerInfo } from "./auction-card/SellerInfo";
 import { VehicleImages } from "./auction-card/VehicleImages";
 import { AuctionStatus } from "@/types/auction";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
-import { AuctionDetailsComponent } from "@/components/admin/AuctionDetails";
+import { AuctionDetails as AuctionDetailsView } from "@/components/admin/AuctionDetails";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -119,7 +119,7 @@ export function AdminAuctionCard({ auction, onPause, onCancel, onStart, onExtend
               <AccordionTrigger className="text-sm font-semibold">View Full Vehicle Details</AccordionTrigger>
               <AccordionContent>
                 <Separator className="my-2" />
-                <AuctionDetailsComponent car={auction} />
+                <AuctionDetailsView car={auction} />
               </AccordionContent>
             </AccordionItem>
           </Accordion>
