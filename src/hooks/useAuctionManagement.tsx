@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Auction, AuctionStatus } from "@/types/auction";
@@ -39,7 +38,8 @@ export function useAuctionManagement() {
         // Pass status as null to match the required parameter type
         const response = await edgeFunctionAdminOperations.getAuctionListings({ 
           showAllCars, 
-          status: statusFilter === "all" ? null : statusFilter 
+          status: statusFilter === "all" ? null : statusFilter,
+          includeFiles: true // Add parameter to include file uploads
         });
         
         if (!response) {
@@ -70,6 +70,21 @@ export function useAuctionManagement() {
         }
         
         console.log(`Successfully fetched ${auctionData.length} car listings`);
+        
+        // Process valuation data and extract reserve price for each auction
+        auctionData = auctionData.map(auction => {
+          try {
+            if (auction.valuation_data) {
+              // Log the valuation data for debugging
+              console.log(`Valuation data for ${auction.id}:`, auction.valuation_data);
+            }
+            return auction;
+          } catch (err) {
+            console.error('Error processing auction valuation data:', err);
+            return auction;
+          }
+        });
+        
         return auctionData;
       } catch (err) {
         console.error('Exception in queryFn:', err);

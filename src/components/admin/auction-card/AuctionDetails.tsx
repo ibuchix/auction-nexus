@@ -1,18 +1,24 @@
-import { Clock, DollarSign } from "lucide-react";
+
+import { Clock } from "lucide-react";
+import { PLNCurrency } from "@/components/ui/PLNCurrency";
 
 interface AuctionDetailsProps {
   price: number;
   endTime: string;
   notes?: string;
+  reservePrice?: number;
+  valuation_data?: any;
 }
 
-export function AuctionDetails({ price, endTime, notes }: AuctionDetailsProps) {
+export function AuctionDetails({ price, endTime, notes, reservePrice, valuation_data }: AuctionDetailsProps) {
+  // Use the reserve price from valuation_data if it exists, otherwise fall back to other prices
+  const displayPrice = valuation_data?.reservePrice || reservePrice || price;
+  
   return (
     <>
       <div className="flex gap-4">
         <div className="flex items-center gap-1">
-          <DollarSign className="h-4 w-4" />
-          <span>{price?.toLocaleString()}</span>
+          <PLNCurrency value={displayPrice} className="font-semibold" />
         </div>
         <div className="flex items-center gap-1">
           <Clock className="h-4 w-4" />

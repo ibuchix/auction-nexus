@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -97,8 +96,12 @@ export const edgeFunctionAdminOperations = {
     return performAdminOperation('getActiveAuctions');
   },
   
-  // Updated to make status an optional parameter
-  getAuctionListings: async (params: { showAllCars: boolean, status: string | null }) => {
+  // Updated to make status an optional parameter and include file uploads
+  getAuctionListings: async (params: { 
+    showAllCars: boolean, 
+    status: string | null,
+    includeFiles?: boolean 
+  }) => {
     return performAdminOperation('getAuctionListings', params);
   },
   

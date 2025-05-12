@@ -8,11 +8,14 @@ import { EditForm } from "./auction-card/EditForm";
 import { AuctionDetails } from "./auction-card/AuctionDetails";
 import { SellerInfo } from "./auction-card/SellerInfo";
 import { VehicleImages } from "./auction-card/VehicleImages";
-import { Auction, AuctionStatus } from "@/types/auction";
+import { AuctionStatus } from "@/types/auction";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
+import { AuctionDetailsComponent } from "@/components/admin/AuctionDetails";
+import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface AdminAuctionCardProps {
-  auction: Auction;
+  auction: any;
   onPause?: (id: string) => Promise<void>;
   onCancel?: (id: string) => Promise<void>;
   onStart?: (id: string) => Promise<void>;
@@ -60,6 +63,9 @@ export function AdminAuctionCard({ auction, onPause, onCancel, onStart, onExtend
   const handleStart = async () => onStart ? await onStart(auction.id) : await startAuction(auction.id);
   const handleExtendTime = async () => onExtendTime ? await onExtendTime(auction.id) : await extendAuctionTime(auction.id);
 
+  // Get proper pricing from valuation data if available
+  const reservePrice = auction.valuation_data?.reservePrice || auction.reserve_price;
+
   return (
     <Card className={`hover:shadow-md transition-shadow ${auction.is_damaged ? 'border-red-500' : ''}`}>
       <CardHeader className="pb-2">
@@ -94,15 +100,29 @@ export function AdminAuctionCard({ auction, onPause, onCancel, onStart, onExtend
               price={auction.price}
               endTime={auction.auction_end_time}
               notes={auction.seller_notes}
+              reservePrice={reservePrice}
+              valuation_data={auction.valuation_data}
             />
           )}
 
           <SellerInfo
             seller={auction.seller}
             mobileNumber={auction.mobile_number}
+            address={auction.address}
+            seller_name={auction.seller_name}
           />
 
           <VehicleImages images={auction.images} />
+
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="details">
+              <AccordionTrigger className="text-sm font-semibold">View Full Vehicle Details</AccordionTrigger>
+              <AccordionContent>
+                <Separator className="my-2" />
+                <AuctionDetailsComponent car={auction} />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </CardContent>
     </Card>
