@@ -1,7 +1,8 @@
 
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DealerData } from "./types";
+import { objectToCamelCase } from "@/utils/caseConverter";
 
 // Helper to validate UUID format
 const isValidUUID = (uuid: string) => {
@@ -33,7 +34,7 @@ export const approveDealer = async (
 
     console.log('Approving dealer with params:', { dealerId, adminId, notes });
     
-    const { data, error } = await adminSupabase.rpc(
+    const { data, error } = await supabase.rpc(
       'verify_dealer',
       { p_dealer_id: dealerId, p_admin_id: adminId, p_notes: notes || null }
     );
@@ -49,7 +50,7 @@ export const approveDealer = async (
     }
     
     // Also directly update the dealer record to ensure UI consistency
-    const { error: updateError } = await adminSupabase
+    const { error: updateError } = await supabase
       .from('dealers')
       .update({ 
         verification_status: 'approved',
@@ -100,7 +101,7 @@ export const rejectDealer = async (
     
     console.log('Rejecting dealer with params:', { dealerId, adminId, rejectionReason, notes });
     
-    const { data, error } = await adminSupabase.rpc(
+    const { data, error } = await supabase.rpc(
       'reject_dealer',
       { 
         p_dealer_id: dealerId, 
@@ -121,7 +122,7 @@ export const rejectDealer = async (
     }
     
     // Also directly update the dealer record to ensure UI consistency
-    const { error: updateError } = await adminSupabase
+    const { error: updateError } = await supabase
       .from('dealers')
       .update({ 
         verification_status: 'rejected',
@@ -150,7 +151,7 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
     console.log('Fetching dealers with status:', status);
     
     // Fetch all dealers directly from the dealers table
-    let query = adminSupabase
+    let query = supabase
       .from('dealers')
       .select('*')
       .order('created_at', { ascending: false });
@@ -169,11 +170,11 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
     
     console.log(`Fetched ${dealersData.length} dealers`);
     
-    // Type-safe dealers data with proper verification status type
+    // Convert snake_case to camelCase and type-safe dealers data
     const typedDealers: DealerData[] = dealersData.map(dealer => ({
-      ...dealer,
+      ...objectToCamelCase(dealer),
       verification_status: dealer.verification_status as any
-    }));
+    })) as DealerData[];
     
     return typedDealers;
   } catch (error) {

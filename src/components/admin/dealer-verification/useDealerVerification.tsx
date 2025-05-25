@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DealerData, VerificationStatus } from "./types";
-import { useAdmin } from "@/context/AdminContext";
+import { useAuth } from "@/hooks/useAuth";
 import { approveDealer, rejectDealer, fetchDealers } from "./dealer-verification-operations";
 
 export const useDealerVerification = () => {
@@ -13,7 +13,7 @@ export const useDealerVerification = () => {
   const [adminNotes, setAdminNotes] = useState("");
   const [activeTab, setActiveTab] = useState<VerificationStatus | "all">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
-  const { userId, operations } = useAdmin();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { 
@@ -37,15 +37,15 @@ export const useDealerVerification = () => {
       return;
     }
     
-    if (!userId) {
-      toast.error('Admin ID not available. Please ensure you have admin permissions.');
+    if (!user?.id) {
+      toast.error('User not authenticated. Please sign in again.');
       return;
     }
     
     setIsProcessing(true);
     
     try {
-      const result = await approveDealer(selectedDealer.id, userId, adminNotes);
+      const result = await approveDealer(selectedDealer.id, user.id, adminNotes);
       
       if (!result) throw new Error('Verification failed');
       
@@ -71,8 +71,8 @@ export const useDealerVerification = () => {
       return;
     }
     
-    if (!userId) {
-      toast.error('Admin ID not available. Please ensure you have admin permissions.');
+    if (!user?.id) {
+      toast.error('User not authenticated. Please sign in again.');
       return;
     }
     
@@ -81,7 +81,7 @@ export const useDealerVerification = () => {
     try {
       const result = await rejectDealer(
         selectedDealer.id, 
-        userId, 
+        user.id, 
         rejectionReason,
         adminNotes
       );
@@ -106,8 +106,8 @@ export const useDealerVerification = () => {
   };
 
   const handleToggleVerification = async (dealer: DealerData, newStatus: boolean) => {
-    if (!userId) {
-      toast.error('Admin ID not available. Please ensure you have admin permissions.');
+    if (!user?.id) {
+      toast.error('User not authenticated. Please sign in again.');
       return;
     }
     
@@ -117,7 +117,7 @@ export const useDealerVerification = () => {
       if (newStatus) {
         const result = await approveDealer(
           dealer.id,
-          userId,
+          user.id,
           "Quick verification via toggle switch"
         );
         
@@ -126,7 +126,7 @@ export const useDealerVerification = () => {
       } else {
         const result = await rejectDealer(
           dealer.id,
-          userId,
+          user.id,
           "Verification revoked",
           "Quick rejection via toggle switch"
         );

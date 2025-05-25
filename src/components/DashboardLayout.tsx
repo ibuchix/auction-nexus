@@ -2,7 +2,7 @@
 import { useHotkeys } from "react-hotkeys-hook";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { useAdmin } from "@/context/AdminContext";
+import { useAuth } from "@/hooks/useAuth";
 import { TopNavbar } from "./navigation/TopNavbar";
 import { BreadcrumbNav } from "./navigation/Breadcrumb";
 import { MobileNav } from "./navigation/MobileNav";
@@ -11,7 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { isAdmin } = useAdmin();
+  const { user, signOut } = useAuth();
 
   // Keyboard shortcuts
   useHotkeys('alt+h', () => navigate('/'), { description: 'Go to Dashboard' });

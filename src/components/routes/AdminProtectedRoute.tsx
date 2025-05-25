@@ -1,60 +1,43 @@
 
 import { ReactNode } from "react";
-import { useEffect } from "react";
-import { useLocation } from 'react-router-dom';
-import { useToast } from "@/hooks/use-toast";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { Loader2 } from "lucide-react";
 
 interface AdminProtectedRouteProps {
   children: ReactNode;
 }
 
 export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
-  const { isAdmin, isLoading, error } = useAdminAuth();
-  const { toast } = useToast();
-  const location = useLocation();
-
-  useEffect(() => {
-    if (!isLoading && !isAdmin) {
-      toast({
-        title: "Admin Access Error",
-        description: "Service role key not working. Check .env configuration or Supabase permissions.",
-        variant: "destructive",
-      });
-    }
-  }, [isAdmin, isLoading, toast]);
+  const { user, isAdmin, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">
-      <div className="space-y-4 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <p>Verifying admin access...</p>
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="space-y-4 text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+          <p>Loading...</p>
+        </div>
       </div>
-    </div>;
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
   if (!isAdmin) {
-    return <div className="flex items-center justify-center h-screen">
-      <div className="space-y-4 text-center max-w-lg">
-        <p className="text-red-600 font-medium text-lg">Admin Service Access Error</p>
-        <p className="text-gray-600">Unable to access the database with admin privileges. Check that:</p>
-        <ul className="list-disc list-inside text-left mx-auto text-gray-600 space-y-2">
-          <li>The VITE_SUPABASE_SERVICE_ROLE_KEY is correctly set in .env</li>
-          <li>The service role key has proper permissions in Supabase</li>
-          <li>The database connection is working</li>
-        </ul>
-        
-        {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
-            <h4 className="font-medium mb-2">Error Details:</h4>
-            <pre className="whitespace-pre-wrap text-xs text-left bg-white p-3 rounded overflow-auto max-h-40 border">
-              {JSON.stringify(error, null, 2)}
-            </pre>
-          </div>
-        )}
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="space-y-4 text-center max-w-lg">
+          <p className="text-red-600 font-medium text-lg">Access Denied</p>
+          <p className="text-gray-600">
+            You don't have admin privileges. Please contact an administrator if you believe this is an error.
+          </p>
+        </div>
       </div>
-    </div>;
+    );
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;
