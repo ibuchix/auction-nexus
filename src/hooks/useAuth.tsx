@@ -59,12 +59,14 @@ export function useAuth() {
       
       if (session?.user) {
         // Check if user is admin for existing session
-        supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data, error }) => {
+        const checkAdminStatus = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+              
             if (!error && data) {
               setIsAdmin(data.role === 'admin');
               console.log('Initial user role:', data.role);
@@ -72,13 +74,15 @@ export function useAuth() {
               console.log('Error checking initial admin status or no profile found:', error);
               setIsAdmin(false);
             }
-            setIsLoading(false);
-          })
-          .catch((error) => {
+          } catch (error) {
             console.error('Error in initial admin check:', error);
             setIsAdmin(false);
+          } finally {
             setIsLoading(false);
-          });
+          }
+        };
+        
+        checkAdminStatus();
       } else {
         // No session, not loading anymore
         setIsLoading(false);
