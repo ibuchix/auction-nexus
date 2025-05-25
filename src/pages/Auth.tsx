@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -18,13 +18,31 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupFullName, setSignupFullName] = useState("");
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
+  // Handle redirect when user is authenticated
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate("/", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="space-y-4 text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the form if user is already authenticated
   if (user) {
-    navigate("/");
     return null;
   }
 
@@ -57,7 +75,7 @@ const Auth = () => {
           title: "Welcome back!",
           description: "You have been successfully logged in.",
         });
-        navigate("/");
+        // Navigation will be handled by the useEffect above
       }
     } catch (error) {
       toast({
