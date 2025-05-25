@@ -15,11 +15,13 @@ export function useAuth() {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check if user is admin
+          // Only check admin status if user is authenticated
+          // Use setTimeout to avoid blocking the auth state change
           setTimeout(async () => {
             try {
               const { data, error } = await supabase
@@ -30,12 +32,18 @@ export function useAuth() {
               
               if (!error && data) {
                 setIsAdmin(data.role === 'admin');
+                console.log('User role:', data.role);
+              } else {
+                console.log('Error checking admin status or no profile found:', error);
+                setIsAdmin(false);
               }
             } catch (error) {
               console.error('Error checking admin status:', error);
+              setIsAdmin(false);
             }
           }, 0);
         } else {
+          // No user, definitely not admin
           setIsAdmin(false);
         }
         
@@ -45,11 +53,12 @@ export function useAuth() {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Check if user is admin
+        // Check if user is admin for existing session
         supabase
           .from('profiles')
           .select('role')
@@ -58,10 +67,20 @@ export function useAuth() {
           .then(({ data, error }) => {
             if (!error && data) {
               setIsAdmin(data.role === 'admin');
+              console.log('Initial user role:', data.role);
+            } else {
+              console.log('Error checking initial admin status or no profile found:', error);
+              setIsAdmin(false);
             }
+            setIsLoading(false);
+          })
+          .catch((error) => {
+            console.error('Error in initial admin check:', error);
+            setIsAdmin(false);
             setIsLoading(false);
           });
       } else {
+        // No session, not loading anymore
         setIsLoading(false);
       }
     });
