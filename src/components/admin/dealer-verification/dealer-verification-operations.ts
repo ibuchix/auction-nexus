@@ -49,18 +49,8 @@ export const approveDealer = async (
       throw error;
     }
     
-    // Log the action
-    await adminSupabase
-      .from('audit_logs')
-      .insert({
-        user_id: adminId,
-        action: 'approve',
-        entity_type: 'dealer',
-        entity_id: dealerId,
-        details: { notes }
-      });
-    
     console.log('Dealer approved successfully:', data);
+    toast.success('Dealer approved successfully');
     return true;
   } catch (error) {
     console.error('Error approving dealer:', error);
@@ -115,18 +105,8 @@ export const rejectDealer = async (
       throw error;
     }
     
-    // Log the action
-    await adminSupabase
-      .from('audit_logs')
-      .insert({
-        user_id: adminId,
-        action: 'reject',
-        entity_type: 'dealer',
-        entity_id: dealerId,
-        details: { rejection_reason: rejectionReason, notes }
-      });
-    
     console.log('Dealer rejected successfully:', data);
+    toast.success('Dealer rejected successfully');
     return true;
   } catch (error) {
     console.error('Error rejecting dealer:', error);
