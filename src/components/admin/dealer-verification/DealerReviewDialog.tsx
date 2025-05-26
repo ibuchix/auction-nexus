@@ -60,7 +60,7 @@ export const DealerReviewDialog = ({
           <div className="space-y-4">
             <VerificationStatus 
               status={selectedDealer.verification_status} 
-              createdAt={selectedDealer.created_at} 
+              createdAt={selectedDealer.createdAt} 
             />
             <AdminNotesInput 
               adminNotes={adminNotes} 

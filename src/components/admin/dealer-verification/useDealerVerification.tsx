@@ -49,7 +49,7 @@ export const useDealerVerification = () => {
       
       if (!result) throw new Error('Verification failed');
       
-      toast.success(`${selectedDealer.dealership_name} has been approved`);
+      toast.success(`${selectedDealer.dealershipName} has been approved`);
       setIsReviewOpen(false);
       setSelectedDealer(null);
       setAdminNotes("");
@@ -88,7 +88,7 @@ export const useDealerVerification = () => {
       
       if (!result) throw new Error('Rejection failed');
       
-      toast.success(`${selectedDealer.dealership_name} has been rejected`);
+      toast.success(`${selectedDealer.dealershipName} has been rejected`);
       setIsReviewOpen(false);
       setSelectedDealer(null);
       setRejectionReason("");
@@ -122,7 +122,7 @@ export const useDealerVerification = () => {
         );
         
         if (!result) throw new Error('Verification failed');
-        toast.success(`${dealer.dealership_name} has been approved`);
+        toast.success(`${dealer.dealershipName} has been approved`);
       } else {
         const result = await rejectDealer(
           dealer.id,
@@ -132,7 +132,7 @@ export const useDealerVerification = () => {
         );
         
         if (!result) throw new Error('Rejection failed');
-        toast.success(`${dealer.dealership_name} verification has been revoked`);
+        toast.success(`${dealer.dealershipName} verification has been revoked`);
       }
       
       // Invalidate and refetch data to update UI immediately
