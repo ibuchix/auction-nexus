@@ -7,11 +7,6 @@ interface DealerInformationProps {
 }
 
 const DealerInformation = ({ dealer }: DealerInformationProps) => {
-  // Helper function to get property value (handles both camelCase and snake_case)
-  const getValue = (camelCase: string, snakeCase: string) => {
-    return (dealer as any)[camelCase] || (dealer as any)[snakeCase] || 'N/A';
-  };
-
   return (
     <div className="space-y-4">
       <div>
@@ -19,23 +14,23 @@ const DealerInformation = ({ dealer }: DealerInformationProps) => {
         <div className="mt-2 bg-gray-50 p-3 rounded-md">
           <p className="text-sm font-semibold flex items-center gap-2">
             <Building className="h-4 w-4 text-primary" />
-            {getValue('dealershipName', 'dealership_name')}
+            {dealer.dealershipName || 'N/A'}
           </p>
           <p className="text-sm mt-1 flex items-center gap-2">
             <MapPin className="h-4 w-4 text-primary" />
-            {getValue('address', 'address')}
+            {dealer.address || 'N/A'}
           </p>
           <p className="text-sm mt-1 flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-primary" />
-            Tax ID: {getValue('taxId', 'tax_id')}
+            Tax ID: {dealer.taxId || 'N/A'}
           </p>
           <p className="text-sm mt-1 flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
-            Business Registry: {getValue('businessRegistryNumber', 'business_registry_number')}
+            Business Registry: {dealer.businessRegistryNumber || 'N/A'}
           </p>
           <p className="text-sm mt-1 flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
-            License Number: {getValue('licenseNumber', 'license_number')}
+            License Number: {dealer.licenseNumber || 'N/A'}
           </p>
         </div>
       </div>
@@ -45,7 +40,7 @@ const DealerInformation = ({ dealer }: DealerInformationProps) => {
         <div className="mt-2 bg-gray-50 p-3 rounded-md">
           <p className="text-sm font-semibold flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
-            {getValue('supervisorName', 'supervisor_name')}
+            {dealer.supervisorName || 'N/A'}
           </p>
         </div>
       </div>

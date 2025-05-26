@@ -84,16 +84,16 @@ export const DealerVerificationTable = ({
           dealers.map((dealer) => (
             <TableRow key={dealer.id}>
               <TableCell className="font-medium">
-                {dealer.dealershipName || dealer.dealership_name || 'N/A'}
+                {dealer.dealershipName || 'N/A'}
               </TableCell>
               <TableCell>
-                {dealer.supervisorName || dealer.supervisor_name || 'N/A'}
+                {dealer.supervisorName || 'N/A'}
               </TableCell>
               <TableCell>
-                {dealer.taxId || dealer.tax_id || 'N/A'}
+                {dealer.taxId || 'N/A'}
               </TableCell>
               <TableCell>
-                {formatDate(dealer.createdAt || dealer.created_at)}
+                {formatDate(dealer.createdAt)}
               </TableCell>
               <TableCell>{getStatusBadge(dealer.verification_status)}</TableCell>
               <TableCell>

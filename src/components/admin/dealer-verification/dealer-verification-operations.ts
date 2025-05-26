@@ -2,7 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DealerData } from "./types";
-import { objectToCamelCase } from "@/utils/caseConverter";
 
 // Helper to validate UUID format
 const isValidUUID = (uuid: string) => {
@@ -181,7 +180,7 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
       filteredDealers = dealersData.filter((dealer: any) => dealer.verification_status === status);
     }
     
-    // Convert snake_case to camelCase and ensure proper typing
+    // Convert snake_case to camelCase for frontend use
     const typedDealers: DealerData[] = filteredDealers.map((dealer: any) => ({
       id: dealer.id,
       userId: dealer.user_id,
@@ -191,7 +190,7 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
       businessRegistryNumber: dealer.business_registry_number,
       address: dealer.address,
       licenseNumber: dealer.license_number,
-      verification_status: dealer.verification_status as any,
+      verification_status: dealer.verification_status,
       isVerified: dealer.is_verified,
       createdAt: dealer.created_at,
       updatedAt: dealer.updated_at
