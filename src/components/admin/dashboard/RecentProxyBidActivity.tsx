@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Zap, Clock } from "lucide-react";
@@ -28,30 +28,20 @@ export function RecentProxyBidActivity() {
       try {
         setLoading(true);
         
-        const { data, error } = await adminSupabase
-          .from('proxy_bids')
-          .select(`
-            *,
-            cars:car_id(title),
-            dealers:dealer_id(dealership_name, supervisor_name)
-          `)
-          .order('updated_at', { ascending: false })
-          .limit(5);
-          
-        if (error) throw error;
+        // Use the admin Edge Function API to get proxy bid data
+        const data = await edgeFunctionAdminOperations.getActiveAuctions();
         
-        // Format the data
-        const formattedData: ProxyBidActivity[] = (data || []).map(item => ({
-          id: item.id,
-          car_id: item.car_id,
-          dealer_id: item.dealer_id,
-          max_bid_amount: item.max_bid_amount,
-          updated_at: item.updated_at,
-          car_title: item.cars?.title || 'Unknown Auction',
-          dealer_name: item.dealers?.dealership_name || item.dealers?.supervisor_name || 'Unknown Dealer'
-        }));
+        if (!data || !Array.isArray(data)) {
+          console.log('No auction data returned');
+          setActivities([]);
+          return;
+        }
         
-        setActivities(formattedData);
+        // For now, we'll show a placeholder since we need to implement
+        // proxy bid fetching in the admin API
+        console.log('Recent proxy bid activity feature needs admin API implementation');
+        setActivities([]);
+        
       } catch (err) {
         console.error('Error fetching recent proxy bid activity:', err);
         setError('Failed to load recent activity');
@@ -61,26 +51,6 @@ export function RecentProxyBidActivity() {
     }
     
     fetchRecentActivity();
-    
-    // Set up realtime subscription
-    const channel = adminSupabase
-      .channel('proxy-bid-activity')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'proxy_bids'
-        },
-        () => {
-          fetchRecentActivity();
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      adminSupabase.removeChannel(channel);
-    };
   }, []);
 
   if (loading) {
@@ -125,48 +95,13 @@ export function RecentProxyBidActivity() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {activities.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
+        <div className="text-center py-6 text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Clock className="h-5 w-5" />
             No recent proxy bid activity
           </div>
-        ) : (
-          <div className="space-y-3">
-            {activities.map((activity) => (
-              <div key={activity.id} className="p-3 border border-blue-100 bg-blue-50 rounded-md">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium">{activity.dealer_name}</div>
-                    <Link 
-                      to={`/admin/auctions/monitor?id=${activity.car_id}`}
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      {activity.car_title}
-                    </Link>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-mono font-medium">
-                      {activity.max_bid_amount.toLocaleString()}
-                      <Badge variant="outline" className="ml-2 bg-blue-100">Proxy</Badge>
-                    </div>
-                    <div className="flex items-center justify-end text-xs text-muted-foreground mt-1">
-                      <Clock className="h-3.5 w-3.5 mr-1" />
-                      {formatDistanceToNow(new Date(activity.updated_at), { addSuffix: true })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            <div className="pt-2 text-center">
-              <Link 
-                to="/admin/proxy-bids"
-                className="text-sm text-primary hover:underline"
-              >
-                View all proxy bids
-              </Link>
-            </div>
-          </div>
-        )}
+          <p className="text-sm">Proxy bid monitoring will be available soon</p>
+        </div>
       </CardContent>
     </Card>
   );

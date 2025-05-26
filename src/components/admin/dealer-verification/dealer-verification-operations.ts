@@ -104,8 +104,8 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
     // Use Edge Function API to get all dealers
     const dealersData = await edgeFunctionAdminOperations.getAllDealers();
 
-    if (!dealersData) {
-      console.log('No dealers data returned');
+    if (!dealersData || !Array.isArray(dealersData)) {
+      console.log('No dealers data returned or invalid format');
       return [];
     }
     

@@ -19,6 +19,8 @@ interface SellerInfoProps {
     verification_status?: string;
     is_verified?: boolean;
   };
+  // Add seller email as a separate prop since it's not in the Profile type
+  sellerEmail?: string;
 }
 
 export function SellerInfo({ 
@@ -27,7 +29,8 @@ export function SellerInfo({
   dealerInfo, 
   address, 
   seller_name,
-  sellerVerificationStatus 
+  sellerVerificationStatus,
+  sellerEmail
 }: SellerInfoProps) {
   if (!seller && !mobileNumber && !dealerInfo && !address && !seller_name) {
     return (
@@ -79,10 +82,10 @@ export function SellerInfo({
           </div>
         )}
         
-        {seller?.email && (
+        {sellerEmail && (
           <div className="flex items-center gap-2">
             <Mail className="h-4 w-4 text-primary" />
-            <span className="text-sm">{seller.email}</span>
+            <span className="text-sm">{sellerEmail}</span>
           </div>
         )}
         

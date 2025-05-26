@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Clock } from "lucide-react";
 
@@ -29,24 +29,11 @@ export function ProxyBidsList({ auctionId }: ProxyBidsListProps) {
       try {
         setLoading(true);
         
-        // Fetch proxy bids for this auction with dealer information
-        const { data, error } = await adminSupabase
-          .from('proxy_bids')
-          .select(`
-            *,
-            dealers:dealers(dealership_name, supervisor_name)
-          `)
-          .eq('car_id', auctionId);
-          
-        if (error) throw error;
+        // For now, we'll show a placeholder since we need to implement
+        // proxy bid fetching for specific auctions in the admin API
+        console.log('Proxy bids for auction', auctionId, 'need admin API implementation');
+        setProxyBids([]);
         
-        // Format the data
-        const formattedData = data.map(bid => ({
-          ...bid,
-          dealer_name: bid.dealers?.dealership_name || bid.dealers?.supervisor_name || 'Unknown Dealer'
-        }));
-        
-        setProxyBids(formattedData);
       } catch (err) {
         console.error('Error fetching proxy bids:', err);
         setError('Failed to load proxy bids');
@@ -73,40 +60,10 @@ export function ProxyBidsList({ auctionId }: ProxyBidsListProps) {
     );
   }
 
-  if (proxyBids.length === 0) {
-    return (
-      <div className="text-center py-4 text-muted-foreground flex items-center justify-center gap-2">
-        <Clock className="h-4 w-4" />
-        No proxy bids for this auction
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Dealer</TableHead>
-            <TableHead className="text-right">Max Bid Amount</TableHead>
-            <TableHead>Last Updated</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {proxyBids.map((bid) => (
-            <TableRow key={bid.id}>
-              <TableCell className="font-medium">{bid.dealer_name}</TableCell>
-              <TableCell className="text-right font-mono">
-                {bid.max_bid_amount.toLocaleString()} 
-                <Badge variant="outline" className="ml-2">Proxy</Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground text-sm">
-                {new Date(bid.updated_at).toLocaleString()}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="text-center py-4 text-muted-foreground flex items-center justify-center gap-2">
+      <Clock className="h-4 w-4" />
+      Proxy bid monitoring for specific auctions will be available soon
     </div>
   );
 }
