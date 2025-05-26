@@ -290,21 +290,12 @@ async function getAllSellers(supabaseAdmin) {
 
 async function getAllDealers(supabaseAdmin) {
   try {
-    console.log('Fetching all dealers with verification data...');
+    console.log('Fetching all dealers with separate queries...');
     
-    // Get dealers with profile information
+    // First, get all dealers
     const { data: dealersData, error: dealersError } = await supabaseAdmin
       .from('dealers')
-      .select(`
-        *,
-        profiles!dealers_user_id_fkey (
-          id,
-          full_name,
-          role,
-          created_at,
-          updated_at
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
       
     if (dealersError) {
@@ -314,22 +305,52 @@ async function getAllDealers(supabaseAdmin) {
     
     console.log(`Found ${dealersData?.length || 0} dealers`);
     
-    // Format dealer data for frontend
-    const formattedDealers = dealersData.map(dealer => ({
-      id: dealer.id,
-      userId: dealer.user_id,
-      supervisorName: dealer.supervisor_name,
-      dealershipName: dealer.dealership_name,
-      taxId: dealer.tax_id,
-      businessRegistryNumber: dealer.business_registry_number,
-      address: dealer.address,
-      licenseNumber: dealer.license_number,
-      verification_status: dealer.verification_status,
-      isVerified: dealer.is_verified,
-      createdAt: dealer.created_at,
-      updatedAt: dealer.updated_at,
-      profileInfo: dealer.profiles
-    }));
+    if (!dealersData || dealersData.length === 0) {
+      return [];
+    }
+    
+    // Get user IDs for profile lookup
+    const userIds = dealersData.map(dealer => dealer.user_id).filter(Boolean);
+    
+    // Fetch corresponding profiles separately
+    const { data: profilesData, error: profilesError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, role, created_at, updated_at')
+      .in('id', userIds);
+      
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      // Continue without profiles data rather than failing completely
+    }
+    
+    // Create a map of profiles for easy lookup
+    const profilesMap = new Map();
+    if (profilesData) {
+      profilesData.forEach(profile => {
+        profilesMap.set(profile.id, profile);
+      });
+    }
+    
+    // Format dealer data for frontend with profile information
+    const formattedDealers = dealersData.map(dealer => {
+      const profile = profilesMap.get(dealer.user_id);
+      
+      return {
+        id: dealer.id,
+        userId: dealer.user_id,
+        supervisorName: dealer.supervisor_name,
+        dealershipName: dealer.dealership_name,
+        taxId: dealer.tax_id,
+        businessRegistryNumber: dealer.business_registry_number,
+        address: dealer.address,
+        licenseNumber: dealer.license_number,
+        verification_status: dealer.verification_status,
+        isVerified: dealer.is_verified,
+        createdAt: dealer.created_at,
+        updatedAt: dealer.updated_at,
+        profileInfo: profile || null
+      };
+    });
     
     console.log(`Returning ${formattedDealers.length} formatted dealers`);
     return formattedDealers;
