@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -63,6 +64,10 @@ export const edgeFunctionAdminOperations = {
   
   getAllSellers: async () => {
     return performAdminOperation('getAllSellers');
+  },
+  
+  getAllDealers: async () => {
+    return performAdminOperation('getAllDealers');
   },
   
   getSellerCars: async () => {

@@ -61,6 +61,10 @@ serve(async (req) => {
         result = await getAllSellers(supabaseAdmin);
         break;
       
+      case 'getAllDealers':
+        result = await getAllDealers(supabaseAdmin);
+        break;
+      
       case 'getSellerCars':
         result = await getSellerCars(supabaseAdmin, params?.sellerId);
         break;
@@ -226,7 +230,7 @@ async function getAllSellers(supabaseAdmin) {
           // Get car data for contact info and listings count
           const { data: carsData, error: carsError } = await supabaseAdmin
             .from('cars')
-            .select('mobile_number, address, status, auction_status, is_auction')
+            .select('mobile_number, address, status, auction_status, is_auction, seller_name')
             .eq('seller_id', profile.id);
             
           if (carsError) {
@@ -247,7 +251,7 @@ async function getAllSellers(supabaseAdmin) {
             id: profile.id,
             role: profile.role,
             created_at: profile.sellers.created_at,
-            name: profile.full_name || latestCar?.mobile_number || 'Unknown Seller',
+            name: profile.full_name || latestCar?.seller_name || latestCar?.mobile_number || 'Unknown Seller',
             email: authData?.user?.email || null,
             mobile_number: latestCar?.mobile_number || null,
             address: latestCar?.address || null,
@@ -284,16 +288,68 @@ async function getAllSellers(supabaseAdmin) {
   }
 }
 
+async function getAllDealers(supabaseAdmin) {
+  try {
+    console.log('Fetching all dealers with verification data...');
+    
+    // Get dealers with profile information
+    const { data: dealersData, error: dealersError } = await supabaseAdmin
+      .from('dealers')
+      .select(`
+        *,
+        profiles!dealers_user_id_fkey (
+          id,
+          full_name,
+          role,
+          created_at,
+          updated_at
+        )
+      `)
+      .order('created_at', { ascending: false });
+      
+    if (dealersError) {
+      console.error('Error fetching dealers:', dealersError);
+      throw dealersError;
+    }
+    
+    console.log(`Found ${dealersData?.length || 0} dealers`);
+    
+    // Format dealer data for frontend
+    const formattedDealers = dealersData.map(dealer => ({
+      id: dealer.id,
+      userId: dealer.user_id,
+      supervisorName: dealer.supervisor_name,
+      dealershipName: dealer.dealership_name,
+      taxId: dealer.tax_id,
+      businessRegistryNumber: dealer.business_registry_number,
+      address: dealer.address,
+      licenseNumber: dealer.license_number,
+      verification_status: dealer.verification_status,
+      isVerified: dealer.is_verified,
+      createdAt: dealer.created_at,
+      updatedAt: dealer.updated_at,
+      profileInfo: dealer.profiles
+    }));
+    
+    console.log(`Returning ${formattedDealers.length} formatted dealers`);
+    return formattedDealers;
+  } catch (error) {
+    console.error('getAllDealers error:', error);
+    throw error;
+  }
+}
+
 async function getSellerCars(supabaseAdmin, sellerId) {
   try {
     if (!sellerId) {
-      // If no seller ID provided, get all cars with enhanced details
+      // If no seller ID provided, get all cars with enhanced details including seller info
       const { data, error } = await supabaseAdmin
         .from('cars')
         .select(`
           *, 
           profiles!cars_seller_id_fkey(full_name, role),
-          car_file_uploads(*)
+          car_file_uploads(*),
+          sellers!cars_seller_id_fkey(verification_status, is_verified)
         `);
       
       if (error) throw error;
@@ -305,7 +361,8 @@ async function getSellerCars(supabaseAdmin, sellerId) {
         .select(`
           *, 
           profiles!cars_seller_id_fkey(full_name, role),
-          car_file_uploads(*)
+          car_file_uploads(*),
+          sellers!cars_seller_id_fkey(verification_status, is_verified)
         `)
         .eq('seller_id', sellerId);
       

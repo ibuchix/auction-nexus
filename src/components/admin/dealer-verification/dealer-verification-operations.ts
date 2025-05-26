@@ -1,7 +1,7 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DealerData } from "./types";
+import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 
 // Helper to validate UUID format
 const isValidUUID = (uuid: string) => {
@@ -33,40 +33,12 @@ export const approveDealer = async (
 
     console.log('Approving dealer with params:', { dealerId, adminId, notes });
     
-    // Update dealer record directly
-    const { data, error } = await supabase
-      .from('dealers')
-      .update({ 
-        verification_status: 'approved',
-        is_verified: true,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', dealerId)
-      .select();
+    // Use Edge Function API for dealer verification
+    const result = await edgeFunctionAdminOperations.verifyDealer(dealerId, notes);
     
-    if (error) {
-      console.error('Error in approveDealer:', error);
-      throw error;
-    }
-    
-    if (!data || data.length === 0) {
-      console.error('No data returned from dealer update');
+    if (!result) {
       throw new Error('Verification failed - no response from server');
     }
-    
-    // Log the action
-    await supabase
-      .from('audit_logs')
-      .insert({
-        user_id: adminId,
-        action: 'approve',
-        entity_type: 'dealer',
-        entity_id: dealerId,
-        details: {
-          notes: notes || null,
-          verification_status: 'approved'
-        }
-      });
     
     return true;
   } catch (error) {
@@ -106,41 +78,12 @@ export const rejectDealer = async (
     
     console.log('Rejecting dealer with params:', { dealerId, adminId, rejectionReason, notes });
     
-    // Update dealer record directly
-    const { data, error } = await supabase
-      .from('dealers')
-      .update({ 
-        verification_status: 'rejected',
-        is_verified: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', dealerId)
-      .select();
+    // Use Edge Function API for dealer rejection
+    const result = await edgeFunctionAdminOperations.rejectDealer(dealerId, rejectionReason, notes);
     
-    if (error) {
-      console.error('Error in rejectDealer:', error);
-      throw error;
-    }
-    
-    if (!data || data.length === 0) {
-      console.error('No data returned from dealer update');
+    if (!result) {
       throw new Error('Rejection failed - no response from server');
     }
-    
-    // Log the action
-    await supabase
-      .from('audit_logs')
-      .insert({
-        user_id: adminId,
-        action: 'reject',
-        entity_type: 'dealer',
-        entity_id: dealerId,
-        details: {
-          rejection_reason: rejectionReason,
-          notes: notes || null,
-          verification_status: 'rejected'
-        }
-      });
     
     return true;
   } catch (error) {
@@ -152,27 +95,21 @@ export const rejectDealer = async (
 
 /**
  * Fetches the list of dealers with optional filtering by verification status
- * Uses the new admin function for complete access
+ * Uses Edge Function API for admin access
  */
 export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
   try {
     console.log('Fetching dealers with status:', status);
     
-    // Use the admin function to get all dealers with complete information
-    const { data: dealersData, error: dealersError } = await supabase
-      .rpc('admin_get_all_dealers');
+    // Use Edge Function API to get all dealers
+    const dealersData = await edgeFunctionAdminOperations.getAllDealers();
 
-    if (dealersError) {
-      console.error('Error fetching dealers:', dealersError);
-      throw dealersError;
-    }
-    
     if (!dealersData) {
       console.log('No dealers data returned');
       return [];
     }
     
-    console.log(`Fetched ${dealersData.length} dealers from admin function`);
+    console.log(`Fetched ${dealersData.length} dealers from Edge Function`);
     
     // Filter by status if specified
     let filteredDealers = dealersData;
@@ -180,20 +117,20 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
       filteredDealers = dealersData.filter((dealer: any) => dealer.verification_status === status);
     }
     
-    // Convert snake_case to camelCase for frontend use
+    // Convert to frontend format
     const typedDealers: DealerData[] = filteredDealers.map((dealer: any) => ({
       id: dealer.id,
-      userId: dealer.user_id,
-      supervisorName: dealer.supervisor_name,
-      dealershipName: dealer.dealership_name,
-      taxId: dealer.tax_id,
-      businessRegistryNumber: dealer.business_registry_number,
+      userId: dealer.user_id || dealer.userId,
+      supervisorName: dealer.supervisor_name || dealer.supervisorName,
+      dealershipName: dealer.dealership_name || dealer.dealershipName,
+      taxId: dealer.tax_id || dealer.taxId,
+      businessRegistryNumber: dealer.business_registry_number || dealer.businessRegistryNumber,
       address: dealer.address,
-      licenseNumber: dealer.license_number,
+      licenseNumber: dealer.license_number || dealer.licenseNumber,
       verification_status: dealer.verification_status,
-      isVerified: dealer.is_verified,
-      createdAt: dealer.created_at,
-      updatedAt: dealer.updated_at
+      isVerified: dealer.is_verified || dealer.isVerified,
+      createdAt: dealer.created_at || dealer.createdAt,
+      updatedAt: dealer.updated_at || dealer.updatedAt
     }));
     
     console.log(`Returning ${typedDealers.length} filtered dealers`);
