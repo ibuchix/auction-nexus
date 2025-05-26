@@ -9,8 +9,13 @@ interface Seller {
   role: string;
   created_at: string;
   name: string | null;
+  email: string | null;
   mobile_number: string | null;
   address: string | null;
+  verification_status: string | null;
+  is_verified: boolean;
+  total_listings: number;
+  active_listings: number;
 }
 
 export const useSellerManagement = () => {
@@ -22,12 +27,14 @@ export const useSellerManagement = () => {
     queryKey: ['activeSellers'],
     queryFn: async () => {
       try {
+        console.log('Fetching sellers with admin operations...');
         // Use the admin operations to fetch all sellers
         const sellersData = await operations.getAllSellers();
         if (!sellersData) {
           console.error('Failed to fetch sellers data');
           return [];
         }
+        console.log('Fetched sellers data:', sellersData);
         return sellersData as Seller[];
       } catch (error) {
         console.error('Error fetching sellers:', error);
@@ -46,6 +53,7 @@ export const useSellerManagement = () => {
     if (!selectedSeller || !userId) return;
 
     try {
+      console.log('Deleting seller:', selectedSeller.id);
       // Use admin operations to delete the seller
       const result = await operations.deleteSeller(selectedSeller.id);
       
@@ -58,6 +66,7 @@ export const useSellerManagement = () => {
         throw new Error('Failed to delete seller');
       }
     } catch (error) {
+      console.error('Error deleting seller:', error);
       throw error; // Let the dialog component handle the error
     }
   };

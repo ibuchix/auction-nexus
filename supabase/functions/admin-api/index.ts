@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
@@ -191,53 +190,93 @@ async function getAllUsers(supabaseAdmin) {
 
 async function getAllSellers(supabaseAdmin) {
   try {
-    // Get all profiles with seller role
-    const { data: profilesData, error: profilesError } = await supabaseAdmin
+    console.log('Fetching comprehensive seller data...');
+    
+    // Get sellers with joined profile and user data
+    const { data: sellersData, error: sellersError } = await supabaseAdmin
       .from('profiles')
-      .select('*')
+      .select(`
+        id,
+        role,
+        full_name,
+        updated_at,
+        sellers!inner (
+          user_id,
+          verification_status,
+          is_verified,
+          created_at
+        )
+      `)
       .eq('role', 'seller');
       
-    if (profilesError) throw profilesError;
+    if (sellersError) {
+      console.error('Error fetching sellers:', sellersError);
+      throw sellersError;
+    }
     
-    // Enrich seller data with car information
+    console.log(`Found ${sellersData?.length || 0} sellers`);
+    
+    // Get additional data for each seller (cars, contact info)
     const enrichedSellers = await Promise.all(
-      (profilesData || []).map(async (profile) => {
+      (sellersData || []).map(async (profile) => {
         try {
-          // Get latest car for this seller for contact info
+          // Get user email from auth.users
+          const { data: authData } = await supabaseAdmin.auth.admin.getUserById(profile.id);
+          
+          // Get car data for contact info and listings count
           const { data: carsData, error: carsError } = await supabaseAdmin
             .from('cars')
-            .select('mobile_number, title, created_at, address')
-            .eq('seller_id', profile.id)
-            .order('created_at', { ascending: false })
-            .limit(1);
+            .select('mobile_number, address, status, auction_status, is_auction')
+            .eq('seller_id', profile.id);
             
           if (carsError) {
-            console.error('Error fetching car data:', carsError);
+            console.error('Error fetching car data for seller:', profile.id, carsError);
           }
+          
+          // Calculate listing counts
+          const totalListings = carsData?.length || 0;
+          const activeListings = carsData?.filter(car => 
+            car.status === 'available' || 
+            (car.auction_status === 'active' && car.is_auction)
+          ).length || 0;
+          
+          // Get latest contact info from most recent car
+          const latestCar = carsData?.[0];
           
           return {
             id: profile.id,
             role: profile.role,
-            created_at: profile.updated_at,
-            name: carsData?.[0]?.title?.split(' ')?.[0] || profile.full_name || 'Unknown Seller',
-            mobile_number: carsData?.[0]?.mobile_number || 'N/A',
-            address: carsData?.[0]?.address || 'N/A',
+            created_at: profile.sellers.created_at,
+            name: profile.full_name || latestCar?.mobile_number || 'Unknown Seller',
+            email: authData?.user?.email || null,
+            mobile_number: latestCar?.mobile_number || null,
+            address: latestCar?.address || null,
+            verification_status: profile.sellers.verification_status,
+            is_verified: profile.sellers.is_verified,
+            total_listings: totalListings,
+            active_listings: activeListings
           };
         } catch (err) {
-          console.error('Error processing seller data:', err);
+          console.error('Error processing seller data:', profile.id, err);
           return {
             id: profile.id,
             role: profile.role,
-            created_at: profile.updated_at,
+            created_at: profile.sellers.created_at,
             name: profile.full_name || 'Unknown Seller',
-            mobile_number: 'N/A',
-            address: 'N/A',
+            email: null,
+            mobile_number: null,
+            address: null,
+            verification_status: profile.sellers.verification_status,
+            is_verified: profile.sellers.is_verified,
+            total_listings: 0,
+            active_listings: 0,
             error: err.message
           };
         }
       })
     );
     
+    console.log(`Enriched ${enrichedSellers.length} sellers with additional data`);
     return enrichedSellers;
   } catch (error) {
     console.error('getAllSellers error:', error);
@@ -248,18 +287,26 @@ async function getAllSellers(supabaseAdmin) {
 async function getSellerCars(supabaseAdmin, sellerId) {
   try {
     if (!sellerId) {
-      // If no seller ID provided, get all cars
+      // If no seller ID provided, get all cars with enhanced details
       const { data, error } = await supabaseAdmin
         .from('cars')
-        .select('*, profiles!cars_seller_id_fkey(full_name, role)');
+        .select(`
+          *, 
+          profiles!cars_seller_id_fkey(full_name, role),
+          car_file_uploads(*)
+        `);
       
       if (error) throw error;
       return data;
     } else {
-      // Get cars for specific seller
+      // Get cars for specific seller with enhanced details
       const { data, error } = await supabaseAdmin
         .from('cars')
-        .select('*, profiles!cars_seller_id_fkey(full_name, role)')
+        .select(`
+          *, 
+          profiles!cars_seller_id_fkey(full_name, role),
+          car_file_uploads(*)
+        `)
         .eq('seller_id', sellerId);
       
       if (error) throw error;
@@ -319,16 +366,25 @@ async function verifyDealer(supabaseAdmin, dealerId, adminId, notes) {
       throw new Error('Missing required parameters');
     }
     
+    console.log('Verifying dealer:', dealerId, 'by admin:', adminId);
+    
     // Update dealer verification status
-    const { error: updateError } = await supabaseAdmin
+    const { data: dealerData, error: updateError } = await supabaseAdmin
       .from('dealers')
       .update({ 
         verification_status: 'approved',
-        is_verified: true
+        is_verified: true,
+        updated_at: new Date().toISOString()
       })
-      .eq('id', dealerId);
+      .eq('id', dealerId)
+      .select();
     
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('Error updating dealer:', updateError);
+      throw updateError;
+    }
+    
+    console.log('Dealer verification updated:', dealerData);
     
     // Update dealer verification record if it exists
     const { data: verificationData, error: verificationError } = await supabaseAdmin
@@ -342,9 +398,18 @@ async function verifyDealer(supabaseAdmin, dealerId, adminId, notes) {
       .eq('dealer_id', dealerId)
       .select();
     
-    // If there's no existing verification record, we can ignore that error
+    // Log the action
+    await supabaseAdmin
+      .from('audit_logs')
+      .insert({
+        user_id: adminId,
+        action: 'approve',
+        entity_type: 'dealer',
+        entity_id: dealerId,
+        details: { notes, verification_data: verificationData }
+      });
     
-    return { success: true, dealer_id: dealerId };
+    return { success: true, dealer_id: dealerId, data: dealerData };
   } catch (error) {
     console.error('verifyDealer error:', error);
     throw error;
@@ -357,16 +422,25 @@ async function rejectDealer(supabaseAdmin, dealerId, adminId, rejectionReason, n
       throw new Error('Missing required parameters');
     }
     
+    console.log('Rejecting dealer:', dealerId, 'by admin:', adminId, 'reason:', rejectionReason);
+    
     // Update dealer verification status
-    const { error: updateError } = await supabaseAdmin
+    const { data: dealerData, error: updateError } = await supabaseAdmin
       .from('dealers')
       .update({ 
         verification_status: 'rejected',
-        is_verified: false
+        is_verified: false,
+        updated_at: new Date().toISOString()
       })
-      .eq('id', dealerId);
+      .eq('id', dealerId)
+      .select();
     
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('Error updating dealer:', updateError);
+      throw updateError;
+    }
+    
+    console.log('Dealer rejection updated:', dealerData);
     
     // Update dealer verification record if it exists
     const { data: verificationData, error: verificationError } = await supabaseAdmin
@@ -381,9 +455,18 @@ async function rejectDealer(supabaseAdmin, dealerId, adminId, rejectionReason, n
       .eq('dealer_id', dealerId)
       .select();
     
-    // If there's no existing verification record, we can ignore that error
+    // Log the action
+    await supabaseAdmin
+      .from('audit_logs')
+      .insert({
+        user_id: adminId,
+        action: 'reject',
+        entity_type: 'dealer',
+        entity_id: dealerId,
+        details: { rejection_reason: rejectionReason, notes, verification_data: verificationData }
+      });
     
-    return { success: true, dealer_id: dealerId };
+    return { success: true, dealer_id: dealerId, data: dealerData };
   } catch (error) {
     console.error('rejectDealer error:', error);
     throw error;
@@ -396,22 +479,42 @@ async function deleteSeller(supabaseAdmin, sellerId) {
       throw new Error('Missing seller ID');
     }
     
+    console.log('Deleting seller:', sellerId);
+    
     // First delete any cars associated with this seller
     const { error: carsError } = await supabaseAdmin
       .from('cars')
       .delete()
       .eq('seller_id', sellerId);
     
-    if (carsError) throw carsError;
+    if (carsError) {
+      console.error('Error deleting cars:', carsError);
+      throw carsError;
+    }
     
-    // Then delete the seller profile
+    // Delete seller record
     const { error: sellerError } = await supabaseAdmin
+      .from('sellers')
+      .delete()
+      .eq('user_id', sellerId);
+    
+    if (sellerError) {
+      console.error('Error deleting seller:', sellerError);
+      throw sellerError;
+    }
+    
+    // Delete the seller profile
+    const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .delete()
       .eq('id', sellerId);
     
-    if (sellerError) throw sellerError;
+    if (profileError) {
+      console.error('Error deleting profile:', profileError);
+      throw profileError;
+    }
     
+    console.log('Successfully deleted seller:', sellerId);
     return { success: true };
   } catch (error) {
     console.error('deleteSeller error:', error);
@@ -429,7 +532,8 @@ async function getActiveAuctions(supabaseAdmin) {
           *,
           bids (*),
           auction_metrics (*),
-          seller:profiles (*)
+          seller:profiles (*),
+          car_file_uploads (*)
         `)
         .eq('is_auction', true)
         .in('auction_status', ['active', 'pending'])
@@ -454,7 +558,7 @@ async function getActiveAuctions(supabaseAdmin) {
 
 async function getAuctionListings(supabaseAdmin, params = {}) {
   try {
-    const { showAllCars = true, status = null } = params;
+    const { showAllCars = true, status = null, includeFiles = true } = params;
     
     console.log('Getting auction listings with params:', params);
     
@@ -466,7 +570,13 @@ async function getAuctionListings(supabaseAdmin, params = {}) {
           *,
           bids (*),
           seller:profiles (*),
-          auction_metrics (*)
+          auction_metrics (*),
+          ${includeFiles ? 'car_file_uploads (*),' : ''}
+          sellers!cars_seller_id_fkey (
+            verification_status,
+            is_verified,
+            created_at
+          )
         `);
       
       // Only filter by approved status if we're not showing all cars

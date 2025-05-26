@@ -25,7 +25,13 @@ const SellerManagement = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Active Sellers</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Seller Management</h1>
+          <p className="text-gray-600">Manage and monitor seller accounts</p>
+        </div>
+        <div className="text-sm text-gray-500">
+          Total Sellers: {sellers?.length || 0}
+        </div>
       </div>
 
       <SellerList 

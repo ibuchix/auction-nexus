@@ -45,6 +45,7 @@ export const useDealerVerification = () => {
     setIsProcessing(true);
     
     try {
+      console.log('Approving dealer:', selectedDealer.id, 'by admin:', user.id);
       const result = await approveDealer(selectedDealer.id, user.id, adminNotes);
       
       if (!result) throw new Error('Verification failed');
@@ -79,6 +80,7 @@ export const useDealerVerification = () => {
     setIsProcessing(true);
     
     try {
+      console.log('Rejecting dealer:', selectedDealer.id, 'by admin:', user.id);
       const result = await rejectDealer(
         selectedDealer.id, 
         user.id, 
@@ -114,6 +116,8 @@ export const useDealerVerification = () => {
     setIsProcessing(true);
     
     try {
+      console.log(`Toggle verification for dealer ${dealer.id}: ${newStatus ? 'approve' : 'reject'}`);
+      
       if (newStatus) {
         const result = await approveDealer(
           dealer.id,
