@@ -1,7 +1,7 @@
 
 import { toast } from "sonner";
 import { DealerData } from "./types";
-import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
+import { adminSupabase } from "@/integrations/supabase/adminClient";
 
 // Helper to validate UUID format
 const isValidUUID = (uuid: string) => {
@@ -33,13 +33,34 @@ export const approveDealer = async (
 
     console.log('Approving dealer with params:', { dealerId, adminId, notes });
     
-    // Use Edge Function API for dealer verification
-    const result = await edgeFunctionAdminOperations.verifyDealer(dealerId, notes);
+    // Update dealer verification status directly
+    const { data, error } = await adminSupabase
+      .from('dealers')
+      .update({ 
+        verification_status: 'approved',
+        is_verified: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', dealerId)
+      .select();
     
-    if (!result) {
-      throw new Error('Verification failed - no response from server');
+    if (error) {
+      console.error('Error approving dealer:', error);
+      throw error;
     }
     
+    // Log the action
+    await adminSupabase
+      .from('audit_logs')
+      .insert({
+        user_id: adminId,
+        action: 'approve',
+        entity_type: 'dealer',
+        entity_id: dealerId,
+        details: { notes }
+      });
+    
+    console.log('Dealer approved successfully:', data);
     return true;
   } catch (error) {
     console.error('Error approving dealer:', error);
@@ -78,13 +99,34 @@ export const rejectDealer = async (
     
     console.log('Rejecting dealer with params:', { dealerId, adminId, rejectionReason, notes });
     
-    // Use Edge Function API for dealer rejection
-    const result = await edgeFunctionAdminOperations.rejectDealer(dealerId, rejectionReason, notes);
+    // Update dealer verification status directly
+    const { data, error } = await adminSupabase
+      .from('dealers')
+      .update({ 
+        verification_status: 'rejected',
+        is_verified: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', dealerId)
+      .select();
     
-    if (!result) {
-      throw new Error('Rejection failed - no response from server');
+    if (error) {
+      console.error('Error rejecting dealer:', error);
+      throw error;
     }
     
+    // Log the action
+    await adminSupabase
+      .from('audit_logs')
+      .insert({
+        user_id: adminId,
+        action: 'reject',
+        entity_type: 'dealer',
+        entity_id: dealerId,
+        details: { rejection_reason: rejectionReason, notes }
+      });
+    
+    console.log('Dealer rejected successfully:', data);
     return true;
   } catch (error) {
     console.error('Error rejecting dealer:', error);
@@ -95,45 +137,53 @@ export const rejectDealer = async (
 
 /**
  * Fetches the list of dealers with optional filtering by verification status
- * Uses Edge Function API for admin access
+ * Uses direct admin client access
  */
 export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
   try {
     console.log('Fetching dealers with status:', status);
     
-    // Use Edge Function API to get all dealers
-    const dealersData = await edgeFunctionAdminOperations.getAllDealers();
+    // Use direct admin client to get dealers
+    let query = adminSupabase
+      .from('dealers')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    if (!dealersData || !Array.isArray(dealersData)) {
-      console.log('No dealers data returned or invalid format');
+    // Filter by status if specified
+    if (status && status !== "all") {
+      query = query.eq('verification_status', status);
+    }
+
+    const { data: dealersData, error: dealersError } = await query;
+
+    if (dealersError) {
+      console.error('Error fetching dealers:', dealersError);
+      throw dealersError;
+    }
+    
+    console.log(`Fetched ${dealersData?.length || 0} dealers from database`);
+    
+    if (!dealersData || dealersData.length === 0) {
       return [];
     }
     
-    console.log(`Fetched ${dealersData.length} dealers from Edge Function`);
-    
-    // Filter by status if specified
-    let filteredDealers = dealersData;
-    if (status && status !== "all") {
-      filteredDealers = dealersData.filter((dealer: any) => dealer.verification_status === status);
-    }
-    
     // Convert to frontend format
-    const typedDealers: DealerData[] = filteredDealers.map((dealer: any) => ({
+    const typedDealers: DealerData[] = dealersData.map((dealer: any) => ({
       id: dealer.id,
-      userId: dealer.user_id || dealer.userId,
-      supervisorName: dealer.supervisor_name || dealer.supervisorName,
-      dealershipName: dealer.dealership_name || dealer.dealershipName,
-      taxId: dealer.tax_id || dealer.taxId,
-      businessRegistryNumber: dealer.business_registry_number || dealer.businessRegistryNumber,
+      userId: dealer.user_id,
+      supervisorName: dealer.supervisor_name,
+      dealershipName: dealer.dealership_name,
+      taxId: dealer.tax_id,
+      businessRegistryNumber: dealer.business_registry_number,
       address: dealer.address,
-      licenseNumber: dealer.license_number || dealer.licenseNumber,
+      licenseNumber: dealer.license_number,
       verification_status: dealer.verification_status,
-      isVerified: dealer.is_verified || dealer.isVerified,
-      createdAt: dealer.created_at || dealer.createdAt,
-      updatedAt: dealer.updated_at || dealer.updatedAt
+      isVerified: dealer.is_verified,
+      createdAt: dealer.created_at,
+      updatedAt: dealer.updated_at
     }));
     
-    console.log(`Returning ${typedDealers.length} filtered dealers`);
+    console.log(`Returning ${typedDealers.length} dealers`);
     return typedDealers;
   } catch (error) {
     console.error('Error fetching dealers:', error);
