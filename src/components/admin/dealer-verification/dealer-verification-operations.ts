@@ -34,34 +34,40 @@ export const approveDealer = async (
 
     console.log('Approving dealer with params:', { dealerId, adminId, notes });
     
-    const { data, error } = await supabase.rpc(
-      'verify_dealer',
-      { p_dealer_id: dealerId, p_admin_id: adminId, p_notes: notes || null }
-    );
-    
-    if (error) {
-      console.error('RPC error in approveDealer:', error);
-      throw error;
-    }
-    
-    if (!data) {
-      console.error('No data returned from verify_dealer RPC');
-      throw new Error('Verification failed - no response from server');
-    }
-    
-    // Also directly update the dealer record to ensure UI consistency
-    const { error: updateError } = await supabase
+    // Update dealer record directly
+    const { data, error } = await supabase
       .from('dealers')
       .update({ 
         verification_status: 'approved',
-        is_verified: true
+        is_verified: true,
+        updated_at: new Date().toISOString()
       })
-      .eq('id', dealerId);
+      .eq('id', dealerId)
+      .select();
     
-    if (updateError) {
-      console.error('Error updating dealer record:', updateError);
-      // Don't throw here, as the RPC might have succeeded
+    if (error) {
+      console.error('Error in approveDealer:', error);
+      throw error;
     }
+    
+    if (!data || data.length === 0) {
+      console.error('No data returned from dealer update');
+      throw new Error('Verification failed - no response from server');
+    }
+    
+    // Log the action
+    await supabase
+      .from('audit_logs')
+      .insert({
+        user_id: adminId,
+        action: 'approve',
+        entity_type: 'dealer',
+        entity_id: dealerId,
+        details: {
+          notes: notes || null,
+          verification_status: 'approved'
+        }
+      });
     
     return true;
   } catch (error) {
@@ -101,39 +107,41 @@ export const rejectDealer = async (
     
     console.log('Rejecting dealer with params:', { dealerId, adminId, rejectionReason, notes });
     
-    const { data, error } = await supabase.rpc(
-      'reject_dealer',
-      { 
-        p_dealer_id: dealerId, 
-        p_admin_id: adminId,
-        p_rejection_reason: rejectionReason,
-        p_notes: notes || null
-      }
-    );
-    
-    if (error) {
-      console.error('RPC error in rejectDealer:', error);
-      throw error;
-    }
-    
-    if (!data) {
-      console.error('No data returned from reject_dealer RPC');
-      throw new Error('Rejection failed - no response from server');
-    }
-    
-    // Also directly update the dealer record to ensure UI consistency
-    const { error: updateError } = await supabase
+    // Update dealer record directly
+    const { data, error } = await supabase
       .from('dealers')
       .update({ 
         verification_status: 'rejected',
-        is_verified: false
+        is_verified: false,
+        updated_at: new Date().toISOString()
       })
-      .eq('id', dealerId);
+      .eq('id', dealerId)
+      .select();
     
-    if (updateError) {
-      console.error('Error updating dealer record:', updateError);
-      // Don't throw here, as the RPC might have succeeded
+    if (error) {
+      console.error('Error in rejectDealer:', error);
+      throw error;
     }
+    
+    if (!data || data.length === 0) {
+      console.error('No data returned from dealer update');
+      throw new Error('Rejection failed - no response from server');
+    }
+    
+    // Log the action
+    await supabase
+      .from('audit_logs')
+      .insert({
+        user_id: adminId,
+        action: 'reject',
+        entity_type: 'dealer',
+        entity_id: dealerId,
+        details: {
+          rejection_reason: rejectionReason,
+          notes: notes || null,
+          verification_status: 'rejected'
+        }
+      });
     
     return true;
   } catch (error) {
@@ -145,41 +153,55 @@ export const rejectDealer = async (
 
 /**
  * Fetches the list of dealers with optional filtering by verification status
+ * Uses the new admin function for complete access
  */
 export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
   try {
     console.log('Fetching dealers with status:', status);
     
-    // Fetch all dealers directly from the dealers table
-    let query = supabase
-      .from('dealers')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    // Apply filter if not showing all dealers
-    if (status && status !== "all") {
-      query = query.eq('verification_status', status);
-    }
-    
-    const { data: dealersData, error: dealersError } = await query;
+    // Use the admin function to get all dealers with complete information
+    const { data: dealersData, error: dealersError } = await supabase
+      .rpc('admin_get_all_dealers');
 
     if (dealersError) {
       console.error('Error fetching dealers:', dealersError);
       throw dealersError;
     }
     
-    console.log(`Fetched ${dealersData.length} dealers`);
+    if (!dealersData) {
+      console.log('No dealers data returned');
+      return [];
+    }
     
-    // Convert snake_case to camelCase and type-safe dealers data
-    const typedDealers: DealerData[] = dealersData.map(dealer => ({
-      ...objectToCamelCase(dealer),
-      verification_status: dealer.verification_status as any
-    })) as DealerData[];
+    console.log(`Fetched ${dealersData.length} dealers from admin function`);
     
+    // Filter by status if specified
+    let filteredDealers = dealersData;
+    if (status && status !== "all") {
+      filteredDealers = dealersData.filter((dealer: any) => dealer.verification_status === status);
+    }
+    
+    // Convert snake_case to camelCase and ensure proper typing
+    const typedDealers: DealerData[] = filteredDealers.map((dealer: any) => ({
+      id: dealer.id,
+      userId: dealer.user_id,
+      supervisorName: dealer.supervisor_name,
+      dealershipName: dealer.dealership_name,
+      taxId: dealer.tax_id,
+      businessRegistryNumber: dealer.business_registry_number,
+      address: dealer.address,
+      licenseNumber: dealer.license_number,
+      verification_status: dealer.verification_status as any,
+      isVerified: dealer.is_verified,
+      createdAt: dealer.created_at,
+      updatedAt: dealer.updated_at
+    }));
+    
+    console.log(`Returning ${typedDealers.length} filtered dealers`);
     return typedDealers;
   } catch (error) {
     console.error('Error fetching dealers:', error);
-    toast.error('Failed to load dealers');
+    toast.error('Failed to load dealers: ' + (error instanceof Error ? error.message : 'Unknown error'));
     return [];
   }
 };

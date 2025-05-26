@@ -48,12 +48,31 @@ export const DealerVerificationTable = ({
     }
   };
 
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
+    }
+  };
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Dealership</TableHead>
           <TableHead>Contact Person</TableHead>
+          <TableHead>Tax ID</TableHead>
           <TableHead>Submitted</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Verified</TableHead>
@@ -64,9 +83,18 @@ export const DealerVerificationTable = ({
         {dealers?.length ? (
           dealers.map((dealer) => (
             <TableRow key={dealer.id}>
-              <TableCell className="font-medium">{dealer.dealership_name}</TableCell>
-              <TableCell>{dealer.supervisor_name}</TableCell>
-              <TableCell>{new Date(dealer.created_at).toLocaleDateString()}</TableCell>
+              <TableCell className="font-medium">
+                {dealer.dealershipName || dealer.dealership_name || 'N/A'}
+              </TableCell>
+              <TableCell>
+                {dealer.supervisorName || dealer.supervisor_name || 'N/A'}
+              </TableCell>
+              <TableCell>
+                {dealer.taxId || dealer.tax_id || 'N/A'}
+              </TableCell>
+              <TableCell>
+                {formatDate(dealer.createdAt || dealer.created_at)}
+              </TableCell>
               <TableCell>{getStatusBadge(dealer.verification_status)}</TableCell>
               <TableCell>
                 <TooltipProvider>
@@ -100,7 +128,7 @@ export const DealerVerificationTable = ({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={6} className="text-center py-4">
+            <TableCell colSpan={7} className="text-center py-4">
               No {activeTab === "all" ? "" : activeTab} dealers found
             </TableCell>
           </TableRow>
