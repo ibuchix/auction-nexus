@@ -20,9 +20,17 @@ interface AdminAuctionCardProps {
   onCancel?: (id: string) => Promise<void>;
   onStart?: (id: string) => Promise<void>;
   onExtendTime?: (id: string) => Promise<void>;
+  onScheduleClick?: (auction: any) => void;
 }
 
-export function AdminAuctionCard({ auction, onPause, onCancel, onStart, onExtendTime }: AdminAuctionCardProps) {
+export function AdminAuctionCard({ 
+  auction, 
+  onPause, 
+  onCancel, 
+  onStart, 
+  onExtendTime,
+  onScheduleClick 
+}: AdminAuctionCardProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editedPrice, setEditedPrice] = useState(auction.price?.toString() || "");
@@ -62,6 +70,7 @@ export function AdminAuctionCard({ auction, onPause, onCancel, onStart, onExtend
   const handleCancel = async () => onCancel ? await onCancel(auction.id) : await cancelAuction(auction.id);
   const handleStart = async () => onStart ? await onStart(auction.id) : await startAuction(auction.id);
   const handleExtendTime = async () => onExtendTime ? await onExtendTime(auction.id) : await extendAuctionTime(auction.id);
+  const handleScheduleClick = () => onScheduleClick ? onScheduleClick(auction) : undefined;
 
   // Get proper pricing from valuation data if available
   const reservePrice = auction.valuation_data?.reservePrice || auction.reserve_price;
@@ -79,6 +88,7 @@ export function AdminAuctionCard({ auction, onPause, onCancel, onStart, onExtend
           onStart={auction.auction_status === 'ready' || auction.auction_status === 'paused' ? handleStart : undefined}
           onPause={auction.auction_status === 'active' ? handlePause : undefined}
           onExtendTime={auction.auction_status === 'active' ? handleExtendTime : undefined}
+          onScheduleClick={onScheduleClick ? handleScheduleClick : undefined}
           status={auction.auction_status as AuctionStatus}
           startTime={auction.auction_start_time}
           endTime={auction.auction_end_time}
