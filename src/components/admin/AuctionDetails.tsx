@@ -1,7 +1,10 @@
+
 import { Database } from "@/integrations/supabase/types";
 import { Card } from "@/components/ui/card";
 import { Image, FileText, File, Eye } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Badge } from "@/components/ui/badge";
+import { extractAllCarImages } from "@/utils/imageUtils";
 
 type Car = Database['public']['Tables']['cars']['Row'] & {
   car_file_uploads: Database['public']['Tables']['car_file_uploads']['Row'][];
@@ -12,27 +15,40 @@ interface AuctionDetailsProps {
 }
 
 export function AuctionDetails({ car }: AuctionDetailsProps) {
+  // Extract all images from all sources
+  const allImages = extractAllCarImages(car);
+
   return (
     <div className="mt-4 space-y-4">
       {/* Images Section */}
       <div>
         <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
           <Image className="h-4 w-4" />
-          Images
+          All Vehicle Images ({allImages.length})
         </h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {car.images?.map((image, index) => (
-            <Card key={index} className="overflow-hidden">
-              <AspectRatio ratio={4/3}>
-                <img 
-                  src={image} 
-                  alt={`Car image ${index + 1}`}
-                  className="object-cover w-full h-full"
-                />
-              </AspectRatio>
-            </Card>
-          ))}
-        </div>
+        {allImages.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {allImages.map((image, index) => (
+              <Card key={index} className="overflow-hidden relative">
+                <AspectRatio ratio={4/3}>
+                  <img 
+                    src={image.url} 
+                    alt={`${image.category} image ${index + 1}`}
+                    className="object-cover w-full h-full"
+                  />
+                  <Badge 
+                    variant="secondary" 
+                    className="absolute bottom-1 left-1 text-xs bg-black/70 text-white"
+                  >
+                    {image.category}
+                  </Badge>
+                </AspectRatio>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">No images available</div>
+        )}
       </div>
 
       {/* Documents Section */}
@@ -41,21 +57,25 @@ export function AuctionDetails({ car }: AuctionDetailsProps) {
           <FileText className="h-4 w-4" />
           Documents
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {car.car_file_uploads?.map((file, index) => (
-            <Card key={index} className="p-3">
-              <a 
-                href={file.file_path}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm hover:text-blue-600"
-              >
-                <File className="h-4 w-4" />
-                {file.file_type}
-              </a>
-            </Card>
-          ))}
-        </div>
+        {car.car_file_uploads && car.car_file_uploads.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {car.car_file_uploads.map((file, index) => (
+              <Card key={index} className="p-3">
+                <a 
+                  href={file.file_path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm hover:text-blue-600"
+                >
+                  <File className="h-4 w-4" />
+                  {file.file_type}
+                </a>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">No documents available</div>
+        )}
       </div>
 
       {/* Additional Details Section */}

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -122,7 +121,7 @@ export function AdminAuctionCard({
             seller_name={auction.seller_name}
           />
 
-          <VehicleImages images={auction.images} />
+          <VehicleImages car={auction} />
 
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="details">
