@@ -1,6 +1,7 @@
 import { adminSupabase } from '@/integrations/supabase/adminClient';
 import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
+import { AuctionScheduleStatus } from '@/types/auction';
 
 // Generic admin operation handler with error handling and case conversion
 export async function performAdminOperation<T>(
@@ -200,7 +201,7 @@ export const adminOperations = {
   },
 
   // Update auction schedule status
-  updateAuctionScheduleStatus: async (scheduleId: string, status: string, adminId?: string) => {
+  updateAuctionScheduleStatus: async (scheduleId: string, status: AuctionScheduleStatus, adminId?: string) => {
     return performAdminOperation('updateAuctionScheduleStatus', async () => {
       return await adminSupabase
         .from('auction_schedules')
