@@ -38,7 +38,7 @@ export function AuctionTabContent({
             <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
             <p>No {title.toLowerCase()}</p>
           </div> : auctions?.map(listing => <div key={listing.id} className={showScheduleButton ? "relative" : ""}>
-              {showScheduleButton && <Button variant="outline" size="sm" onClick={() => onScheduleClick && onScheduleClick(listing)} className="absolute right-44 top-3 z-5 text-left text-sm bg-green-500 hover:bg-green-400">
+              {showScheduleButton && <Button variant="outline" size="sm" onClick={() => onScheduleClick && onScheduleClick(listing)} className="absolute right-44 top-3 z-5 text-left text-sm bg-green-500 hover:bg-green-400 mx-0 my-[12px]">
                   <CalendarClock className="h-4 w-4 mr-1" />
                   Schedule
                 </Button>}
