@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { adminOperations } from "@/utils/adminOperations";
 import { AuctionSchedule } from "@/types/auction";
 
 export function useScheduleOperations(carId?: string) {
@@ -13,24 +13,22 @@ export function useScheduleOperations(carId?: string) {
     try {
       setLoading(true);
       
-      let query = adminSupabase
-        .from('auction_schedules')
-        .select(`
-          *,
-          car:cars(*)
-        `)
-        .order('start_time', { ascending: true });
+      // Use admin operations to fetch schedules
+      const data = await adminOperations.getAllAuctionSchedules();
       
-      // If carId is provided, filter by this car
-      if (carId) {
-        query = query.eq('car_id', carId);
-      }
+      if (data) {
+        let filteredData = data as AuctionSchedule[];
         
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setSchedules(data as AuctionSchedule[]);
+        // If carId is provided, filter by this car
+        if (carId) {
+          filteredData = filteredData.filter(schedule => schedule.car_id === carId);
+        }
+        
+        setSchedules(filteredData);
+        setError(null);
+      } else {
+        setError('Failed to load auction schedules');
+      }
     } catch (err) {
       console.error('Error fetching auction schedules:', err);
       setError('Failed to load auction schedules');
@@ -41,28 +39,25 @@ export function useScheduleOperations(carId?: string) {
 
   const cancelSchedule = async (id: string) => {
     try {
-      // Update schedule status to 'cancelled'
-      const { error } = await adminSupabase
-        .from('auction_schedules')
-        .update({
-          status: 'cancelled',
-          last_status_change: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      const result = await adminOperations.updateAuctionScheduleStatus(id, 'cancelled');
+      
+      if (result) {
+        // Update local state
+        setSchedules(schedules.map(schedule => 
+          schedule.id === id ? { ...schedule, status: 'cancelled' } : schedule
+        ));
         
-      if (error) throw error;
-      
-      // Update local state
-      setSchedules(schedules.map(schedule => 
-        schedule.id === id ? { ...schedule, status: 'cancelled' } : schedule
-      ));
-      
-      toast.success("Schedule Cancelled", {
-        description: "The auction schedule has been cancelled"
-      });
-      
-      return true;
+        toast.success("Schedule Cancelled", {
+          description: "The auction schedule has been cancelled"
+        });
+        
+        return true;
+      } else {
+        toast.error("Error", {
+          description: "Failed to cancel the schedule"
+        });
+        return false;
+      }
     } catch (err) {
       console.error('Error cancelling schedule:', err);
       toast.error("Error", {
@@ -74,21 +69,23 @@ export function useScheduleOperations(carId?: string) {
 
   const deleteSchedule = async (id: string) => {
     try {
-      const { error } = await adminSupabase
-        .from('auction_schedules')
-        .delete()
-        .eq('id', id);
+      const result = await adminOperations.deleteAuctionSchedule(id);
+      
+      if (result !== null) {
+        // Update local state
+        setSchedules(schedules.filter(schedule => schedule.id !== id));
         
-      if (error) throw error;
-      
-      // Update local state
-      setSchedules(schedules.filter(schedule => schedule.id !== id));
-      
-      toast.success("Schedule Deleted", {
-        description: "The auction schedule has been removed"
-      });
-      
-      return true;
+        toast.success("Schedule Deleted", {
+          description: "The auction schedule has been removed"
+        });
+        
+        return true;
+      } else {
+        toast.error("Error", {
+          description: "Failed to delete the schedule"
+        });
+        return false;
+      }
     } catch (err) {
       console.error('Error deleting schedule:', err);
       toast.error("Error", {

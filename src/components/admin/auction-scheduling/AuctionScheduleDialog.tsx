@@ -4,7 +4,8 @@ import { useForm } from "react-hook-form";
 import { CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { adminOperations } from "@/utils/adminOperations";
+import { useAuth } from "@/hooks/useAuth";
 
 import {
   Dialog,
@@ -53,6 +54,7 @@ export function AuctionScheduleDialog({
   onScheduled,
 }: AuctionScheduleDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
   const [startDate, setStartDate] = useState<Date | undefined>(
     auction.auction_start_time 
       ? new Date(auction.auction_start_time) 
@@ -101,29 +103,28 @@ export function AuctionScheduleDialog({
         return;
       }
 
-      // Get current user ID for created_by
-      const { data: { user } } = await adminSupabase.auth.getUser();
-      
-      // Create auction schedule
-      const { error } = await adminSupabase
-        .from('auction_schedules')
-        .insert({
-          car_id: auction.id,
-          start_time: startDateTime.toISOString(),
-          end_time: endDateTime.toISOString(),
-          notes: data.notes,
-          created_by: user?.id,
-          is_manually_controlled: data.isManuallyControlled
+      // Create auction schedule using admin operations
+      const result = await adminOperations.createAuctionSchedule(
+        auction.id,
+        startDateTime.toISOString(),
+        endDateTime.toISOString(),
+        data.notes,
+        data.isManuallyControlled,
+        user?.id
+      );
+
+      if (result) {
+        toast.success("Auction Scheduled", {
+          description: `Auction for ${auction.title} has been scheduled successfully`
         });
-
-      if (error) throw error;
-
-      toast.success("Auction Scheduled", {
-        description: `Auction for ${auction.title} has been scheduled`
-      });
-      
-      onScheduled();
-      onClose();
+        
+        onScheduled();
+        onClose();
+      } else {
+        toast.error("Schedule Failed", {
+          description: "Failed to schedule the auction. Please check your permissions and try again."
+        });
+      }
     } catch (err) {
       console.error("Error scheduling auction:", err);
       toast.error("Schedule Failed", {

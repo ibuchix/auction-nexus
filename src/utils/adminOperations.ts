@@ -1,4 +1,3 @@
-
 import { adminSupabase } from '@/integrations/supabase/adminClient';
 import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
@@ -151,6 +150,78 @@ export const adminOperations = {
       
       // Then delete the seller profile
       return await adminSupabase.from('sellers').delete().eq('user_id', sellerId);
+    });
+  },
+
+  // Create auction schedule with proper validation
+  createAuctionSchedule: async (
+    carId: string, 
+    startTime: string, 
+    endTime: string, 
+    notes?: string, 
+    isManuallyControlled?: boolean,
+    createdBy?: string
+  ) => {
+    return performAdminOperation('createAuctionSchedule', async () => {
+      const { data, error } = await adminSupabase
+        .from('auction_schedules')
+        .insert({
+          car_id: carId,
+          start_time: startTime,
+          end_time: endTime,
+          notes: notes,
+          is_manually_controlled: isManuallyControlled || false,
+          created_by: createdBy,
+          status: 'scheduled',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select(`
+          *,
+          car:cars(*)
+        `)
+        .single();
+      
+      return { data, error };
+    });
+  },
+
+  // Get all auction schedules with car details
+  getAllAuctionSchedules: async () => {
+    return performAdminOperation('getAllAuctionSchedules', async () => {
+      return await adminSupabase
+        .from('auction_schedules')
+        .select(`
+          *,
+          car:cars(*)
+        `)
+        .order('start_time', { ascending: true });
+    });
+  },
+
+  // Update auction schedule status
+  updateAuctionScheduleStatus: async (scheduleId: string, status: string, adminId?: string) => {
+    return performAdminOperation('updateAuctionScheduleStatus', async () => {
+      return await adminSupabase
+        .from('auction_schedules')
+        .update({
+          status: status,
+          last_status_change: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', scheduleId)
+        .select()
+        .single();
+    });
+  },
+
+  // Delete auction schedule
+  deleteAuctionSchedule: async (scheduleId: string) => {
+    return performAdminOperation('deleteAuctionSchedule', async () => {
+      return await adminSupabase
+        .from('auction_schedules')
+        .delete()
+        .eq('id', scheduleId);
     });
   }
 };
