@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CalendarClock, Search, Plus, Car } from "lucide-react";
 import { AuctionSchedulesTable } from "@/components/admin/auction-scheduling/AuctionSchedulesTable";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { adminOperations } from "@/utils/adminOperations";
 import { Auction, AuctionSchedule } from "@/types/auction";
 import { Select } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,34 +24,22 @@ const AuctionScheduling = () => {
   const { data: availableAuctions, isLoading, error, refetch } = useQuery({
     queryKey: ['availableAuctions', refreshKey],
     queryFn: async () => {
-      console.log('Fetching available cars for scheduling');
+      console.log('Fetching available cars for scheduling via admin operations');
       
-      try {
-        const { data, error } = await adminSupabase
-          .from('cars')
-          .select(`
-            *,
-            seller:profiles (*)
-          `)
-          .eq('status', 'approved')
-          .is('auction_status', null);
-        
-        if (error) {
-          console.error('Error fetching available cars:', error);
-          toast({
-            title: "Error",
-            description: "Failed to load available cars for scheduling",
-            variant: "destructive",
-          });
-          throw error;
-        }
-        
-        console.log(`Successfully fetched ${data?.length || 0} available cars`);
-        return data as Auction[];
-      } catch (err) {
-        console.error('Exception fetching available cars:', err);
-        throw err;
+      const data = await adminOperations.getAvailableCarsForScheduling();
+      
+      if (!data) {
+        console.error('No data returned from getAvailableCarsForScheduling');
+        toast({
+          title: "Error",
+          description: "Failed to load available cars for scheduling",
+          variant: "destructive",
+        });
+        return [];
       }
+      
+      console.log(`Successfully fetched ${data.length || 0} available cars`);
+      return data as Auction[];
     },
     retry: 2,
   });

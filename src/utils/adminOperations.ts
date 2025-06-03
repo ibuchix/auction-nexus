@@ -120,6 +120,20 @@ export const adminOperations = {
     });
   },
   
+  // Get available cars for auction scheduling with admin access
+  getAvailableCarsForScheduling: async () => {
+    return performAdminOperation('getAvailableCarsForScheduling', async () => {
+      return await adminSupabase
+        .from('cars')
+        .select(`
+          *,
+          seller:profiles (*)
+        `)
+        .eq('status', 'approved')
+        .is('auction_status', null);
+    });
+  },
+  
   // Get active auctions with admin access - direct table access
   getActiveAuctions: async () => {
     return performAdminOperation('getActiveAuctions', async () => {
