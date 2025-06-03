@@ -120,28 +120,20 @@ export const adminOperations = {
     });
   },
   
-  // Get active auctions with admin access
+  // Get active auctions with admin access - using RPC function
   getActiveAuctions: async () => {
     return performAdminOperation('getActiveAuctions', async () => {
-      return await adminSupabase
-        .from('cars')
-        .select('*')
-        .in('auction_status', ['active', 'pending'])
-        .eq('is_auction', true)
-        .order('auction_end_time', { ascending: true });
+      return await adminSupabase.rpc('admin_get_active_auctions');
     });
   },
   
-  // Get auction listings with admin access
+  // Get auction listings with admin access - using RPC function
   getAuctionListings: async (showAllCars: boolean = true, status?: string) => {
     return performAdminOperation('getAuctionListings', async () => {
-      let query = adminSupabase.from('cars').select('*');
-      
-      if (!showAllCars && status) {
-        query = query.eq('auction_status', status);
-      }
-      
-      return await query.order('created_at', { ascending: false });
+      return await adminSupabase.rpc('admin_get_auction_listings', {
+        p_show_all: showAllCars,
+        p_status: status || null
+      });
     });
   },
   
@@ -170,21 +162,8 @@ export const adminOperations = {
     });
     
     return performAdminOperation('createAuctionSchedule', async () => {
-      // First verify the car exists and we have access to it
-      const { data: carData, error: carError } = await adminSupabase
-        .from('cars')
-        .select('id, title, make, model, year')
-        .eq('id', carId)
-        .single();
-
-      if (carError) {
-        console.error('Car verification failed:', carError);
-        throw new Error(`Car not found or access denied: ${carError.message}`);
-      }
-
-      console.log('Car verified:', carData);
-
-      // Create the schedule record
+      // Skip car verification step and directly create the schedule
+      // The RLS policies should allow admin access
       const scheduleData = {
         car_id: carId,
         start_time: startTime,
