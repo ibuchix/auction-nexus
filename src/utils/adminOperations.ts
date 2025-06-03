@@ -1,4 +1,3 @@
-
 import { adminSupabase } from '@/integrations/supabase/adminClient';
 import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
@@ -157,7 +156,7 @@ export const adminOperations = {
     });
   },
 
-  // Create auction schedule with admin access
+  // Create auction schedule with admin access - simplified
   createAuctionSchedule: async (
     carId: string, 
     startTime: string, 
@@ -171,7 +170,7 @@ export const adminOperations = {
     });
     
     return performAdminOperation('createAuctionSchedule', async () => {
-      // Use admin client to directly insert without RLS restrictions
+      // Create schedule data without any validation
       const scheduleData = {
         car_id: carId,
         start_time: startTime,
@@ -186,13 +185,11 @@ export const adminOperations = {
 
       console.log('Inserting schedule data:', scheduleData);
 
+      // Insert directly into auction_schedules table
       const { data, error } = await adminSupabase
         .from('auction_schedules')
         .insert(scheduleData)
-        .select(`
-          *,
-          car:cars(*)
-        `)
+        .select()
         .single();
       
       if (error) {
