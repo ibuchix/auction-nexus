@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CalendarClock, Search, Plus, Car } from "lucide-react";
 import { AuctionSchedulesTable } from "@/components/admin/auction-scheduling/AuctionSchedulesTable";
@@ -38,7 +39,7 @@ const AuctionScheduling = () => {
         return [];
       }
       
-      console.log(`Successfully fetched ${data.length || 0} available cars`);
+      console.log(`Successfully fetched ${(data as Auction[]).length || 0} available cars`);
       return data as Auction[];
     },
     retry: 2,
