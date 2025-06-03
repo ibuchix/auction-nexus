@@ -1,3 +1,4 @@
+
 import { adminSupabase } from '@/integrations/supabase/adminClient';
 import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
@@ -120,20 +121,28 @@ export const adminOperations = {
     });
   },
   
-  // Get active auctions with admin access - using RPC function
+  // Get active auctions with admin access - direct table access
   getActiveAuctions: async () => {
     return performAdminOperation('getActiveAuctions', async () => {
-      return await adminSupabase.rpc('admin_get_active_auctions');
+      return await adminSupabase
+        .from('cars')
+        .select('*')
+        .in('auction_status', ['active', 'pending'])
+        .eq('is_auction', true)
+        .order('auction_end_time', { ascending: true });
     });
   },
   
-  // Get auction listings with admin access - using RPC function
+  // Get auction listings with admin access - direct table access
   getAuctionListings: async (showAllCars: boolean = true, status?: string) => {
     return performAdminOperation('getAuctionListings', async () => {
-      return await adminSupabase.rpc('admin_get_auction_listings', {
-        p_show_all: showAllCars,
-        p_status: status || null
-      });
+      let query = adminSupabase.from('cars').select('*');
+      
+      if (!showAllCars && status) {
+        query = query.eq('auction_status', status);
+      }
+      
+      return await query.order('created_at', { ascending: false });
     });
   },
   
@@ -148,7 +157,7 @@ export const adminOperations = {
     });
   },
 
-  // Create auction schedule with proper validation and error handling
+  // Create auction schedule with admin access
   createAuctionSchedule: async (
     carId: string, 
     startTime: string, 
@@ -162,8 +171,7 @@ export const adminOperations = {
     });
     
     return performAdminOperation('createAuctionSchedule', async () => {
-      // Skip car verification step and directly create the schedule
-      // The RLS policies should allow admin access
+      // Use admin client to directly insert without RLS restrictions
       const scheduleData = {
         car_id: carId,
         start_time: startTime,
@@ -197,7 +205,7 @@ export const adminOperations = {
     });
   },
 
-  // Get all auction schedules with car details and improved error handling
+  // Get all auction schedules with admin access
   getAllAuctionSchedules: async () => {
     console.log('Fetching all auction schedules');
     
@@ -220,7 +228,7 @@ export const adminOperations = {
     });
   },
 
-  // Update auction schedule status with improved logging
+  // Update auction schedule status with admin access
   updateAuctionScheduleStatus: async (scheduleId: string, status: AuctionScheduleStatus, adminId?: string) => {
     console.log('Updating schedule status:', { scheduleId, status, adminId });
     
@@ -246,7 +254,7 @@ export const adminOperations = {
     });
   },
 
-  // Delete auction schedule with improved logging
+  // Delete auction schedule with admin access
   deleteAuctionSchedule: async (scheduleId: string) => {
     console.log('Deleting auction schedule:', scheduleId);
     
