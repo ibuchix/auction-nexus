@@ -14,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Json } from "@/integrations/supabase/types";
 
 // Define a type for verification status
 type VerificationStatus = "pending" | "approved" | "rejected";
@@ -24,7 +23,7 @@ interface CarListing {
   make: string;
   model: string;
   year: number;
-  price: number;
+  reserve_price: number;
   created_at: string;
   status: string;
   seller_id: string;
@@ -63,13 +62,20 @@ const ListingVerification = () => {
         const { data, error } = await supabase
           .from('listing_verifications')
           .select(`
-            *,
-            car:car_id (
+            id,
+            car_id,
+            verification_status,
+            submitted_at,
+            reviewed_at,
+            notes,
+            rejection_reason,
+            admin_id,
+            car:cars!listing_verifications_car_id_fkey (
               id,
               make,
               model,
               year,
-              price,
+              reserve_price,
               created_at,
               status,
               seller_id,
@@ -79,9 +85,20 @@ const ListingVerification = () => {
           `)
           .eq('verification_status', activeTab);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
         
-        return data as ListingVerificationData[];
+        // Filter out any records where car data failed to load
+        const validData = (data || []).filter(item => 
+          item.car && 
+          typeof item.car === 'object' && 
+          !('error' in item.car) &&
+          item.car.id
+        ) as ListingVerificationData[];
+        
+        return validData;
       } catch (error) {
         console.error('Error fetching listing verifications:', error);
         toast.error('Failed to load listing verifications');
@@ -238,7 +255,7 @@ const ListingVerification = () => {
                             <TableCell className="font-medium">
                               {verification.car.year} {verification.car.make} {verification.car.model}
                             </TableCell>
-                            <TableCell>${verification.car.price.toLocaleString()}</TableCell>
+                            <TableCell>PLN {verification.car.reserve_price.toLocaleString()}</TableCell>
                             <TableCell>{format(new Date(verification.submitted_at), "MMM d, yyyy")}</TableCell>
                             <TableCell>{getStatusBadge(verification.verification_status)}</TableCell>
                             <TableCell className="text-right">
@@ -277,7 +294,7 @@ const ListingVerification = () => {
                   <div className="border rounded-md p-4 space-y-2">
                     <p><span className="font-medium">Title:</span> {selectedListing.car.title}</p>
                     <p><span className="font-medium">Vehicle:</span> {selectedListing.car.year} {selectedListing.car.make} {selectedListing.car.model}</p>
-                    <p><span className="font-medium">Price:</span> ${selectedListing.car.price.toLocaleString()}</p>
+                    <p><span className="font-medium">Reserve Price:</span> PLN {selectedListing.car.reserve_price.toLocaleString()}</p>
                     <p><span className="font-medium">Listed on:</span> {format(new Date(selectedListing.car.created_at), "MMM d, yyyy")}</p>
                     <p><span className="font-medium">Status:</span> {selectedListing.car.status}</p>
                   </div>
