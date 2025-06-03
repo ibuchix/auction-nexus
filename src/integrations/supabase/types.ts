@@ -2303,7 +2303,7 @@ export type Database = {
           p_status: Database["public"]["Enums"]["system_component_health"]
           p_details?: Json
         }
-        Returns: string
+        Returns: undefined
       }
       upsert_car_listing: {
         Args: { car_data: Json; is_draft?: boolean }

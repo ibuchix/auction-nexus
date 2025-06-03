@@ -1,3 +1,4 @@
+
 import { useAuctionMonitoring } from "@/hooks/useAuctionMonitoring";
 import { useState, useMemo } from "react";
 import { AuctionMetrics } from "@/components/admin/auction-monitoring/AuctionMetrics";
@@ -27,7 +28,7 @@ const AuctionMonitoring = () => {
           case "bids":
             return (b.bids?.length || 0) - (a.bids?.length || 0);
           case "value":
-            return (b.bids?.[0]?.amount || b.price) - (a.bids?.[0]?.amount || a.price);
+            return (b.bids?.[0]?.amount || b.reserve_price || 0) - (a.bids?.[0]?.amount || a.reserve_price || 0);
           default:
             return 0;
         }

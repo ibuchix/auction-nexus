@@ -137,7 +137,7 @@ export function AuctionCard({ auction, onPause, onCancel }: AuctionCardProps) {
           <div className="flex items-center gap-1">
             <DollarSign className="h-4 w-4" />
             <span>
-              {auction.bids?.[0]?.amount || auction.price}
+              {auction.bids?.[0]?.amount || auction.reserve_price}
             </span>
           </div>
           <div className="flex items-center gap-1">

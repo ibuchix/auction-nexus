@@ -24,7 +24,7 @@ export function useScheduleOperations(carId?: string) {
         
         // If carId is provided, filter by this car
         if (carId) {
-          filteredData = filteredData.filter(schedule => schedule.carId === carId);
+          filteredData = filteredData.filter(schedule => schedule.car_id === carId);
           console.log(`Filtered to ${filteredData.length} schedules for car ${carId}`);
         }
         
