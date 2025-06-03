@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CalendarClock, Search, Plus, Car } from "lucide-react";
 import { AuctionSchedulesTable } from "@/components/admin/auction-scheduling/AuctionSchedulesTable";
@@ -18,49 +19,64 @@ const AuctionScheduling = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
 
   const { data: availableAuctions, isLoading, error, refetch } = useQuery({
-    queryKey: ['availableAuctions'],
+    queryKey: ['availableAuctions', refreshKey],
     queryFn: async () => {
-      const { data, error } = await adminSupabase
-        .from('cars')
-        .select(`
-          *,
-          seller:profiles (*)
-        `)
-        .eq('status', 'approved')
-        .is('auction_status', null);
+      console.log('Fetching available cars for scheduling');
       
-      if (error) {
-        console.error('Error fetching available cars:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load available cars for scheduling",
-          variant: "destructive",
-        });
-        throw error;
+      try {
+        const { data, error } = await adminSupabase
+          .from('cars')
+          .select(`
+            *,
+            seller:profiles (*)
+          `)
+          .eq('status', 'approved')
+          .is('auction_status', null);
+        
+        if (error) {
+          console.error('Error fetching available cars:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load available cars for scheduling",
+            variant: "destructive",
+          });
+          throw error;
+        }
+        
+        console.log(`Successfully fetched ${data?.length || 0} available cars`);
+        return data as Auction[];
+      } catch (err) {
+        console.error('Exception fetching available cars:', err);
+        throw err;
       }
-      
-      return data as Auction[];
-    }
+    },
+    retry: 2,
   });
 
   const handleRefresh = () => {
+    console.log('Refreshing auction scheduling data');
+    setRefreshKey(prev => prev + 1);
     refetch();
   };
 
   const handleScheduleAuction = (auction: Auction) => {
+    console.log('Opening schedule dialog for auction:', auction.id);
     setSelectedAuction(auction);
     setIsScheduleDialogOpen(true);
   };
 
   const handleCloseScheduleDialog = () => {
+    console.log('Closing schedule dialog');
     setIsScheduleDialogOpen(false);
     setSelectedAuction(null);
   };
 
   const handleScheduleSuccess = () => {
+    console.log('Schedule created successfully, refreshing data');
     handleRefresh();
   };
 
@@ -114,7 +130,10 @@ const AuctionScheduling = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <AuctionSchedulesTable onRefresh={handleRefresh} />
+              <AuctionSchedulesTable 
+                onRefresh={handleRefresh}
+                key={refreshKey}
+              />
             </CardContent>
           </Card>
         </TabsContent>

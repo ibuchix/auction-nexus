@@ -84,6 +84,7 @@ export function AuctionScheduleDialog({
   const handleSaveSchedule = async (data: FormValues) => {
     try {
       setIsSubmitting(true);
+      console.log('Starting schedule creation process');
 
       // Create DateTime objects for start and end times
       const startDateTime = new Date(data.startDate);
@@ -103,6 +104,15 @@ export function AuctionScheduleDialog({
         return;
       }
 
+      console.log('Creating schedule with:', {
+        carId: auction.id,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        notes: data.notes,
+        isManuallyControlled: data.isManuallyControlled,
+        userId: user?.id
+      });
+
       // Create auction schedule using admin operations
       const result = await adminOperations.createAuctionSchedule(
         auction.id,
@@ -114,6 +124,7 @@ export function AuctionScheduleDialog({
       );
 
       if (result) {
+        console.log('Schedule creation successful:', result);
         toast.success("Auction Scheduled", {
           description: `Auction for ${auction.title} has been scheduled successfully`
         });
@@ -121,6 +132,7 @@ export function AuctionScheduleDialog({
         onScheduled();
         onClose();
       } else {
+        console.error('Schedule creation failed - no result returned');
         toast.error("Schedule Failed", {
           description: "Failed to schedule the auction. Please check your permissions and try again."
         });
@@ -128,7 +140,7 @@ export function AuctionScheduleDialog({
     } catch (err) {
       console.error("Error scheduling auction:", err);
       toast.error("Schedule Failed", {
-        description: "Failed to schedule the auction. Please try again."
+        description: `Failed to schedule the auction: ${err instanceof Error ? err.message : 'Unknown error'}`
       });
     } finally {
       setIsSubmitting(false);

@@ -9,6 +9,7 @@ export async function performAdminOperation<T>(
   operation: () => Promise<{ data: any; error: any }>
 ): Promise<T | null> {
   try {
+    console.log(`Starting admin operation: ${operationName}`);
     const { data, error } = await operation();
     
     if (error) {
@@ -17,6 +18,7 @@ export async function performAdminOperation<T>(
       return null;
     }
     
+    console.log(`Admin operation successful (${operationName}):`, data);
     // Convert snake_case to camelCase for frontend use
     return data ? objectToCamelCase(data) as T : null;
   } catch (error) {
@@ -154,7 +156,7 @@ export const adminOperations = {
     });
   },
 
-  // Create auction schedule with proper validation
+  // Create auction schedule with proper validation and error handling
   createAuctionSchedule: async (
     carId: string, 
     startTime: string, 
@@ -163,47 +165,88 @@ export const adminOperations = {
     isManuallyControlled?: boolean,
     createdBy?: string
   ) => {
+    console.log('Creating auction schedule with params:', {
+      carId, startTime, endTime, notes, isManuallyControlled, createdBy
+    });
+    
     return performAdminOperation('createAuctionSchedule', async () => {
+      // First verify the car exists and we have access to it
+      const { data: carData, error: carError } = await adminSupabase
+        .from('cars')
+        .select('id, title, make, model, year')
+        .eq('id', carId)
+        .single();
+
+      if (carError) {
+        console.error('Car verification failed:', carError);
+        throw new Error(`Car not found or access denied: ${carError.message}`);
+      }
+
+      console.log('Car verified:', carData);
+
+      // Create the schedule record
+      const scheduleData = {
+        car_id: carId,
+        start_time: startTime,
+        end_time: endTime,
+        notes: notes || null,
+        is_manually_controlled: isManuallyControlled || false,
+        created_by: createdBy || null,
+        status: 'scheduled' as AuctionScheduleStatus,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Inserting schedule data:', scheduleData);
+
       const { data, error } = await adminSupabase
         .from('auction_schedules')
-        .insert({
-          car_id: carId,
-          start_time: startTime,
-          end_time: endTime,
-          notes: notes,
-          is_manually_controlled: isManuallyControlled || false,
-          created_by: createdBy,
-          status: 'scheduled',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(scheduleData)
         .select(`
           *,
           car:cars(*)
         `)
         .single();
       
-      return { data, error };
+      if (error) {
+        console.error('Schedule insertion failed:', error);
+        throw error;
+      }
+
+      console.log('Schedule created successfully:', data);
+      return { data, error: null };
     });
   },
 
-  // Get all auction schedules with car details
+  // Get all auction schedules with car details and improved error handling
   getAllAuctionSchedules: async () => {
+    console.log('Fetching all auction schedules');
+    
     return performAdminOperation('getAllAuctionSchedules', async () => {
-      return await adminSupabase
+      const { data, error } = await adminSupabase
         .from('auction_schedules')
         .select(`
           *,
-          car:cars(*)
+          car:cars(id, title, make, model, year, vin, status, auction_status)
         `)
         .order('start_time', { ascending: true });
+
+      if (error) {
+        console.error('Failed to fetch auction schedules:', error);
+        throw error;
+      }
+
+      console.log(`Successfully fetched ${data?.length || 0} auction schedules`);
+      return { data, error: null };
     });
   },
 
-  // Update auction schedule status
+  // Update auction schedule status with improved logging
   updateAuctionScheduleStatus: async (scheduleId: string, status: AuctionScheduleStatus, adminId?: string) => {
+    console.log('Updating schedule status:', { scheduleId, status, adminId });
+    
     return performAdminOperation('updateAuctionScheduleStatus', async () => {
-      return await adminSupabase
+      const { data, error } = await adminSupabase
         .from('auction_schedules')
         .update({
           status: status,
@@ -213,16 +256,34 @@ export const adminOperations = {
         .eq('id', scheduleId)
         .select()
         .single();
+
+      if (error) {
+        console.error('Schedule status update failed:', error);
+        throw error;
+      }
+
+      console.log('Schedule status updated successfully:', data);
+      return { data, error: null };
     });
   },
 
-  // Delete auction schedule
+  // Delete auction schedule with improved logging
   deleteAuctionSchedule: async (scheduleId: string) => {
+    console.log('Deleting auction schedule:', scheduleId);
+    
     return performAdminOperation('deleteAuctionSchedule', async () => {
-      return await adminSupabase
+      const { data, error } = await adminSupabase
         .from('auction_schedules')
         .delete()
         .eq('id', scheduleId);
+
+      if (error) {
+        console.error('Schedule deletion failed:', error);
+        throw error;
+      }
+
+      console.log('Schedule deleted successfully');
+      return { data, error: null };
     });
   }
 };

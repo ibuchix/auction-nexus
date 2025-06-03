@@ -12,6 +12,9 @@ export function useScheduleOperations(carId?: string) {
   const fetchSchedules = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      console.log('Fetching schedules for carId:', carId);
       
       // Use admin operations to fetch schedules
       const data = await adminOperations.getAllAuctionSchedules();
@@ -21,17 +24,20 @@ export function useScheduleOperations(carId?: string) {
         
         // If carId is provided, filter by this car
         if (carId) {
-          filteredData = filteredData.filter(schedule => schedule.car_id === carId);
+          filteredData = filteredData.filter(schedule => schedule.carId === carId);
+          console.log(`Filtered to ${filteredData.length} schedules for car ${carId}`);
         }
         
+        console.log('Setting schedules:', filteredData);
         setSchedules(filteredData);
-        setError(null);
       } else {
+        console.error('No data returned from getAllAuctionSchedules');
         setError('Failed to load auction schedules');
       }
     } catch (err) {
       console.error('Error fetching auction schedules:', err);
       setError('Failed to load auction schedules');
+      toast.error('Failed to load auction schedules');
     } finally {
       setLoading(false);
     }
@@ -39,6 +45,7 @@ export function useScheduleOperations(carId?: string) {
 
   const cancelSchedule = async (id: string) => {
     try {
+      console.log('Cancelling schedule:', id);
       const result = await adminOperations.updateAuctionScheduleStatus(id, 'cancelled');
       
       if (result) {
@@ -69,6 +76,7 @@ export function useScheduleOperations(carId?: string) {
 
   const deleteSchedule = async (id: string) => {
     try {
+      console.log('Deleting schedule:', id);
       const result = await adminOperations.deleteAuctionSchedule(id);
       
       if (result !== null) {
