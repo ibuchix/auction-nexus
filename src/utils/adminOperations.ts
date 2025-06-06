@@ -30,9 +30,11 @@ export async function performAdminOperation<T>(
 
 // Direct admin operations using Supabase admin client
 export const adminOperations = {
-  // Fetch all dealers using direct admin access with email information
+  // Fetch all dealers using direct admin access with email information - bypassing performAdminOperation
   getAllDealers: async (status?: string) => {
-    return performAdminOperation('getAllDealers', async () => {
+    try {
+      console.log('Starting getAllDealers operation with status:', status);
+      
       let query = adminSupabase
         .from('dealers')
         .select(`
@@ -52,8 +54,11 @@ export const adminOperations = {
       
       if (error) {
         console.error('Error fetching dealers:', error);
-        throw error;
+        toast.error(`Failed to load dealers: ${error.message}`);
+        return null;
       }
+
+      console.log(`Fetched ${dealersData?.length || 0} dealers from database`);
 
       // If we have dealers, fetch their email addresses from auth.users
       if (dealersData && dealersData.length > 0) {
@@ -76,17 +81,23 @@ export const adminOperations = {
           return acc;
         }, {} as Record<string, string | null>);
 
-        // Add email to each dealer
+        // Add email to each dealer - return raw data without case conversion
         const dealersWithEmails = dealersData.map(dealer => ({
           ...dealer,
           email: emailMap[dealer.user_id]
         }));
 
-        return { data: dealersWithEmails, error: null };
+        console.log(`Successfully added emails to ${dealersWithEmails.length} dealers`);
+        return dealersWithEmails;
       }
 
-      return { data: dealersData, error: null };
-    });
+      console.log('No dealers found or empty result');
+      return dealersData || [];
+    } catch (error) {
+      console.error('Fatal error in getAllDealers:', error);
+      toast.error(`Failed to load dealers: ${(error as Error).message || 'Unknown error'}`);
+      return null;
+    }
   },
   
   // Verify dealer using direct database access
