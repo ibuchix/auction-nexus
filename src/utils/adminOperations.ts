@@ -1,4 +1,3 @@
-
 import { adminSupabase } from '@/integrations/supabase/adminClient';
 import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
@@ -31,20 +30,15 @@ export async function performAdminOperation<T>(
 
 // Direct admin operations using Supabase admin client
 export const adminOperations = {
-  // Fetch all dealers using direct admin access with email information - bypassing performAdminOperation
+  // Fetch all dealers using direct admin access with email information - simplified query
   getAllDealers: async (status?: string) => {
     try {
       console.log('Starting getAllDealers operation with status:', status);
       
+      // Simple query without problematic foreign key joins
       let query = adminSupabase
         .from('dealers')
-        .select(`
-          *,
-          profile:profiles!dealers_user_id_fkey(
-            id,
-            full_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // Only apply status filter if status is provided and is not 'all'
