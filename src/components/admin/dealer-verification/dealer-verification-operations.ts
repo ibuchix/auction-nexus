@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { DealerData } from "./types";
 import { adminSupabase } from "@/integrations/supabase/adminClient";
@@ -131,14 +132,17 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
       return [];
     }
     
-    console.log(`Fetched ${result.length || 0} dealers from database`);
+    // Type guard to ensure result is an array
+    const dealersArray = Array.isArray(result) ? result : [];
     
-    if (!result || result.length === 0) {
+    console.log(`Fetched ${dealersArray.length || 0} dealers from database`);
+    
+    if (!dealersArray || dealersArray.length === 0) {
       return [];
     }
     
     // Convert to frontend format
-    const typedDealers: DealerData[] = result.map((dealer: any) => ({
+    const typedDealers: DealerData[] = dealersArray.map((dealer: any) => ({
       id: dealer.id,
       userId: dealer.user_id,
       supervisorName: dealer.supervisor_name,
