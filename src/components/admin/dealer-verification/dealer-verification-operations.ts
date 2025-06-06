@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { DealerData } from "./types";
 import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { adminOperations } from "@/utils/adminOperations";
 
 // Helper to validate UUID format
 const isValidUUID = (uuid: string) => {
