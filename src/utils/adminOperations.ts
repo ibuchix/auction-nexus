@@ -1,3 +1,4 @@
+
 import { adminSupabase } from '@/integrations/supabase/adminClient';
 import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
@@ -46,8 +47,12 @@ export const adminOperations = {
         `)
         .order('created_at', { ascending: false });
 
+      // Only apply status filter if status is provided and is not 'all'
       if (status && status !== 'all') {
+        console.log('Applying status filter:', status);
         query = query.eq('verification_status', status);
+      } else {
+        console.log('No status filter applied - fetching all dealers');
       }
 
       const { data: dealersData, error } = await query;
