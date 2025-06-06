@@ -30,19 +30,62 @@ export async function performAdminOperation<T>(
 
 // Direct admin operations using Supabase admin client
 export const adminOperations = {
-  // Fetch all dealers using direct admin access
+  // Fetch all dealers using direct admin access with email information
   getAllDealers: async (status?: string) => {
     return performAdminOperation('getAllDealers', async () => {
       let query = adminSupabase
         .from('dealers')
-        .select('*')
+        .select(`
+          *,
+          profile:profiles!dealers_user_id_fkey(
+            id,
+            full_name
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (status && status !== 'all') {
         query = query.eq('verification_status', status);
       }
 
-      return await query;
+      const { data: dealersData, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching dealers:', error);
+        throw error;
+      }
+
+      // If we have dealers, fetch their email addresses from auth.users
+      if (dealersData && dealersData.length > 0) {
+        const userIds = dealersData.map(dealer => dealer.user_id);
+        
+        // Fetch emails using admin client's auth admin methods
+        const emailPromises = userIds.map(async (userId) => {
+          try {
+            const { data: user, error: userError } = await adminSupabase.auth.admin.getUserById(userId);
+            return { userId, email: user?.user?.email || null };
+          } catch (error) {
+            console.warn(`Failed to fetch email for user ${userId}:`, error);
+            return { userId, email: null };
+          }
+        });
+
+        const emailResults = await Promise.all(emailPromises);
+        const emailMap = emailResults.reduce((acc, result) => {
+          acc[result.userId] = result.email;
+          return acc;
+        }, {} as Record<string, string | null>);
+
+        // Add email to each dealer
+        const dealersWithEmails = dealersData.map(dealer => ({
+          ...dealer,
+          email: emailMap[dealer.user_id]
+        }));
+
+        return { data: dealersWithEmails, error: null };
+      }
+
+      return { data: dealersData, error: null };
     });
   },
   

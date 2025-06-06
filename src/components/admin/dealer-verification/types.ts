@@ -15,4 +15,5 @@ export interface DealerData {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
+  email?: string; // Add email field
 }

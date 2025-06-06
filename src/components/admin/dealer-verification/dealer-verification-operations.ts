@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { DealerData } from "./types";
 import { adminSupabase } from "@/integrations/supabase/adminClient";
@@ -123,32 +122,22 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
   try {
     console.log('Fetching dealers with status:', status);
     
-    // Use direct admin client to get dealers
-    let query = adminSupabase
-      .from('dealers')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    // Filter by status if specified
-    if (status && status !== "all") {
-      query = query.eq('verification_status', status);
-    }
-
-    const { data: dealersData, error: dealersError } = await query;
-
-    if (dealersError) {
-      console.error('Error fetching dealers:', dealersError);
-      throw dealersError;
+    // Use admin operations which now includes email fetching
+    const result = await adminOperations.getAllDealers(status);
+    
+    if (!result) {
+      console.log('No dealers data returned');
+      return [];
     }
     
-    console.log(`Fetched ${dealersData?.length || 0} dealers from database`);
+    console.log(`Fetched ${result.length || 0} dealers from database`);
     
-    if (!dealersData || dealersData.length === 0) {
+    if (!result || result.length === 0) {
       return [];
     }
     
     // Convert to frontend format
-    const typedDealers: DealerData[] = dealersData.map((dealer: any) => ({
+    const typedDealers: DealerData[] = result.map((dealer: any) => ({
       id: dealer.id,
       userId: dealer.user_id,
       supervisorName: dealer.supervisor_name,
@@ -160,7 +149,8 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
       verification_status: dealer.verification_status,
       isVerified: dealer.is_verified,
       createdAt: dealer.created_at,
-      updatedAt: dealer.updated_at
+      updatedAt: dealer.updated_at,
+      email: dealer.email // Include email from admin operations
     }));
     
     console.log(`Returning ${typedDealers.length} dealers`);

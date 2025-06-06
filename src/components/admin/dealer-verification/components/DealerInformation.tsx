@@ -1,5 +1,5 @@
 
-import { Building, MapPin, CreditCard, FileText, User } from "lucide-react";
+import { Building, MapPin, CreditCard, FileText, User, Mail } from "lucide-react";
 import { DealerData } from "../types";
 
 interface DealerInformationProps {
@@ -42,6 +42,12 @@ const DealerInformation = ({ dealer }: DealerInformationProps) => {
             <User className="h-4 w-4 text-primary" />
             {dealer.supervisorName || 'N/A'}
           </p>
+          {dealer.email && (
+            <p className="text-sm mt-1 flex items-center gap-2">
+              <Mail className="h-4 w-4 text-primary" />
+              {dealer.email}
+            </p>
+          )}
         </div>
       </div>
 
