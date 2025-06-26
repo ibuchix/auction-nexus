@@ -16,7 +16,13 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
-    // Create admin client
+    console.log('Environment check:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      serviceKeyPrefix: supabaseServiceKey ? supabaseServiceKey.substring(0, 8) + '...' : 'missing'
+    })
+    
+    // Create admin client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -29,7 +35,7 @@ serve(async (req) => {
 
     // Verify admin API key - FIXED: Use correct environment variable
     const adminApiKey = req.headers.get('x-admin-api-key')
-    const expectedKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.substring(0, 10)
+    const expectedKey = supabaseServiceKey?.substring(0, 10)
     
     console.log('Admin API key verification:', {
       receivedKey: adminApiKey ? `${adminApiKey.substring(0, 4)}...` : 'null',
@@ -56,62 +62,72 @@ serve(async (req) => {
       case 'getAuctionListings':
         console.log('Fetching auction listings with params:', params)
         
-        let query = supabase.from('cars').select('*')
-        
-        // Update the filtering logic to include both 'approved' and 'available' status cars
-        if (!params?.showAllCars && params?.status) {
-          console.log('Applying status filter:', params.status)
-          query = query.eq('auction_status', params.status)
-        } else if (!params?.showAllCars) {
-          // When not showing all cars, include both approved and available cars
-          console.log('Filtering for auction-ready cars (approved and available)')
-          query = query.in('status', ['approved', 'available'])
-        } else {
-          console.log('Showing all cars regardless of status')
+        try {
+          let query = supabase.from('cars').select('*')
+          
+          // Update the filtering logic to include both 'approved' and 'available' status cars
+          if (!params?.showAllCars && params?.status) {
+            console.log('Applying status filter:', params.status)
+            query = query.eq('auction_status', params.status)
+          } else if (!params?.showAllCars) {
+            // When not showing all cars, include both approved and available cars
+            console.log('Filtering for auction-ready cars (approved and available)')
+            query = query.in('status', ['approved', 'available'])
+          } else {
+            console.log('Showing all cars regardless of status')
+          }
+          
+          const { data: carsData, error: carsError } = await query.order('created_at', { ascending: false })
+          
+          if (carsError) {
+            console.error('Error fetching cars:', carsError)
+            throw carsError
+          }
+          
+          console.log(`Successfully fetched ${carsData?.length || 0} cars`)
+          
+          // Log some details about the cars for debugging
+          if (carsData && carsData.length > 0) {
+            const fordMondeos = carsData.filter(car => 
+              car.make?.toLowerCase().includes('ford') && 
+              car.model?.toLowerCase().includes('mondeo')
+            )
+            console.log(`Found ${fordMondeos.length} Ford Mondeo cars:`, fordMondeos.map(car => ({
+              id: car.id,
+              title: car.title,
+              status: car.status,
+              auction_status: car.auction_status
+            })))
+          }
+          
+          result = carsData
+        } catch (dbError) {
+          console.error('Database error in getAuctionListings:', dbError)
+          throw new Error(`Database query failed: ${dbError.message}`)
         }
-        
-        const { data: carsData, error: carsError } = await query.order('created_at', { ascending: false })
-        
-        if (carsError) {
-          console.error('Error fetching cars:', carsError)
-          throw carsError
-        }
-        
-        console.log(`Successfully fetched ${carsData?.length || 0} cars`)
-        
-        // Log some details about the cars for debugging
-        if (carsData && carsData.length > 0) {
-          const fordMondeos = carsData.filter(car => 
-            car.make?.toLowerCase().includes('ford') && 
-            car.model?.toLowerCase().includes('mondeo')
-          )
-          console.log(`Found ${fordMondeos.length} Ford Mondeo cars:`, fordMondeos.map(car => ({
-            id: car.id,
-            title: car.title,
-            status: car.status,
-            auction_status: car.auction_status
-          })))
-        }
-        
-        result = carsData
         break
 
       case 'getActiveAuctions':
         console.log('Fetching active auctions')
-        const { data: activeData, error: activeError } = await supabase
-          .from('cars')
-          .select('*')
-          .in('auction_status', ['active', 'pending'])
-          .eq('is_auction', true)
-          .order('auction_end_time', { ascending: true })
-        
-        if (activeError) {
-          console.error('Error fetching active auctions:', activeError)
-          throw activeError
+        try {
+          const { data: activeData, error: activeError } = await supabase
+            .from('cars')
+            .select('*')
+            .in('auction_status', ['active', 'pending'])
+            .eq('is_auction', true)
+            .order('auction_end_time', { ascending: true })
+          
+          if (activeError) {
+            console.error('Error fetching active auctions:', activeError)
+            throw activeError
+          }
+          
+          console.log(`Successfully fetched ${activeData?.length || 0} active auctions`)
+          result = activeData
+        } catch (dbError) {
+          console.error('Database error in getActiveAuctions:', dbError)
+          throw new Error(`Database query failed: ${dbError.message}`)
         }
-        
-        console.log(`Successfully fetched ${activeData?.length || 0} active auctions`)
-        result = activeData
         break
 
       case 'getAllUsers':
