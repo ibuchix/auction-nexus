@@ -27,12 +27,18 @@ serve(async (req) => {
     const { action, params } = await req.json()
     console.log('Admin API called with action:', action, 'params:', params)
 
-    // Verify admin API key
+    // Verify admin API key - FIXED: Use correct environment variable
     const adminApiKey = req.headers.get('x-admin-api-key')
-    const expectedKey = Deno.env.get('VITE_SUPABASE_SERVICE_ROLE_KEY')?.substring(0, 10)
+    const expectedKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.substring(0, 10)
+    
+    console.log('Admin API key verification:', {
+      receivedKey: adminApiKey ? `${adminApiKey.substring(0, 4)}...` : 'null',
+      expectedKey: expectedKey ? `${expectedKey.substring(0, 4)}...` : 'null',
+      keysMatch: adminApiKey === expectedKey
+    })
     
     if (!adminApiKey || adminApiKey !== expectedKey) {
-      console.error('Invalid admin API key')
+      console.error('Invalid admin API key - Auth failed')
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { 
@@ -41,6 +47,8 @@ serve(async (req) => {
         }
       )
     }
+
+    console.log('Admin API key verification passed')
 
     let result;
 
@@ -361,6 +369,7 @@ serve(async (req) => {
         )
     }
 
+    console.log('Admin API operation completed successfully:', action)
     return new Response(
       JSON.stringify(result),
       { 
