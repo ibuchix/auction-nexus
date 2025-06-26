@@ -1943,6 +1943,10 @@ export type Database = {
         }
         Returns: Json
       }
+      debug_admin_context: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       debug_auction_schedules_access: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2336,6 +2340,14 @@ export type Database = {
       store_vin_valuation_cache: {
         Args: { p_vin: string; p_mileage: number; p_valuation_data: Json }
         Returns: undefined
+      }
+      test_admin_access: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      test_admin_policies: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       transition_car_status: {
         Args: { p_car_id: string; p_new_status: string; p_is_draft?: boolean }

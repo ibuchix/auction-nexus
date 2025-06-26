@@ -1,3 +1,4 @@
+
 import { adminSupabase } from '@/integrations/supabase/adminClient';
 import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
@@ -28,10 +29,12 @@ export async function performAdminOperation<T>(
   }
 }
 
-// Test admin access function
+// Test admin access function using service role
 export const testAdminAccess = async () => {
   try {
-    console.log('Testing admin access...');
+    console.log('Testing admin access via service role...');
+    
+    // Use service role to call the test function directly
     const { data, error } = await adminSupabase.rpc('test_admin_access');
     
     if (error) {
