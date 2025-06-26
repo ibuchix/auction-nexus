@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { verifyAdminAccess } from '@/utils/edgeFunctionAdminOperations';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from "@/hooks/use-toast";
 
 export function useAdminAuth() {
@@ -9,40 +10,40 @@ export function useAdminAuth() {
   const [userId, setUserId] = useState<string | null>(null);
   const [error, setError] = useState<any>(null);
   const { toast } = useToast();
+  const { user, isAdmin: authIsAdmin, isLoading: authLoading } = useAuth();
   
   useEffect(() => {
-    // Check if admin access works using the service role key
     const checkAdminAccess = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
-        console.log('Testing admin access via Edge Function...');
-        
-        // First verify that the service_role key is properly set
-        if (!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
-          throw new Error('VITE_SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
-        }
-        
-        // Check if the key looks valid (basic format validation)
-        if (import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY.length < 30) {
-          throw new Error('VITE_SUPABASE_SERVICE_ROLE_KEY appears to be invalid or incomplete');
+        // Wait for auth to complete
+        if (authLoading) {
+          return;
         }
 
-        console.log('Service role key is present and valid format');
+        // If not authenticated or not admin according to auth hook, fail fast
+        if (!user || !authIsAdmin) {
+          console.log('User not authenticated or not admin:', { user: !!user, authIsAdmin });
+          setIsAdmin(false);
+          setUserId(null);
+          return;
+        }
+
+        console.log('Testing admin access via Edge Function for user:', user.id);
         
-        // Use Edge Function to verify access
+        // Use Edge Function to verify access with proper JWT
         const verificationResult = await verifyAdminAccess();
         
-        if (!verificationResult || (verificationResult as any).success === false) {
+        if (!verificationResult || verificationResult.success === false) {
           console.error('Admin access verification failed:', verificationResult);
-          throw new Error(`Admin verification failed: ${(verificationResult as any)?.error || 'Unknown error'}`);
+          throw new Error(`Admin verification failed: ${verificationResult?.error || 'Unknown error'}`);
         }
         
         console.log('Admin access via Edge Function verified successfully:', verificationResult);
         
-        // Use a system admin ID since we're not requiring authentication
-        setUserId("admin-system");
+        setUserId(user.id);
         setIsAdmin(true);
         
       } catch (err) {
@@ -52,17 +53,18 @@ export function useAdminAuth() {
         setError(err);
         toast({
           title: "Admin Access Error",
-          description: `Error connecting with admin privileges: ${errorMessage}`,
+          description: `Error verifying admin privileges: ${errorMessage}`,
           variant: "destructive",
         });
         setIsAdmin(false);
+        setUserId(null);
       } finally {
         setIsLoading(false);
       }
     };
     
     checkAdminAccess();
-  }, [toast]);
+  }, [user, authIsAdmin, authLoading, toast]);
   
   return { isAdmin, isLoading, userId, error };
 }

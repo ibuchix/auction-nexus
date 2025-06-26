@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-api-key',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 serve(async (req) => {
@@ -22,8 +22,69 @@ serve(async (req) => {
       serviceKeyPrefix: supabaseServiceKey ? supabaseServiceKey.substring(0, 8) + '...' : 'missing'
     })
     
-    // Create admin client with service role key
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    // Get the authorization header
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Missing or invalid authorization header')
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    console.log('Received token:', token ? `${token.substring(0, 10)}...` : 'null')
+
+    // Create client with the user's token for authentication
+    const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: {
+        headers: {
+          'Authorization': authHeader
+        }
+      }
+    })
+
+    // Verify the user is authenticated and is an admin
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
+    
+    if (userError || !user) {
+      console.error('Authentication failed:', userError)
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('User authenticated:', user.id)
+
+    // Check if user is admin using the authenticated client
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile || profile.role !== 'admin') {
+      console.error('Admin check failed:', profileError, profile)
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('Admin access verified for user:', user.id)
+
+    // Create admin client with service role for database operations
+    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
@@ -33,29 +94,6 @@ serve(async (req) => {
     const { action, params } = await req.json()
     console.log('Admin API called with action:', action, 'params:', params)
 
-    // Verify admin API key - FIXED: Use correct environment variable
-    const adminApiKey = req.headers.get('x-admin-api-key')
-    const expectedKey = supabaseServiceKey?.substring(0, 10)
-    
-    console.log('Admin API key verification:', {
-      receivedKey: adminApiKey ? `${adminApiKey.substring(0, 4)}...` : 'null',
-      expectedKey: expectedKey ? `${expectedKey.substring(0, 4)}...` : 'null',
-      keysMatch: adminApiKey === expectedKey
-    })
-    
-    if (!adminApiKey || adminApiKey !== expectedKey) {
-      console.error('Invalid admin API key - Auth failed')
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    console.log('Admin API key verification passed')
-
     let result;
 
     switch (action) {
@@ -63,7 +101,7 @@ serve(async (req) => {
         console.log('Fetching auction listings with params:', params)
         
         try {
-          let query = supabase.from('cars').select('*')
+          let query = adminSupabase.from('cars').select('*')
           
           // Update the filtering logic to include both 'approved' and 'available' status cars
           if (!params?.showAllCars && params?.status) {
@@ -110,7 +148,7 @@ serve(async (req) => {
       case 'getActiveAuctions':
         console.log('Fetching active auctions')
         try {
-          const { data: activeData, error: activeError } = await supabase
+          const { data: activeData, error: activeError } = await adminSupabase
             .from('cars')
             .select('*')
             .in('auction_status', ['active', 'pending'])
@@ -132,7 +170,7 @@ serve(async (req) => {
 
       case 'getAllUsers':
         console.log('Fetching all users')
-        const { data: usersData, error: usersError } = await supabase
+        const { data: usersData, error: usersError } = await adminSupabase
           .from('profiles')
           .select('*')
           .order('updated_at', { ascending: false })
@@ -148,7 +186,7 @@ serve(async (req) => {
 
       case 'getAllSellers':
         console.log('Fetching all sellers')
-        const { data: sellersData, error: sellersError } = await supabase
+        const { data: sellersData, error: sellersError } = await adminSupabase
           .from('sellers')
           .select('*')
           .order('created_at', { ascending: false })
@@ -164,7 +202,7 @@ serve(async (req) => {
 
       case 'getAllDealers':
         console.log('Fetching all dealers')
-        const { data: dealersData, error: dealersError } = await supabase
+        const { data: dealersData, error: dealersError } = await adminSupabase
           .from('dealers')
           .select('*')
           .order('created_at', { ascending: false })
@@ -180,7 +218,7 @@ serve(async (req) => {
 
       case 'getSellerCars':
         console.log('Fetching seller cars')
-        const { data: sellerCarsData, error: sellerCarsError } = await supabase
+        const { data: sellerCarsData, error: sellerCarsError } = await adminSupabase
           .from('cars')
           .select('*')
           .eq('seller_id', params.sellerId)
@@ -197,7 +235,7 @@ serve(async (req) => {
 
       case 'updateUserRole':
         console.log('Updating user role')
-        const { data: updateUserRoleData, error: updateUserRoleError } = await supabase
+        const { data: updateUserRoleData, error: updateUserRoleError } = await adminSupabase
           .from('profiles')
           .update({ role: params.role })
           .eq('id', params.userId)
@@ -215,7 +253,7 @@ serve(async (req) => {
 
       case 'suspendUser':
         console.log('Suspending user')
-        const { data: suspendUserData, error: suspendUserError } = await supabase
+        const { data: suspendUserData, error: suspendUserError } = await adminSupabase
           .from('profiles')
           .update({ suspended: params.suspended })
           .eq('id', params.userId)
@@ -233,7 +271,7 @@ serve(async (req) => {
 
       case 'verifyDealer':
         console.log('Verifying dealer')
-        const { data: verifyDealerData, error: verifyDealerError } = await supabase
+        const { data: verifyDealerData, error: verifyDealerError } = await adminSupabase
           .from('dealers')
           .update({
             verification_status: 'approved',
@@ -255,7 +293,7 @@ serve(async (req) => {
 
       case 'rejectDealer':
         console.log('Rejecting dealer')
-        const { data: rejectDealerData, error: rejectDealerError } = await supabase
+        const { data: rejectDealerData, error: rejectDealerError } = await adminSupabase
           .from('dealers')
           .update({
             verification_status: 'rejected',
@@ -278,7 +316,7 @@ serve(async (req) => {
       case 'deleteSeller':
         console.log('Deleting seller')
         // First delete any cars associated with this seller
-        const { error: deleteCarsError } = await supabase
+        const { error: deleteCarsError } = await adminSupabase
           .from('cars')
           .delete()
           .eq('seller_id', params.sellerId)
@@ -289,7 +327,7 @@ serve(async (req) => {
         }
 
         // Then delete the seller profile
-        const { data: deleteSellerData, error: deleteSellerError } = await supabase
+        const { data: deleteSellerData, error: deleteSellerError } = await adminSupabase
           .from('sellers')
           .delete()
           .eq('user_id', params.sellerId)
@@ -305,7 +343,7 @@ serve(async (req) => {
 
       case 'pauseAuction':
         console.log('Pausing auction')
-        const { data: pauseAuctionData, error: pauseAuctionError } = await supabase
+        const { data: pauseAuctionData, error: pauseAuctionError } = await adminSupabase
           .from('cars')
           .update({ auction_status: 'paused' })
           .eq('id', params.auctionId)
@@ -323,7 +361,7 @@ serve(async (req) => {
 
       case 'startAuction':
         console.log('Starting auction')
-        const { data: startAuctionData, error: startAuctionError } = await supabase
+        const { data: startAuctionData, error: startAuctionError } = await adminSupabase
           .from('cars')
           .update({ auction_status: 'active' })
           .eq('id', params.auctionId)
@@ -341,7 +379,7 @@ serve(async (req) => {
 
       case 'cancelAuction':
         console.log('Cancelling auction')
-        const { data: cancelAuctionData, error: cancelAuctionError } = await supabase
+        const { data: cancelAuctionData, error: cancelAuctionError } = await adminSupabase
           .from('cars')
           .update({ auction_status: 'cancelled' })
           .eq('id', params.auctionId)
@@ -371,7 +409,7 @@ serve(async (req) => {
 
       case 'verifyAccess':
         console.log('Verifying admin access')
-        result = { userId: 'admin', timestamp: new Date().toISOString() }
+        result = { userId: user.id, timestamp: new Date().toISOString() }
         break
         
       default:

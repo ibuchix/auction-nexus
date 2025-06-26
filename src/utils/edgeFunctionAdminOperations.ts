@@ -8,18 +8,26 @@ interface AdminOperationResponse<T> {
   error?: string;
 }
 
-// Generic admin operation handler with error handling
+// Generic admin operation handler with proper authentication
 export async function performAdminOperation<T>(
   action: string,
   params?: Record<string, any>
 ): Promise<T | null> {
   try {
-    // Get the first 10 characters of the service role key for authentication
-    const adminApiKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.substring(0, 10);
+    // Get the current user's session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    if (!adminApiKey) {
-      throw new Error('VITE_SUPABASE_SERVICE_ROLE_KEY is not properly configured');
+    if (sessionError || !session) {
+      console.error('No valid session found:', sessionError);
+      toast.error('Authentication required. Please log in again.');
+      return null;
     }
+    
+    console.log('Making admin operation with user session:', {
+      action,
+      userId: session.user.id,
+      hasAccessToken: !!session.access_token
+    });
     
     const { data, error } = await supabase.functions.invoke('admin-api', {
       body: {
@@ -27,11 +35,16 @@ export async function performAdminOperation<T>(
         params
       },
       headers: {
-        'x-admin-api-key': adminApiKey
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json'
       }
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error(`Admin operation failed (${action}):`, error);
+      toast.error(`Admin operation failed: ${error.message || 'Unknown error'}`);
+      return null;
+    }
     
     return data as T;
   } catch (error) {
@@ -55,7 +68,7 @@ export async function verifyAdminAccess(): Promise<AdminOperationResponse<{userI
   }
 }
 
-// Admin operations using Edge Function
+// Admin operations using Edge Function with proper authentication
 export const edgeFunctionAdminOperations = {
   // User management
   getAllUsers: async () => {
