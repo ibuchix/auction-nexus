@@ -28,25 +28,44 @@ export async function performAdminOperation<T>(
   }
 }
 
+// Test admin access function
+export const testAdminAccess = async () => {
+  try {
+    console.log('Testing admin access...');
+    const { data, error } = await adminSupabase.rpc('test_admin_access');
+    
+    if (error) {
+      console.error('Admin access test failed:', error);
+      return { success: false, error: error.message, details: error };
+    }
+    
+    console.log('Admin access test result:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Exception in admin access test:', error);
+    return { success: false, error: (error as Error).message };
+  }
+};
+
 // Direct admin operations using Supabase admin client
 export const adminOperations = {
-  // Fetch all dealers using direct admin access with email information - simplified query
+  // Test admin access
+  testAccess: testAdminAccess,
+  
+  // Fetch all dealers using direct admin access with email information
   getAllDealers: async (status?: string) => {
     try {
       console.log('Starting getAllDealers operation with status:', status);
       
-      // Simple query without problematic foreign key joins
+      // Use admin client with service role to bypass RLS
       let query = adminSupabase
         .from('dealers')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Only apply status filter if status is provided and is not 'all'
       if (status && status !== 'all') {
         console.log('Applying status filter:', status);
         query = query.eq('verification_status', status);
-      } else {
-        console.log('No status filter applied - fetching all dealers');
       }
 
       const { data: dealersData, error } = await query;
@@ -59,11 +78,10 @@ export const adminOperations = {
 
       console.log(`Fetched ${dealersData?.length || 0} dealers from database`);
 
-      // If we have dealers, fetch their email addresses from auth.users
+      // Fetch emails using admin client's auth admin methods
       if (dealersData && dealersData.length > 0) {
         const userIds = dealersData.map(dealer => dealer.user_id);
         
-        // Fetch emails using admin client's auth admin methods
         const emailPromises = userIds.map(async (userId) => {
           try {
             const { data: user, error: userError } = await adminSupabase.auth.admin.getUserById(userId);
@@ -80,7 +98,6 @@ export const adminOperations = {
           return acc;
         }, {} as Record<string, string | null>);
 
-        // Add email to each dealer - return raw data without case conversion
         const dealersWithEmails = dealersData.map(dealer => ({
           ...dealer,
           email: emailMap[dealer.user_id]
@@ -90,7 +107,6 @@ export const adminOperations = {
         return dealersWithEmails;
       }
 
-      console.log('No dealers found or empty result');
       return dealersData || [];
     } catch (error) {
       console.error('Fatal error in getAllDealers:', error);

@@ -5,6 +5,7 @@ import { AdminActions } from "@/components/admin/dashboard/AdminActions";
 import { AuctionSystemStatus } from "@/components/admin/dashboard/AuctionSystemStatus";
 import { ActiveAuctionsMonitor } from "@/components/admin/dashboard/ActiveAuctionsMonitor";
 import { AuctionOperationsLogView } from "@/components/admin/audit-logs/AuctionOperationsLogView";
+import { AdminAccessDebugger } from "@/components/admin/debug/AdminAccessDebugger";
 
 const AdminDashboard = () => {
   return (
@@ -15,6 +16,12 @@ const AdminDashboard = () => {
       </div>
 
       <AuctionSystemStatus />
+
+      {/* Temporary debug component */}
+      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+        <h3 className="text-yellow-800 font-medium mb-2">Debug: Admin Access Issues</h3>
+        <AdminAccessDebugger />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActiveAuctionsMonitor />

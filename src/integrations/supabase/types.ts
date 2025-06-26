@@ -696,6 +696,56 @@ export type Database = {
           },
         ]
       }
+      dealer_documents: {
+        Row: {
+          created_at: string
+          dealer_id: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_type: string
+          id: string
+          updated_at: string
+          uploaded_at: string
+          verification_notes: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          dealer_id: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_type: string
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+          verification_notes?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          dealer_id?: string
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+          verification_notes?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dealer_documents_dealer_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "dealers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealer_purchases: {
         Row: {
           amount: number
@@ -1893,6 +1943,10 @@ export type Database = {
         }
         Returns: Json
       }
+      debug_auction_schedules_access: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       debug_auth_context: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2027,6 +2081,16 @@ export type Database = {
       get_dealer_profile_safe: {
         Args: { p_user_id?: string }
         Returns: Json
+      }
+      get_live_auction_schedules: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          car_id: string
+          status: string
+          start_time: string
+          end_time: string
+          is_manually_controlled: boolean
+        }[]
       }
       get_profile: {
         Args: { p_user_id: string }
