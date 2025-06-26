@@ -1,4 +1,3 @@
-
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { AdminAction } from './types.ts';
 
@@ -8,9 +7,21 @@ export async function handleAdminAction(
   adminSupabase: SupabaseClient,
   user: any
 ): Promise<any> {
-  console.log('Admin API called with action:', action, 'params:', params);
+  console.log('=== Handler: Processing admin action ===');
+  console.log('Action:', action);
+  console.log('Params:', params);
+  console.log('User ID:', user.id);
 
   switch (action) {
+    case 'verifyAccess':
+      console.log('Verifying admin access - simple test case');
+      return { 
+        success: true,
+        userId: user.id, 
+        timestamp: new Date().toISOString(),
+        message: 'Admin access verified successfully'
+      };
+
     case 'getAuctionListings':
       console.log('Fetching auction listings with params:', params);
       
@@ -303,12 +314,9 @@ export async function handleAdminAction(
       console.log('Recovering auction');
       return { status: 'recovery initiated', auctionId: params.auctionId, action: params.action };
 
-    case 'verifyAccess':
-      console.log('Verifying admin access');
-      return { userId: user.id, timestamp: new Date().toISOString() };
-
+    
     default:
-      console.error('Unknown action:', action);
+      console.error('Unknown action requested:', action);
       throw new Error('Unknown action');
   }
 }
