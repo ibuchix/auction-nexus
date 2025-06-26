@@ -9,31 +9,62 @@ serve(async (req) => {
   console.log('=== Admin API Request Started ===');
   console.log('Method:', req.method);
   console.log('URL:', req.url);
-  console.log('Headers:', Object.fromEntries(req.headers.entries()));
+  console.log('Timestamp:', new Date().toISOString());
+  
+  // Log all headers for debugging
+  const headers = Object.fromEntries(req.headers.entries());
+  console.log('Request headers:', headers);
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight request');
-    return new Response(null, { headers: corsHeaders });
+    console.log('=== Handling CORS Preflight ===');
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
+  }
+
+  // Only allow POST requests for actual operations
+  if (req.method !== 'POST') {
+    console.error('Invalid request method:', req.method);
+    return createErrorResponse('Only POST requests are allowed', 405);
   }
 
   try {
-    console.log('=== Step 1: Parsing request body ===');
-    // Parse request body
-    const { action, params } = await parseRequestBody(req);
-    console.log('Successfully parsed request:', { action, params });
+    console.log('=== Step 1: Request Body Parsing ===');
+    
+    // Handle potential empty body by providing defaults
+    let action = 'verifyAccess'; // Default action for testing
+    let params = {};
+    
+    try {
+      const parsed = await parseRequestBody(req);
+      action = parsed.action;
+      params = parsed.params || {};
+    } catch (parseError) {
+      console.warn('Request body parsing failed, using defaults:', parseError.message);
+      
+      // If parsing fails but we have query parameters, try to extract from URL
+      const url = new URL(req.url);
+      const urlAction = url.searchParams.get('action');
+      if (urlAction) {
+        action = urlAction;
+        console.log('Using action from query params:', action);
+      }
+    }
+    
+    console.log('Final action to execute:', action);
+    console.log('Final params:', params);
 
-    console.log('=== Step 2: Authentication and authorization ===');
-    // Authenticate and authorize user
+    console.log('=== Step 2: Authentication and Authorization ===');
     const { user, adminSupabase } = await authenticateAndAuthorize(req);
     console.log('Authentication successful for user:', user.id);
 
-    console.log('=== Step 3: Handling admin action ===');
-    // Handle the admin action
+    console.log('=== Step 3: Handling Admin Action ===');
     const result = await handleAdminAction(action as AdminAction, params, adminSupabase, user);
     console.log('Admin action completed successfully:', action);
 
-    console.log('=== Step 4: Returning success response ===');
+    console.log('=== Step 4: Returning Success Response ===');
     return createSuccessResponse(result);
 
   } catch (error) {
@@ -42,39 +73,37 @@ serve(async (req) => {
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     
-    // Handle specific error types with detailed logging
-    if (error.name === 'SyntaxError' && error.message.includes('JSON')) {
-      console.error('JSON parsing failed - request body was not valid JSON');
-      return createErrorResponse('Invalid JSON in request body', 400, error.message);
+    // Handle specific error types with more detailed responses
+    if (error.message.includes('JSON')) {
+      return createErrorResponse('Invalid request format', 400, 'Request body must be valid JSON');
     }
     
     if (error.message === 'Missing action parameter') {
-      console.error('Request missing required action parameter');
-      return createErrorResponse('Missing action parameter', 400);
+      return createErrorResponse('Missing required action parameter', 400, 'Request must include an action field');
     }
     
     if (error.message === 'Missing authorization header') {
-      console.error('Authorization header missing from request');
-      return createErrorResponse('Missing authorization header', 401);
+      return createErrorResponse('Authentication required', 401, 'Authorization header with valid token required');
     }
     
     if (error.message === 'Authentication failed') {
-      console.error('User authentication failed');
-      return createErrorResponse('Authentication failed', 401);
+      return createErrorResponse('Invalid authentication', 401, 'Token validation failed');
     }
     
     if (error.message === 'Admin access required') {
-      console.error('User does not have admin privileges');
-      return createErrorResponse('Admin access required', 403);
+      return createErrorResponse('Insufficient permissions', 403, 'Admin role required for this operation');
     }
     
     if (error.message === 'Unknown action') {
-      console.error('Unknown action requested');
-      return createErrorResponse('Unknown action', 400);
+      return createErrorResponse('Invalid action', 400, `Action '${error.action || 'unknown'}' not supported`);
     }
     
-    // Generic server error with more details
-    console.error('Generic server error - returning 500');
-    return createErrorResponse('Internal server error', 500, error.message);
+    // Generic server error with sanitized message
+    console.error('Unhandled error in admin API');
+    return createErrorResponse(
+      'Internal server error', 
+      500, 
+      process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred'
+    );
   }
 });
