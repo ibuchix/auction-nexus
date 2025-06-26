@@ -91,7 +91,52 @@ serve(async (req) => {
       }
     })
 
-    const { action, params } = await req.json()
+    // Parse JSON with proper error handling
+    let requestBody;
+    try {
+      const text = await req.text();
+      console.log('Raw request body:', text ? `${text.substring(0, 100)}...` : 'empty');
+      
+      if (!text || text.trim() === '') {
+        console.error('Empty request body received');
+        return new Response(
+          JSON.stringify({ error: 'Empty request body' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      requestBody = JSON.parse(text);
+      console.log('Parsed request body:', requestBody);
+    } catch (parseError) {
+      console.error('JSON parsing error:', parseError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid JSON in request body',
+          details: parseError.message 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Validate required fields
+    const { action, params } = requestBody;
+    if (!action) {
+      console.error('Missing action in request body');
+      return new Response(
+        JSON.stringify({ error: 'Missing action parameter' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     console.log('Admin API called with action:', action, 'params:', params)
 
     let result;
