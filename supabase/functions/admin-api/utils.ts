@@ -18,11 +18,11 @@ export async function parseRequestBody(req: Request): Promise<{ action: string; 
     console.log('Has body:', hasBody);
     console.log('Body used:', req.bodyUsed);
     
-    let requestBody: any = null;
+    let requestBody: any = {};
     
     if (hasBody && !req.bodyUsed) {
       try {
-        // First try to get the body as text to see what we're working with
+        // Clone the request to avoid consuming the body twice
         const bodyText = await req.text();
         console.log('Raw body text:', bodyText);
         console.log('Body text length:', bodyText.length);
@@ -32,32 +32,33 @@ export async function parseRequestBody(req: Request): Promise<{ action: string; 
           requestBody = JSON.parse(bodyText);
           console.log('Successfully parsed JSON body:', requestBody);
         } else {
-          console.log('Empty body text received');
+          console.log('Empty body text received - using empty object');
           requestBody = {};
         }
       } catch (parseError) {
         console.error('Error parsing body as JSON:', parseError);
-        // If JSON parsing fails, try to handle as form data or other formats
+        // If JSON parsing fails, use empty object
         requestBody = {};
       }
     } else {
-      console.log('No body content detected or body already used');
+      console.log('No body content detected or body already used - using empty object');
       requestBody = {};
     }
 
     // Extract action and params
-    const { action, params } = requestBody || {};
+    let { action, params } = requestBody;
     
     console.log('Extracted action:', action);
     console.log('Extracted params:', params);
     
+    // If no action is provided, throw an error
     if (!action) {
       console.error('No action found in request body');
       throw new Error('Missing action parameter');
     }
 
     console.log('=== Request Body Parsing Complete ===');
-    return { action, params };
+    return { action, params: params || {} };
     
   } catch (error) {
     console.error('=== Request Body Parsing Error ===');

@@ -30,18 +30,21 @@ export async function performAdminOperation<T>(
     console.log('Session found for user:', session.user.id);
     console.log('Token length:', session.access_token.length);
     
-    // Prepare the request body - ensure it's always valid JSON
+    // Prepare the request body with explicit action and params
     const requestBody = {
-      action,
-      ...(params && { params })
+      action: action,
+      params: params || {}
     };
     
-    console.log('Request body to send:', requestBody);
-    console.log('Request body JSON:', JSON.stringify(requestBody));
+    console.log('=== Request Body Construction ===');
+    console.log('Request body object:', requestBody);
+    console.log('Request body JSON string:', JSON.stringify(requestBody));
+    console.log('Request body size:', JSON.stringify(requestBody).length);
     
-    // Make the request with explicit configuration
+    // Make the request with explicit body construction
+    console.log('=== Making Edge Function Request ===');
     const { data, error } = await supabase.functions.invoke('admin-api', {
-      body: requestBody, // Don't JSON.stringify - Supabase does this automatically
+      body: JSON.stringify(requestBody), // Explicitly stringify to ensure body is sent
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json'
@@ -69,6 +72,11 @@ export async function performAdminOperation<T>(
       if (data.success !== undefined) {
         // New response format with success wrapper
         if (data.success) {
+          console.log('=== Successful Response Data ===');
+          console.log('Data content:', data.data);
+          console.log('Data type:', typeof data.data);
+          console.log('Is array:', Array.isArray(data.data));
+          
           return data.data as T;
         } else {
           console.error('Operation returned success=false:', data.error);
@@ -77,6 +85,8 @@ export async function performAdminOperation<T>(
         }
       } else {
         // Legacy direct data response
+        console.log('=== Legacy Response Format ===');
+        console.log('Direct data:', data);
         return data as T;
       }
     }
@@ -164,7 +174,8 @@ export const edgeFunctionAdminOperations = {
   
   // Auction management
   getActiveAuctions: async () => {
-    return performAdminOperation('getActiveAuctions');
+    console.log('=== Calling getActiveAuctions ===');
+    return performAdminOperation('getActiveAuctions', {});
   },
   
   // Updated to make status an optional parameter and include file uploads
@@ -173,6 +184,8 @@ export const edgeFunctionAdminOperations = {
     status: string | null,
     includeFiles?: boolean 
   }) => {
+    console.log('=== Calling getAuctionListings ===');
+    console.log('Parameters being sent:', params);
     return performAdminOperation('getAuctionListings', params);
   },
   

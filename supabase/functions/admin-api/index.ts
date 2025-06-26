@@ -33,34 +33,17 @@ serve(async (req) => {
   try {
     console.log('=== Step 1: Request Body Parsing ===');
     
-    // Handle potential empty body by providing defaults
-    let action = 'verifyAccess'; // Default action for testing
-    let params = {};
+    // Parse request body with improved error handling
+    const { action, params } = await parseRequestBody(req);
     
-    try {
-      const parsed = await parseRequestBody(req);
-      action = parsed.action;
-      params = parsed.params || {};
-    } catch (parseError) {
-      console.warn('Request body parsing failed, using defaults:', parseError.message);
-      
-      // If parsing fails but we have query parameters, try to extract from URL
-      const url = new URL(req.url);
-      const urlAction = url.searchParams.get('action');
-      if (urlAction) {
-        action = urlAction;
-        console.log('Using action from query params:', action);
-      }
-    }
-    
-    console.log('Final action to execute:', action);
-    console.log('Final params:', params);
-
     console.log('=== Step 2: Authentication and Authorization ===');
     const { user, adminSupabase } = await authenticateAndAuthorize(req);
     console.log('Authentication successful for user:', user.id);
 
     console.log('=== Step 3: Handling Admin Action ===');
+    console.log('Processing action:', action);
+    console.log('With parameters:', params);
+    
     const result = await handleAdminAction(action as AdminAction, params, adminSupabase, user);
     console.log('Admin action completed successfully:', action);
 
