@@ -18,15 +18,16 @@ export async function performAdminOperation<T>(
     console.log('Action:', action);
     console.log('Params:', params);
     
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    // Use hardcoded values from the Supabase client configuration
+    const supabaseUrl = "https://sdvakfhmoaoucmhbhwvy.supabase.co";
+    const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkdmFrZmhtb2FvdWNtaGJod3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ3OTI1OTEsImV4cCI6MjA1MDM2ODU5MX0.wvvxbqF3Hg_fmQ_4aJCqISQvcFXhm-2BngjvO6EHL0M";
     
-    if (!supabaseUrl || !anonKey) {
-      throw new Error('Missing Supabase configuration');
-    }
+    console.log('Using Supabase URL:', supabaseUrl);
+    console.log('Using Anon Key (first 20 chars):', anonKey.substring(0, 20) + '...');
     
     // Get current session for authentication
     const { data: { session } } = await supabase.auth.getSession();
+    console.log('Session available:', !!session);
     
     const requestBody = {
       action: action,
