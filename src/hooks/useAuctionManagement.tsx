@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Auction, AuctionStatus } from "@/types/auction";
@@ -5,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 import { supabase } from "@/integrations/supabase/client";
+import { fixAllCarTitles } from "@/utils/fixCarTitles";
 
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,6 +14,7 @@ export function useAuctionManagement() {
   const [showAllCars, setShowAllCars] = useState(true); // State for toggling all cars
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [titleFixRun, setTitleFixRun] = useState(false);
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
@@ -70,6 +73,18 @@ export function useAuctionManagement() {
         }
         
         console.log(`Successfully fetched ${auctionData.length} car listings`);
+        
+        // Run title fix once if not already done
+        if (!titleFixRun && auctionData.length > 0) {
+          console.log('Running car title fix operation...');
+          const fixResult = await fixAllCarTitles();
+          if (fixResult.success && fixResult.updatedCount > 0) {
+            console.log(`Fixed ${fixResult.updatedCount} car titles`);
+            // Refetch data after fixing titles
+            setTimeout(() => refetch(), 1000);
+          }
+          setTitleFixRun(true);
+        }
         
         // Process valuation data and extract reserve price for each auction
         auctionData = auctionData.map(auction => {

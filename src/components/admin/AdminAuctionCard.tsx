@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,7 @@ import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { AuctionDetails as AuctionDetailsView } from "@/components/admin/AuctionDetails";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { generateCarTitle, isGenericTitle } from "@/utils/carTitleGenerator";
 
 interface AdminAuctionCardProps {
   auction: any;
@@ -40,11 +42,18 @@ export function AdminAuctionCard({
 
   const handleSaveChanges = async () => {
     try {
+      // Generate proper title if current title is generic
+      let updatedTitle = auction.title;
+      if (isGenericTitle(auction.title) && auction.make && auction.model && auction.year) {
+        updatedTitle = generateCarTitle(auction.make, auction.model, auction.year);
+      }
+
       const { error } = await supabase
         .from('cars')
         .update({
           price: parseFloat(editedPrice),
-          seller_notes: editedNotes
+          seller_notes: editedNotes,
+          title: updatedTitle
         })
         .eq('id', auction.id);
 
@@ -74,11 +83,16 @@ export function AdminAuctionCard({
   // Get proper pricing from valuation data if available
   const reservePrice = auction.valuation_data?.reservePrice || auction.reserve_price;
 
+  // Generate display title if current title is generic
+  const displayTitle = isGenericTitle(auction.title) && auction.make && auction.model && auction.year
+    ? generateCarTitle(auction.make, auction.model, auction.year)
+    : auction.title;
+
   return (
     <Card className={`hover:shadow-md transition-shadow ${auction.is_damaged ? 'border-red-500' : ''}`}>
       <CardHeader className="pb-2">
         <AuctionHeader
-          title={auction.title}
+          title={displayTitle}
           vin={auction.vin}
           isDamaged={auction.is_damaged}
           isEditing={isEditing}
