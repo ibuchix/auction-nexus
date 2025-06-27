@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -26,7 +25,6 @@ serve(async (req) => {
   }
 
   try {
-    // Get environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
@@ -36,88 +34,51 @@ serve(async (req) => {
       serviceKeyPrefix: serviceKey?.substring(0, 20) + '...'
     })
     
-    // Create admin client with service role (bypasses all RLS)
     const adminClient = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    // Enhanced request body parsing with multiple methods
+    // Enhanced request body parsing
     let requestData: any = {}
-    let bodyParsingMethod = 'none'
     
     try {
-      // Method 1: Try to read as text first
       const bodyText = await req.text()
       console.log('Raw body text:', bodyText)
       console.log('Raw body length:', bodyText?.length || 0)
       
       if (bodyText && bodyText.trim().length > 0) {
-        try {
-          requestData = JSON.parse(bodyText)
-          bodyParsingMethod = 'json-from-text'
-          console.log('Successfully parsed JSON from text')
-        } catch (jsonError) {
-          console.log('JSON parse failed:', jsonError.message)
-          // If it's not JSON, maybe it's a simple string action
-          if (bodyText.trim().length < 100) {
-            requestData = { action: bodyText.trim() }
-            bodyParsingMethod = 'simple-text'
-          }
-        }
+        requestData = JSON.parse(bodyText)
+        console.log('Successfully parsed request body:', requestData)
       } else {
-        console.log('Empty body received, checking URL for action')
-        // Check URL for action parameter as fallback
-        const url = new URL(req.url)
-        const urlAction = url.searchParams.get('action')
-        if (urlAction) {
-          requestData = { action: urlAction }
-          bodyParsingMethod = 'url-param'
-        }
+        console.log('Empty body received')
       }
     } catch (parseError) {
-      console.log('Body parsing failed:', parseError.message)
-    }
-
-    console.log('Parsed request data:', requestData)
-    console.log('Body parsing method:', bodyParsingMethod)
-    
-    const { action, params = {} } = requestData
-    
-    // Special test action that doesn't require parameters
-    if (!action || action === 'test') {
+      console.error('Body parsing failed:', parseError.message)
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          message: 'Admin API is working',
-          debug: {
-            method: req.method,
-            bodyParsingMethod,
-            hasServiceKey: !!serviceKey,
-            timestamp: new Date().toISOString()
-          }
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-    
-    if (!action) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Action parameter is required',
-          debug: {
-            bodyParsingMethod,
-            receivedData: requestData,
-            availableActions: ['verifyAccess', 'getAuctionListings', 'getActiveAuctions', 'getAllUsers', 'getAllSellers', 'getAllDealers']
-          }
+          success: false,
+          error: 'Invalid JSON in request body',
+          details: parseError.message
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    const { action, params = {} } = requestData
     console.log('Processing action:', action)
     console.log('With params:', params)
+    
+    if (!action) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Action parameter is required',
+          available_actions: ['verifyAccess', 'getAuctionListings', 'getActiveAuctions', 'getAllUsers', 'getAllSellers', 'getAllDealers']
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Handle admin actions - using service role for maximum permissions
     let result: any = null
 
     switch (action) {
@@ -403,7 +364,6 @@ serve(async (req) => {
     console.log('Result type:', typeof result)
     console.log('Result is array:', Array.isArray(result))
     
-    // Return success response
     const response = {
       success: true,
       data: result,
@@ -425,16 +385,11 @@ serve(async (req) => {
     console.error('=== Admin API Error ===')
     console.error('Error message:', error.message)
     console.error('Error stack:', error.stack)
-    console.error('Error type:', typeof error)
     
     const errorResponse = {
       success: false,
       error: error.message || 'Internal server error',
-      timestamp: new Date().toISOString(),
-      debug: {
-        errorType: error.constructor.name,
-        stack: error.stack
-      }
+      timestamp: new Date().toISOString()
     }
     
     return new Response(

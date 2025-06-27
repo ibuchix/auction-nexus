@@ -8,146 +8,72 @@ interface AdminOperationResponse<T> {
   error?: string;
 }
 
-// Generic admin operation handler with improved error handling and debugging
+// Direct HTTP fetch implementation to bypass supabase.functions.invoke issues
 export async function performAdminOperation<T>(
   action: string,
   params?: Record<string, any>
 ): Promise<T | null> {
   try {
-    console.log('=== Admin Operation Client Debug START ===');
+    console.log('=== Admin Operation Direct Fetch START ===');
     console.log('Action:', action);
     console.log('Params:', params);
     
-    // Test connection first with a simple test action
-    if (action !== 'test') {
-      console.log('Testing connection first...');
-      try {
-        const testResult = await supabase.functions.invoke('admin-api', {
-          body: JSON.stringify({ action: 'test' }),
-          headers: { 'Content-Type': 'application/json' }
-        });
-        console.log('Test connection result:', testResult);
-      } catch (testError) {
-        console.log('Test connection failed:', testError);
-      }
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !anonKey) {
+      throw new Error('Missing Supabase configuration');
     }
     
-    // Prepare the request body with explicit action and params
+    // Get current session for authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    
     const requestBody = {
       action: action,
       params: params || {}
     };
     
-    console.log('=== Request Body Construction ===');
-    console.log('Request body object:', requestBody);
+    console.log('Request body:', requestBody);
     const bodyString = JSON.stringify(requestBody);
-    console.log('Request body JSON string:', bodyString);
-    console.log('Request body size:', bodyString.length);
+    console.log('Request body JSON:', bodyString);
     
-    // Method 1: Try with supabase.functions.invoke
-    console.log('=== Making Edge Function Request (Method 1: invoke) ===');
-    let data, error;
+    const response = await fetch(`${supabaseUrl}/functions/v1/admin-api`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
+        'apikey': anonKey
+      },
+      body: bodyString
+    });
     
-    try {
-      const response = await supabase.functions.invoke('admin-api', {
-        body: bodyString,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      
-      data = response.data;
-      error = response.error;
-      
-      console.log('Invoke method - Response data:', data);
-      console.log('Invoke method - Response error:', error);
-      
-    } catch (invokeError) {
-      console.log('Invoke method failed, trying direct fetch...');
-      console.error('Invoke error:', invokeError);
-      
-      // Method 2: Fallback to direct fetch
-      try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        if (!supabaseUrl) {
-          throw new Error('VITE_SUPABASE_URL not found');
-        }
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        const fetchResponse = await fetch(`${supabaseUrl}/functions/v1/admin-api`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-          },
-          body: bodyString
-        });
-        
-        console.log('Direct fetch - Response status:', fetchResponse.status);
-        console.log('Direct fetch - Response ok:', fetchResponse.ok);
-        
-        if (!fetchResponse.ok) {
-          const errorText = await fetchResponse.text();
-          console.log('Direct fetch - Error response:', errorText);
-          throw new Error(`HTTP ${fetchResponse.status}: ${errorText}`);
-        }
-        
-        data = await fetchResponse.json();
-        error = null;
-        
-        console.log('Direct fetch - Success data:', data);
-        
-      } catch (fetchError) {
-        console.error('Direct fetch also failed:', fetchError);
-        error = fetchError;
-        data = null;
-      }
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Response error:', errorText);
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
-    console.log('=== Final Admin Operation Response ===');
+    const data = await response.json();
     console.log('Response data:', data);
-    console.log('Response error:', error);
     
-    if (error) {
-      console.error(`Admin operation failed (${action}):`, error);
-      
-      // Handle different types of errors
-      if (error.message && error.message.includes('FunctionsHttpError')) {
-        toast.error(`Server error: Unable to process ${action} request`);
-      } else if (error.message && error.message.includes('HTTP 400')) {
-        toast.error(`Bad request for ${action}. Check the parameters.`);
-      } else {
-        toast.error(`Admin operation failed: ${error.message || 'Unknown error'}`);
-      }
+    if (data.success === false) {
+      console.error('Operation failed:', data.error);
+      toast.error(`Operation failed: ${data.error || 'Unknown error'}`);
       return null;
     }
     
-    // Handle successful response - check if it's wrapped in our response format
-    if (data && typeof data === 'object') {
-      if (data.success !== undefined) {
-        // New response format with success wrapper
-        if (data.success) {
-          console.log('=== Successful Response Data ===');
-          console.log('Data content:', data.data);
-          console.log('Data type:', typeof data.data);
-          console.log('Is array:', Array.isArray(data.data));
-          
-          return data.data as T;
-        } else {
-          console.error('Operation returned success=false:', data.error);
-          toast.error(`Operation failed: ${data.error || 'Unknown error'}`);
-          return null;
-        }
-      } else {
-        // Legacy direct data response
-        console.log('=== Legacy Response Format ===');
-        console.log('Direct data:', data);
-        return data as T;
-      }
+    // Handle response format
+    if (data.success && data.data !== undefined) {
+      console.log('Returning structured data:', data.data);
+      return data.data as T;
+    } else if (data.success) {
+      // Legacy format - return the whole response
+      console.log('Returning legacy format data:', data);
+      return data as T;
     }
     
     return data as T;
@@ -157,7 +83,7 @@ export async function performAdminOperation<T>(
     toast.error(`Admin operation failed: ${(error as Error).message || 'Unknown error'}`);
     return null;
   } finally {
-    console.log('=== Admin Operation Client Debug END ===');
+    console.log('=== Admin Operation Direct Fetch END ===');
   }
 }
 
@@ -173,11 +99,9 @@ export async function verifyAdminAccess(): Promise<AdminOperationResponse<{userI
     
     console.log('Admin access verification result:', result);
     
-    // Handle both old and new response formats
     if (result.success !== undefined) {
       return result;
     } else {
-      // Legacy format - assume success if we got data
       return {
         success: true,
         data: result
@@ -192,7 +116,7 @@ export async function verifyAdminAccess(): Promise<AdminOperationResponse<{userI
   }
 }
 
-// Admin operations using Edge Function with proper authentication
+// Admin operations using direct HTTP calls
 export const edgeFunctionAdminOperations = {
   // User management
   getAllUsers: async () => {
@@ -239,7 +163,6 @@ export const edgeFunctionAdminOperations = {
     return performAdminOperation('getActiveAuctions', {});
   },
   
-  // Updated to make status an optional parameter and include file uploads
   getAuctionListings: async (params: { 
     showAllCars: boolean, 
     status: string | null,
@@ -276,12 +199,9 @@ export const edgeFunctionAdminOperations = {
   },
   
   resetSystemState: async () => {
-    // This is a higher-level function that performs multiple recovery operations
     try {
-      // First check system health
       await performAdminOperation('checkSystemHealth');
       
-      // Get all active auctions that should have ended
       const { data: stuckAuctions } = await supabase
         .from('cars')
         .select('id')
@@ -289,7 +209,6 @@ export const edgeFunctionAdminOperations = {
         .lt('auction_end_time', new Date().toISOString());
       
       if (stuckAuctions && stuckAuctions.length > 0) {
-        // Force complete each stuck auction
         for (const auction of stuckAuctions) {
           await performAdminOperation('recoverAuction', { 
             auctionId: auction.id, 
