@@ -8,7 +8,7 @@ interface AdminOperationResponse<T> {
   error?: string;
 }
 
-// Direct HTTP fetch implementation to bypass supabase.functions.invoke issues
+// Direct HTTP fetch implementation with proper admin authentication
 export async function performAdminOperation<T>(
   action: string,
   params?: Record<string, any>
@@ -29,6 +29,12 @@ export async function performAdminOperation<T>(
     const { data: { session } } = await supabase.auth.getSession();
     console.log('Session available:', !!session);
     
+    if (!session?.access_token) {
+      console.error('No session or access token available');
+      toast.error('Authentication required. Please log in again.');
+      return null;
+    }
+    
     const requestBody = {
       action: action,
       params: params || {}
@@ -43,7 +49,7 @@ export async function performAdminOperation<T>(
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
+        'Authorization': `Bearer ${session.access_token}`,
         'apikey': anonKey
       },
       body: bodyString
@@ -55,6 +61,15 @@ export async function performAdminOperation<T>(
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Response error:', errorText);
+      
+      if (response.status === 401) {
+        toast.error('Authentication failed. Please log in again.');
+      } else if (response.status === 403) {
+        toast.error('Admin privileges required for this operation.');
+      } else {
+        toast.error(`Operation failed: ${errorText}`);
+      }
+      
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
@@ -81,7 +96,15 @@ export async function performAdminOperation<T>(
     
   } catch (error) {
     console.error(`Admin operation failed (${action}):`, error);
-    toast.error(`Admin operation failed: ${(error as Error).message || 'Unknown error'}`);
+    
+    if (error instanceof Error && error.message.includes('401')) {
+      toast.error('Please log in again to continue.');
+    } else if (error instanceof Error && error.message.includes('403')) {
+      toast.error('You do not have admin privileges for this operation.');
+    } else {
+      toast.error(`Admin operation failed: ${(error as Error).message || 'Unknown error'}`);
+    }
+    
     return null;
   } finally {
     console.log('=== Admin Operation Direct Fetch END ===');
@@ -117,7 +140,7 @@ export async function verifyAdminAccess(): Promise<AdminOperationResponse<{userI
   }
 }
 
-// Admin operations using direct HTTP calls
+// Admin operations using direct HTTP calls with proper authentication
 export const edgeFunctionAdminOperations = {
   // User management
   getAllUsers: async () => {

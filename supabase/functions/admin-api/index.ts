@@ -26,17 +26,67 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     
     console.log('Environment check:', {
       hasUrl: !!supabaseUrl,
-      hasServiceKey: !!serviceKey,
-      serviceKeyPrefix: serviceKey?.substring(0, 20) + '...'
+      hasAnonKey: !!anonKey
     })
     
-    const adminClient = createClient(supabaseUrl, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
+    // Get the authorization header from the request
+    const authHeader = req.headers.get('authorization')
+    console.log('Auth header present:', !!authHeader)
+    
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Authorization header required for admin operations'
+        }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Create supabase client with the user's session token
+    const supabase = createClient(supabaseUrl, anonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader
+        }
+      }
     })
+
+    // Verify the user is authenticated and is an admin
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      console.error('User authentication failed:', userError)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Authentication failed'
+        }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('Authenticated user:', user.id)
+
+    // Check if user is admin
+    const { data: isAdminResult, error: adminError } = await supabase.rpc('is_admin')
+    
+    if (adminError || !isAdminResult) {
+      console.error('Admin check failed:', adminError)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Admin privileges required'
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('Admin access verified for user:', user.id)
 
     // Enhanced request body parsing
     let requestData: any = {}
@@ -87,13 +137,13 @@ serve(async (req) => {
           success: true, 
           message: 'Admin access verified',
           timestamp: new Date().toISOString(),
-          serviceRole: true
+          userId: user.id
         }
         break
 
       case 'getAuctionListings':
         console.log('Fetching auction listings with params:', params)
-        let query = adminClient.from('cars').select('*')
+        let query = supabase.from('cars').select('*')
         
         if (!params.showAllCars && params.status) {
           console.log('Filtering by status:', params.status)
@@ -116,7 +166,7 @@ serve(async (req) => {
 
       case 'getActiveAuctions':
         console.log('Fetching active auctions...')
-        const { data: activeData, error: activeError } = await adminClient
+        const { data: activeData, error: activeError } = await supabase
           .from('cars')
           .select('*')
           .in('auction_status', ['active', 'pending'])
@@ -134,7 +184,7 @@ serve(async (req) => {
 
       case 'getAllUsers':
         console.log('Fetching all users...')
-        const { data: usersData, error: usersError } = await adminClient
+        const { data: usersData, error: usersError } = await supabase
           .from('profiles')
           .select('*')
           .order('updated_at', { ascending: false })
@@ -150,7 +200,7 @@ serve(async (req) => {
 
       case 'getAllSellers':
         console.log('Fetching all sellers...')
-        const { data: sellersData, error: sellersError } = await adminClient
+        const { data: sellersData, error: sellersError } = await supabase
           .from('sellers')
           .select('*')
           .order('created_at', { ascending: false })
@@ -166,7 +216,7 @@ serve(async (req) => {
 
       case 'getAllDealers':
         console.log('Fetching all dealers...')
-        const { data: dealersData, error: dealersError } = await adminClient
+        const { data: dealersData, error: dealersError } = await supabase
           .from('dealers')
           .select('*')
           .order('created_at', { ascending: false })
@@ -182,7 +232,7 @@ serve(async (req) => {
 
       case 'updateUserRole':
         console.log('Updating user role...')
-        const { data: roleData, error: roleError } = await adminClient
+        const { data: roleData, error: roleError } = await supabase
           .from('profiles')
           .update({ role: params.role })
           .eq('id', params.userId)
@@ -199,7 +249,7 @@ serve(async (req) => {
 
       case 'suspendUser':
         console.log('Suspending user...')
-        const { data: suspendData, error: suspendError } = await adminClient
+        const { data: suspendData, error: suspendError } = await supabase
           .from('profiles')
           .update({ suspended: params.suspended })
           .eq('id', params.userId)
@@ -216,7 +266,7 @@ serve(async (req) => {
 
       case 'verifyDealer':
         console.log('Verifying dealer...')
-        const { data: verifyData, error: verifyError } = await adminClient
+        const { data: verifyData, error: verifyError } = await supabase
           .from('dealers')
           .update({
             verification_status: 'approved',
@@ -237,7 +287,7 @@ serve(async (req) => {
 
       case 'rejectDealer':
         console.log('Rejecting dealer...')
-        const { data: rejectData, error: rejectError } = await adminClient
+        const { data: rejectData, error: rejectError } = await supabase
           .from('dealers')
           .update({
             verification_status: 'rejected',
@@ -259,13 +309,13 @@ serve(async (req) => {
       case 'deleteSeller':
         console.log('Deleting seller...')
         // Delete cars first
-        const { error: deleteCarError } = await adminClient.from('cars').delete().eq('seller_id', params.sellerId)
+        const { error: deleteCarError } = await supabase.from('cars').delete().eq('seller_id', params.sellerId)
         if (deleteCarError) {
           console.error('Error deleting seller cars:', deleteCarError)
         }
         
         // Delete seller
-        const { data: deleteData, error: deleteError } = await adminClient
+        const { data: deleteData, error: deleteError } = await supabase
           .from('sellers')
           .delete()
           .eq('user_id', params.sellerId)
@@ -280,7 +330,7 @@ serve(async (req) => {
 
       case 'pauseAuction':
         console.log('Pausing auction...')
-        const { data: pauseData, error: pauseError } = await adminClient
+        const { data: pauseData, error: pauseError } = await supabase
           .from('cars')
           .update({ auction_status: 'paused' })
           .eq('id', params.auctionId)
@@ -297,7 +347,7 @@ serve(async (req) => {
 
       case 'startAuction':
         console.log('Starting auction...')
-        const { data: startData, error: startError } = await adminClient
+        const { data: startData, error: startError } = await supabase
           .from('cars')
           .update({ auction_status: 'active' })
           .eq('id', params.auctionId)
@@ -314,7 +364,7 @@ serve(async (req) => {
 
       case 'cancelAuction':
         console.log('Cancelling auction...')
-        const { data: cancelData, error: cancelError } = await adminClient
+        const { data: cancelData, error: cancelError } = await supabase
           .from('cars')
           .update({ auction_status: 'cancelled' })
           .eq('id', params.auctionId)
@@ -332,7 +382,7 @@ serve(async (req) => {
       case 'checkSystemHealth':
         console.log('Checking system health...')
         // Test database connection
-        const { data: healthData, error: healthError } = await adminClient
+        const { data: healthData, error: healthError } = await supabase
           .from('cars')
           .select('count')
           .limit(1)
