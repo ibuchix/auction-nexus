@@ -8,9 +8,10 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  console.log('=== Admin API Request ===')
+  console.log('=== Admin API Request START ===')
   console.log('Method:', req.method)
   console.log('URL:', req.url)
+  console.log('Headers:', Object.fromEntries(req.headers.entries()))
   
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -29,41 +30,86 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
+    console.log('Environment check:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!serviceKey,
+      serviceKeyPrefix: serviceKey?.substring(0, 20) + '...'
+    })
+    
     // Create admin client with service role (bypasses all RLS)
     const adminClient = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    // Parse request body - multiple methods for reliability
+    // Enhanced request body parsing with multiple methods
     let requestData: any = {}
+    let bodyParsingMethod = 'none'
     
     try {
+      // Method 1: Try to read as text first
       const bodyText = await req.text()
-      console.log('Raw body:', bodyText)
+      console.log('Raw body text:', bodyText)
+      console.log('Raw body length:', bodyText?.length || 0)
       
       if (bodyText && bodyText.trim().length > 0) {
-        requestData = JSON.parse(bodyText)
+        try {
+          requestData = JSON.parse(bodyText)
+          bodyParsingMethod = 'json-from-text'
+          console.log('Successfully parsed JSON from text')
+        } catch (jsonError) {
+          console.log('JSON parse failed:', jsonError.message)
+          // If it's not JSON, maybe it's a simple string action
+          if (bodyText.trim().length < 100) {
+            requestData = { action: bodyText.trim() }
+            bodyParsingMethod = 'simple-text'
+          }
+        }
+      } else {
+        console.log('Empty body received, checking URL for action')
+        // Check URL for action parameter as fallback
+        const url = new URL(req.url)
+        const urlAction = url.searchParams.get('action')
+        if (urlAction) {
+          requestData = { action: urlAction }
+          bodyParsingMethod = 'url-param'
+        }
       }
     } catch (parseError) {
-      console.log('Body parse failed:', parseError)
-      // If JSON parsing fails, check if it's form data or try other methods
-      try {
-        const clonedReq = req.clone()
-        const formData = await clonedReq.formData()
-        requestData = Object.fromEntries(formData.entries())
-      } catch (formError) {
-        console.log('Form data parse also failed, using empty object')
-        requestData = {}
-      }
+      console.log('Body parsing failed:', parseError.message)
     }
 
     console.log('Parsed request data:', requestData)
+    console.log('Body parsing method:', bodyParsingMethod)
     
     const { action, params = {} } = requestData
     
+    // Special test action that doesn't require parameters
+    if (!action || action === 'test') {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Admin API is working',
+          debug: {
+            method: req.method,
+            bodyParsingMethod,
+            hasServiceKey: !!serviceKey,
+            timestamp: new Date().toISOString()
+          }
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
     if (!action) {
       return new Response(
-        JSON.stringify({ error: 'Action parameter is required' }),
+        JSON.stringify({ 
+          error: 'Action parameter is required',
+          debug: {
+            bodyParsingMethod,
+            receivedData: requestData,
+            availableActions: ['verifyAccess', 'getAuctionListings', 'getActiveAuctions', 'getAllUsers', 'getAllSellers', 'getAllDealers']
+          }
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -79,27 +125,31 @@ serve(async (req) => {
         result = { 
           success: true, 
           message: 'Admin access verified',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          serviceRole: true
         }
         break
 
       case 'getAuctionListings':
-        console.log('Fetching auction listings...')
+        console.log('Fetching auction listings with params:', params)
         let query = adminClient.from('cars').select('*')
         
         if (!params.showAllCars && params.status) {
+          console.log('Filtering by status:', params.status)
           query = query.eq('auction_status', params.status)
         } else if (!params.showAllCars) {
+          console.log('Filtering by approved/available status')
           query = query.in('status', ['approved', 'available'])
         }
         
         const { data: carsData, error: carsError } = await query.order('created_at', { ascending: false })
         
         if (carsError) {
+          console.error('Cars query error:', carsError)
           throw new Error(`Cars query failed: ${carsError.message}`)
         }
         
-        console.log(`Fetched ${carsData?.length || 0} cars`)
+        console.log(`Successfully fetched ${carsData?.length || 0} cars`)
         result = carsData
         break
 
@@ -113,10 +163,11 @@ serve(async (req) => {
           .order('auction_end_time', { ascending: true })
         
         if (activeError) {
+          console.error('Active auctions query error:', activeError)
           throw new Error(`Active auctions query failed: ${activeError.message}`)
         }
         
-        console.log(`Fetched ${activeData?.length || 0} active auctions`)
+        console.log(`Successfully fetched ${activeData?.length || 0} active auctions`)
         result = activeData
         break
 
@@ -128,10 +179,11 @@ serve(async (req) => {
           .order('updated_at', { ascending: false })
 
         if (usersError) {
+          console.error('Users query error:', usersError)
           throw new Error(`Users query failed: ${usersError.message}`)
         }
 
-        console.log(`Fetched ${usersData?.length || 0} users`)
+        console.log(`Successfully fetched ${usersData?.length || 0} users`)
         result = usersData
         break
 
@@ -143,10 +195,11 @@ serve(async (req) => {
           .order('created_at', { ascending: false })
 
         if (sellersError) {
+          console.error('Sellers query error:', sellersError)
           throw new Error(`Sellers query failed: ${sellersError.message}`)
         }
 
-        console.log(`Fetched ${sellersData?.length || 0} sellers`)
+        console.log(`Successfully fetched ${sellersData?.length || 0} sellers`)
         result = sellersData
         break
 
@@ -158,10 +211,11 @@ serve(async (req) => {
           .order('created_at', { ascending: false })
 
         if (dealersError) {
+          console.error('Dealers query error:', dealersError)
           throw new Error(`Dealers query failed: ${dealersError.message}`)
         }
 
-        console.log(`Fetched ${dealersData?.length || 0} dealers`)
+        console.log(`Successfully fetched ${dealersData?.length || 0} dealers`)
         result = dealersData
         break
 
@@ -175,6 +229,7 @@ serve(async (req) => {
           .single()
 
         if (roleError) {
+          console.error('Role update error:', roleError)
           throw new Error(`Role update failed: ${roleError.message}`)
         }
 
@@ -191,6 +246,7 @@ serve(async (req) => {
           .single()
 
         if (suspendError) {
+          console.error('User suspension error:', suspendError)
           throw new Error(`User suspension failed: ${suspendError.message}`)
         }
 
@@ -211,6 +267,7 @@ serve(async (req) => {
           .single()
 
         if (verifyError) {
+          console.error('Dealer verification error:', verifyError)
           throw new Error(`Dealer verification failed: ${verifyError.message}`)
         }
 
@@ -231,6 +288,7 @@ serve(async (req) => {
           .single()
 
         if (rejectError) {
+          console.error('Dealer rejection error:', rejectError)
           throw new Error(`Dealer rejection failed: ${rejectError.message}`)
         }
 
@@ -240,7 +298,10 @@ serve(async (req) => {
       case 'deleteSeller':
         console.log('Deleting seller...')
         // Delete cars first
-        await adminClient.from('cars').delete().eq('seller_id', params.sellerId)
+        const { error: deleteCarError } = await adminClient.from('cars').delete().eq('seller_id', params.sellerId)
+        if (deleteCarError) {
+          console.error('Error deleting seller cars:', deleteCarError)
+        }
         
         // Delete seller
         const { data: deleteData, error: deleteError } = await adminClient
@@ -249,6 +310,7 @@ serve(async (req) => {
           .eq('user_id', params.sellerId)
 
         if (deleteError) {
+          console.error('Seller deletion error:', deleteError)
           throw new Error(`Seller deletion failed: ${deleteError.message}`)
         }
 
@@ -256,6 +318,7 @@ serve(async (req) => {
         break
 
       case 'pauseAuction':
+        console.log('Pausing auction...')
         const { data: pauseData, error: pauseError } = await adminClient
           .from('cars')
           .update({ auction_status: 'paused' })
@@ -264,6 +327,7 @@ serve(async (req) => {
           .single()
 
         if (pauseError) {
+          console.error('Auction pause error:', pauseError)
           throw new Error(`Auction pause failed: ${pauseError.message}`)
         }
 
@@ -271,6 +335,7 @@ serve(async (req) => {
         break
 
       case 'startAuction':
+        console.log('Starting auction...')
         const { data: startData, error: startError } = await adminClient
           .from('cars')
           .update({ auction_status: 'active' })
@@ -279,6 +344,7 @@ serve(async (req) => {
           .single()
 
         if (startError) {
+          console.error('Auction start error:', startError)
           throw new Error(`Auction start failed: ${startError.message}`)
         }
 
@@ -286,6 +352,7 @@ serve(async (req) => {
         break
 
       case 'cancelAuction':
+        console.log('Cancelling auction...')
         const { data: cancelData, error: cancelError } = await adminClient
           .from('cars')
           .update({ auction_status: 'cancelled' })
@@ -294,6 +361,7 @@ serve(async (req) => {
           .single()
 
         if (cancelError) {
+          console.error('Auction cancellation error:', cancelError)
           throw new Error(`Auction cancellation failed: ${cancelError.message}`)
         }
 
@@ -301,14 +369,24 @@ serve(async (req) => {
         break
 
       case 'checkSystemHealth':
+        console.log('Checking system health...')
+        // Test database connection
+        const { data: healthData, error: healthError } = await adminClient
+          .from('cars')
+          .select('count')
+          .limit(1)
+          .single()
+        
         result = { 
-          status: 'healthy', 
+          status: healthError ? 'unhealthy' : 'healthy', 
           timestamp: new Date().toISOString(),
-          database: 'connected'
+          database: healthError ? 'error' : 'connected',
+          error: healthError?.message
         }
         break
 
       case 'recoverAuction':
+        console.log('Recovering auction...')
         result = { 
           success: true,
           message: 'Recovery initiated',
@@ -322,14 +400,21 @@ serve(async (req) => {
     }
 
     console.log('Action completed successfully:', action)
+    console.log('Result type:', typeof result)
+    console.log('Result is array:', Array.isArray(result))
     
     // Return success response
+    const response = {
+      success: true,
+      data: result,
+      timestamp: new Date().toISOString()
+    }
+    
+    console.log('=== Sending Response ===')
+    console.log('Response structure:', typeof response)
+    
     return new Response(
-      JSON.stringify({
-        success: true,
-        data: result,
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify(response),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -338,19 +423,28 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('=== Admin API Error ===')
-    console.error('Error:', error.message)
-    console.error('Stack:', error.stack)
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
+    console.error('Error type:', typeof error)
+    
+    const errorResponse = {
+      success: false,
+      error: error.message || 'Internal server error',
+      timestamp: new Date().toISOString(),
+      debug: {
+        errorType: error.constructor.name,
+        stack: error.stack
+      }
+    }
     
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Internal server error',
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify(errorResponse),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
+  } finally {
+    console.log('=== Admin API Request END ===')
   }
 })
