@@ -13,7 +13,6 @@ interface ActiveAuction {
   current_bid: number;
   auction_end_time: string;
   bid_count: number;
-  proxy_bid_count: number;
 }
 
 export function ActiveAuctionsMonitor() {
@@ -41,26 +40,15 @@ export function ActiveAuctionsMonitor() {
 
         if (auctionError) throw auctionError;
 
-        // For each auction, fetch proxy bid counts
-        const auctionsWithProxyBids = await Promise.all(
-          (auctionData || []).map(async (auction) => {
-            const { count: proxyBidCount } = await adminSupabase
-              .from('proxy_bids')
-              .select('*', { count: 'exact', head: true })
-              .eq('car_id', auction.id);
+        const auctionsWithCounts = (auctionData || []).map((auction) => ({
+          id: auction.id,
+          title: auction.title || 'Untitled Auction',
+          current_bid: auction.current_bid || 0,
+          auction_end_time: auction.auction_end_time,
+          bid_count: auction.bids?.length || 0
+        }));
 
-            return {
-              id: auction.id,
-              title: auction.title || 'Untitled Auction',
-              current_bid: auction.current_bid || 0,
-              auction_end_time: auction.auction_end_time,
-              bid_count: auction.bids?.length || 0,
-              proxy_bid_count: proxyBidCount || 0
-            };
-          })
-        );
-
-        setAuctions(auctionsWithProxyBids);
+        setAuctions(auctionsWithCounts);
       } catch (err) {
         console.error('Error fetching active auctions:', err);
         setError('Failed to load active auctions');
@@ -166,12 +154,6 @@ export function ActiveAuctionsMonitor() {
                           <Users className="h-3.5 w-3.5 mr-1" />
                           {auction.bid_count} bids
                         </div>
-                        {auction.proxy_bid_count > 0 && (
-                          <div className="flex items-center text-blue-600">
-                            <span className="mr-1">•</span>
-                            {auction.proxy_bid_count} proxy bids
-                          </div>
-                        )}
                       </div>
                     </div>
                     <div className="text-right">
