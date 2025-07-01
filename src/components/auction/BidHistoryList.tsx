@@ -3,12 +3,11 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bid } from "@/types/auction";
-import { EnhancedBid } from "@/types/auctionOperations";
-import { User, Clock, ArrowDown, ArrowUp, Zap, Bot } from "lucide-react";
+import { User, Clock, ArrowDown, ArrowUp } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface BidHistoryListProps {
-  bids: (Bid & { is_proxy?: boolean })[];
+  bids: Bid[];
   currentUserId?: string;
   maxItems?: number;
 }
@@ -63,12 +62,6 @@ export function BidHistoryList({
                     <span className="text-sm font-medium">
                       {isCurrentUser ? "You" : "Bidder"}
                     </span>
-                    {bid.is_proxy && (
-                      <Badge variant="outline" className="gap-1 text-xs py-0 h-5">
-                        <Bot className="h-3 w-3" />
-                        Proxy
-                      </Badge>
-                    )}
                     {bid.status === 'active' && (
                       <Badge variant="secondary" className="gap-1 text-xs py-0 h-5">
                         Leading

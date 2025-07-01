@@ -4,27 +4,20 @@ import { toast } from "sonner";
 import { PlaceBidResponse } from "@/types/auctionOperations";
 
 export function useBidOperations() {
-  // Place a bid with optional proxy bidding
+  // Place a regular bid
   const placeBid = async (
     auctionId: string, 
     dealerId: string, 
-    amount: number, 
-    useProxyBidding: boolean = false, 
-    maxProxyAmount: number | null = null
+    amount: number
   ): Promise<boolean> => {
     try {
-      if (useProxyBidding && !maxProxyAmount) {
-        toast.error("Maximum proxy bid amount is required when using proxy bidding");
-        return false;
-      }
-      
-      // Call the placeBid RPC function with proxy bidding parameters
+      // Call the placeBid RPC function
       const { data, error } = await supabase.rpc<PlaceBidResponse>('place_bid', {
         p_car_id: auctionId,
         p_dealer_id: dealerId,
         p_amount: amount,
-        p_is_proxy: useProxyBidding,
-        p_max_proxy_amount: maxProxyAmount
+        p_is_proxy: false,
+        p_max_proxy_amount: null
       });
       
       if (error) throw error;

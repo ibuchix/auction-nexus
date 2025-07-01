@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Auction, AuctionStatus } from "@/types/auction";
@@ -7,14 +6,16 @@ import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 import { supabase } from "@/integrations/supabase/client";
 import { fixAllCarTitles } from "@/utils/fixCarTitles";
+import { fixStuckAuctionStatuses } from "@/utils/fixAuctionStatuses";
 
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<AuctionStatus | "all">("all");
-  const [showAllCars, setShowAllCars] = useState(true); // State for toggling all cars
+  const [showAllCars, setShowAllCars] = useState(true);
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [titleFixRun, setTitleFixRun] = useState(false);
+  const [statusFixRun, setStatusFixRun] = useState(false);
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
@@ -23,7 +24,6 @@ export function useAuctionManagement() {
     queryFn: async () => {
       console.log('Fetching car listings via Edge Function');
       try {
-        // Check if VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables
         const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
         if (!serviceRoleKey) {
           console.warn('VITE_SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
@@ -37,12 +37,10 @@ export function useAuctionManagement() {
           console.log('VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables');
         }
         
-        // Use Edge Function to get auction listings
-        // Pass status as null to match the required parameter type
         const response = await edgeFunctionAdminOperations.getAuctionListings({ 
           showAllCars, 
           status: statusFilter === "all" ? null : statusFilter,
-          includeFiles: true // Add parameter to include file uploads
+          includeFiles: true
         });
         
         if (!response) {
@@ -55,18 +53,15 @@ export function useAuctionManagement() {
           return [];
         }
         
-        // Handle case where response might be an object with data property rather than direct array
         let auctionData: Auction[] = [];
         
         if (Array.isArray(response)) {
           auctionData = response as Auction[];
         } else if (response && typeof response === 'object') {
-          // Safely check if response has a data property that is an array
           const responseObj = response as Record<string, any>;
           if (responseObj.data && Array.isArray(responseObj.data)) {
             auctionData = responseObj.data as Auction[];
           } else {
-            // If response is an object but not in expected format
             console.error('Unexpected response format:', response);
             return [];
           }
@@ -80,17 +75,25 @@ export function useAuctionManagement() {
           const fixResult = await fixAllCarTitles();
           if (fixResult.success && fixResult.updatedCount > 0) {
             console.log(`Fixed ${fixResult.updatedCount} car titles`);
-            // Refetch data after fixing titles
             setTimeout(() => refetch(), 1000);
           }
           setTitleFixRun(true);
         }
         
-        // Process valuation data and extract reserve price for each auction
+        // Run auction status fix once if not already done
+        if (!statusFixRun && auctionData.length > 0) {
+          console.log('Running auction status fix operation...');
+          const statusResult = await fixStuckAuctionStatuses();
+          if (statusResult.success && statusResult.updatedCount > 0) {
+            console.log(`Fixed ${statusResult.updatedCount} auction statuses`);
+            setTimeout(() => refetch(), 1000);
+          }
+          setStatusFixRun(true);
+        }
+        
         auctionData = auctionData.map(auction => {
           try {
             if (auction.valuation_data) {
-              // Log the valuation data for debugging
               console.log(`Valuation data for ${auction.id}:`, auction.valuation_data);
             }
             return auction;
@@ -114,7 +117,6 @@ export function useAuctionManagement() {
     retry: 1,
   });
 
-  // Set up real-time subscription
   useEffect(() => {
     console.log('Setting up real-time subscription');
     const channel = supabase
@@ -139,7 +141,6 @@ export function useAuctionManagement() {
     };
   }, [refetch]);
 
-  // Ensure filteredListings is always an array, even if listings is undefined
   const filteredListings = (Array.isArray(listings) ? listings : []).filter(listing => {
     const matchesSearch = 
       (listing.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
@@ -152,7 +153,6 @@ export function useAuctionManagement() {
     return matchesSearch && matchesStatus;
   });
 
-  // Derived states that depend on filteredListings - now guaranteed to be arrays
   const readyAuctions = filteredListings.filter(listing => 
     listing.auction_status === 'ready' || !listing.auction_status
   );

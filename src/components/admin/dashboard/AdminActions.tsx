@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarClock, PackageCheck, Wallet } from "lucide-react";
+import { CalendarClock, PackageCheck } from "lucide-react";
 
 export function AdminActions() {
   const { toast } = useToast();
@@ -27,35 +27,6 @@ export function AdminActions() {
       toast({
         title: "Error",
         description: "Failed to close auctions",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleProcessProxyBids = async () => {
-    try {
-      toast({
-        title: "Processing",
-        description: "Processing proxy bids...",
-      });
-      
-      // Call the RPC function directly since we now have a cron job
-      const { data, error } = await supabase.rpc('process_pending_proxy_bids');
-      
-      if (error) throw error;
-      
-      // Parse the result to access the properties
-      const result = typeof data === 'string' ? JSON.parse(data) : data;
-      
-      toast({
-        title: "Success",
-        description: `Processed ${result.bids_processed || 0} bids across ${result.auctions_checked || 0} auctions`,
-      });
-    } catch (error) {
-      console.error("Error processing proxy bids:", error);
-      toast({
-        title: "Error",
-        description: "Failed to process proxy bids",
         variant: "destructive",
       });
     }
@@ -94,14 +65,6 @@ export function AdminActions() {
       >
         <PackageCheck className="h-4 w-4" />
         <span>Close Auctions</span>
-      </Button>
-      <Button 
-        onClick={handleProcessProxyBids} 
-        variant="outline" 
-        className="flex items-center gap-1 whitespace-nowrap text-xs sm:text-sm border-blue-300 text-blue-700 hover:bg-blue-50 shadow-sm hover:shadow-md transition-all"
-      >
-        <Wallet className="h-4 w-4" />
-        <span>Process Bids</span>
       </Button>
       <Button 
         onClick={handleStartScheduledAuctions} 

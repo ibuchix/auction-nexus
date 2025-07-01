@@ -889,6 +889,72 @@ export type Database = {
           },
         ]
       }
+      dealer_won_vehicles: {
+        Row: {
+          auction_end_time: string
+          car_id: string
+          created_at: string
+          dealer_id: string
+          id: string
+          original_bid_amount: number
+          payment_date: string | null
+          payment_status: string
+          platform_fee: number
+          second_highest_bid: number | null
+          seller_details_unlocked: boolean
+          stripe_payment_intent_id: string | null
+          updated_at: string
+          winning_bid_amount: number
+        }
+        Insert: {
+          auction_end_time: string
+          car_id: string
+          created_at?: string
+          dealer_id: string
+          id?: string
+          original_bid_amount: number
+          payment_date?: string | null
+          payment_status?: string
+          platform_fee?: number
+          second_highest_bid?: number | null
+          seller_details_unlocked?: boolean
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          winning_bid_amount: number
+        }
+        Update: {
+          auction_end_time?: string
+          car_id?: string
+          created_at?: string
+          dealer_id?: string
+          id?: string
+          original_bid_amount?: number
+          payment_date?: string | null
+          payment_status?: string
+          platform_fee?: number
+          second_highest_bid?: number | null
+          seller_details_unlocked?: boolean
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          winning_bid_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dealer_won_vehicles_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: true
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_won_vehicles_dealer_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "dealers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealers: {
         Row: {
           address: string
@@ -1327,51 +1393,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      proxy_bids: {
-        Row: {
-          car_id: string
-          created_at: string
-          dealer_id: string
-          id: string
-          last_processed_amount: number | null
-          max_bid_amount: number
-          updated_at: string
-        }
-        Insert: {
-          car_id: string
-          created_at?: string
-          dealer_id: string
-          id?: string
-          last_processed_amount?: number | null
-          max_bid_amount: number
-          updated_at?: string
-        }
-        Update: {
-          car_id?: string
-          created_at?: string
-          dealer_id?: string
-          id?: string
-          last_processed_amount?: number | null
-          max_bid_amount?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "proxy_bids_car_id_fkey"
-            columns: ["car_id"]
-            isOneToOne: false
-            referencedRelation: "cars"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proxy_bids_dealer_id_fkey"
-            columns: ["dealer_id"]
-            isOneToOne: false
-            referencedRelation: "dealers"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       seller_bid_decisions: {
         Row: {
@@ -1829,10 +1850,6 @@ export type Database = {
           year: number | null
         }[]
       }
-      analyze_bidding_strategy: {
-        Args: { p_dealer_id: string }
-        Returns: Json
-      }
       approve_listing: {
         Args: { p_listing_id: string; p_admin_id: string; p_notes?: string }
         Returns: Json
@@ -1847,10 +1864,6 @@ export type Database = {
       }
       authenticate_dealer: {
         Args: { p_email: string; p_password: string }
-        Returns: Json
-      }
-      calculate_optimal_proxy_bid: {
-        Args: { p_car_id: string; p_dealer_id: string; p_max_budget: number }
         Returns: Json
       }
       calculate_reserve_price: {
@@ -2066,10 +2079,6 @@ export type Database = {
           is_draft: boolean
           changed_by: string
         }[]
-      }
-      get_dealer_bid_exposure: {
-        Args: { p_dealer_id: string }
-        Returns: Json
       }
       get_dealer_by_user_id: {
         Args: { p_user_id: string } | { user_id: number }
@@ -2290,13 +2299,23 @@ export type Database = {
         Returns: boolean
       }
       place_bid: {
-        Args: {
-          p_car_id: string
-          p_dealer_id: string
-          p_amount: number
-          p_is_proxy?: boolean
-          p_max_proxy_amount?: number
-        }
+        Args:
+          | { p_car_id: string; p_dealer_id: string; p_amount: number }
+          | {
+              p_car_id: string
+              p_dealer_id: string
+              p_amount: number
+              p_is_proxy?: boolean
+              p_max_proxy_amount?: number
+            }
+        Returns: Json
+      }
+      process_auction_end: {
+        Args: { p_car_id: string }
+        Returns: Json
+      }
+      process_ended_auctions: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       process_pending_proxy_bids: {

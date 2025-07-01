@@ -1,12 +1,11 @@
 
-import { useEffect } from "react";
-import { ProxyBidControls } from "./ProxyBidControls";
-import { BidHistoryList } from "./BidHistoryList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SimpleBidControls } from "./SimpleBidControls";
+import { BidHistoryList } from "./BidHistoryList";
 import { useBiddingOperations } from "@/hooks/useBiddingOperations";
-import { Bid, ProxyBid } from "@/types/auction";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Bid } from "@/types/auction";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface BiddingPanelProps {
@@ -28,27 +27,10 @@ export function BiddingPanel({
   isAuctionActive,
   className
 }: BiddingPanelProps) {
-  const {
-    isPlacingBid,
-    isCancellingBid,
-    isLoadingProxyBid,
-    existingProxyBid,
-    submitBid,
-    cancelProxyBid,
-    fetchProxyBid
-  } = useBiddingOperations(auctionId, dealerId);
+  const { isPlacingBid, submitBid } = useBiddingOperations(auctionId, dealerId);
 
-  useEffect(() => {
-    fetchProxyBid();
-  }, [auctionId, dealerId]);
-
-  // Create wrapper functions to adapt return types
-  const handlePlaceBid = async (amount: number, useProxy: boolean, maxProxyAmount: number): Promise<void> => {
-    await submitBid(amount, useProxy, maxProxyAmount);
-  };
-
-  const handleDeleteProxyBid = async (): Promise<void> => {
-    await cancelProxyBid();
+  const handlePlaceBid = async (amount: number): Promise<void> => {
+    await submitBid(amount);
   };
 
   return (
@@ -73,22 +55,14 @@ export function BiddingPanel({
               </Alert>
             )}
             
-            {isLoadingProxyBid ? (
-              <div className="py-8 flex justify-center items-center">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : (
-              <ProxyBidControls
-                auctionId={auctionId}
-                dealerId={dealerId}
-                currentBid={currentBid}
-                bidIncrement={bidIncrement}
-                existingProxyBid={existingProxyBid ? existingProxyBid.max_bid_amount : null}
-                onPlaceBid={handlePlaceBid}
-                onDeleteProxyBid={handleDeleteProxyBid}
-                className={!isAuctionActive ? "opacity-50 pointer-events-none" : ""}
-              />
-            )}
+            <SimpleBidControls
+              auctionId={auctionId}
+              dealerId={dealerId}
+              currentBid={currentBid}
+              bidIncrement={bidIncrement}
+              onPlaceBid={handlePlaceBid}
+              className={!isAuctionActive ? "opacity-50 pointer-events-none" : ""}
+            />
           </TabsContent>
           
           <TabsContent value="history">

@@ -4,7 +4,6 @@ import { AdminProtectedRoute } from "./AdminProtectedRoute";
 import AuctionManagement from "@/pages/admin/AuctionManagement";
 import AuctionScheduling from "@/pages/admin/AuctionScheduling";
 import AuctionMonitoring from "@/pages/admin/AuctionMonitoring";
-import ProxyBidMonitoring from "@/pages/admin/ProxyBidMonitoring";
 
 export const AuctionRoutes = (
   <>
@@ -29,14 +28,6 @@ export const AuctionRoutes = (
       element={
         <AdminProtectedRoute>
           <AuctionScheduling />
-        </AdminProtectedRoute>
-      } 
-    />
-    <Route 
-      path="/admin/proxy-bids" 
-      element={
-        <AdminProtectedRoute>
-          <ProxyBidMonitoring />
         </AdminProtectedRoute>
       } 
     />
