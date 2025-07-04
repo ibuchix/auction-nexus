@@ -14,38 +14,41 @@ export function useAuth() {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           // Check admin status immediately and wait for it to complete
-          try {
-            const { data, error } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
-            
-            if (!error && data) {
-              setIsAdmin(data.role === 'admin');
-              console.log('User role:', data.role);
-            } else {
-              console.log('Error checking admin status or no profile found:', error);
+          setTimeout(async () => {
+            try {
+              const { data, error } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (!error && data) {
+                setIsAdmin(data.role === 'admin');
+                console.log('User role:', data.role);
+              } else {
+                console.log('Error checking admin status or no profile found:', error);
+                setIsAdmin(false);
+              }
+            } catch (error) {
+              console.error('Error checking admin status:', error);
               setIsAdmin(false);
+            } finally {
+              // Only set loading to false after admin check is complete
+              setIsLoading(false);
             }
-          } catch (error) {
-            console.error('Error checking admin status:', error);
-            setIsAdmin(false);
-          }
+          }, 100);
         } else {
           // No user, definitely not admin
           setIsAdmin(false);
+          setIsLoading(false);
         }
-        
-        // Only set loading to false after admin check is complete
-        setIsLoading(false);
       }
     );
 
