@@ -18,16 +18,33 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupFullName, setSignupFullName] = useState("");
   
-  const { signIn, signUp, user, isLoading: authLoading } = useAuth();
+  const { signIn, signUp, signOut, user, isAdmin, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Handle redirect when user is authenticated
+  // Handle redirect when user is authenticated AND is admin
   useEffect(() => {
     if (user && !authLoading) {
-      navigate("/", { replace: true });
+      if (isAdmin) {
+        navigate("/", { replace: true });
+      } else {
+        // Non-admin user somehow got authenticated - sign them out immediately
+        handleNonAdminAccess();
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, navigate]);
+
+  const handleNonAdminAccess = async () => {
+    toast({
+      title: "Access Denied",
+      description: "This is an admin-only interface. Only authorized administrators can access this system.",
+      variant: "destructive",
+      duration: 5000,
+    });
+    
+    // Sign out the non-admin user immediately
+    await signOut();
+  };
 
   // Show loading while checking auth state
   if (authLoading) {
@@ -71,11 +88,12 @@ const Auth = () => {
       }
 
       if (data?.user) {
+        // We'll check admin status in the useEffect above
+        // For now, just show a loading state while we verify admin access
         toast({
-          title: "Welcome back!",
-          description: "You have been successfully logged in.",
+          title: "Verifying Access",
+          description: "Checking admin privileges...",
         });
-        // Navigation will be handled by the useEffect above
       }
     } catch (error) {
       toast({
@@ -115,7 +133,8 @@ const Auth = () => {
       if (data?.user) {
         toast({
           title: "Account Created!",
-          description: "Your account has been created successfully. You can now sign in.",
+          description: "Your account has been created. However, only authorized administrators can access this system.",
+          variant: "destructive",
         });
         // Switch to login tab
         const loginTab = document.querySelector('[value="login"]') as HTMLElement;
@@ -138,7 +157,7 @@ const Auth = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Admin Portal</CardTitle>
           <CardDescription>
-            Sign in to access the administrative dashboard
+            This is an admin-only interface. Only authorized administrators can access this system.
           </CardDescription>
         </CardHeader>
         <CardContent>

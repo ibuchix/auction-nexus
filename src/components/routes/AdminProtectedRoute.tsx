@@ -1,9 +1,8 @@
 
 import { ReactNode } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 interface AdminProtectedRouteProps {
@@ -12,7 +11,6 @@ interface AdminProtectedRouteProps {
 
 export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   const { user, isAdmin, isLoading } = useAuth();
-  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -30,24 +28,16 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   }
 
   if (!isAdmin) {
-    const handleGoToLogin = () => {
-      console.log('Navigating to /auth');
-      navigate("/auth", { replace: true });
-    };
-
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="space-y-4 text-center max-w-lg">
           <p className="text-red-600 font-medium text-lg">Access Denied</p>
           <p className="text-gray-600">
-            You don't have admin privileges. Please contact an administrator if you believe this is an error.
+            This is an admin-only interface. Only authorized administrators can access this system.
           </p>
-          <Button 
-            onClick={handleGoToLogin}
-            className="mt-4"
-          >
-            Go to Login
-          </Button>
+          <p className="text-sm text-gray-500">
+            If you believe you should have access, please contact your system administrator.
+          </p>
         </div>
       </div>
     );
