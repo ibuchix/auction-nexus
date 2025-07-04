@@ -20,64 +20,33 @@ export function useAuth() {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check admin status immediately and wait for it to complete
-          setTimeout(async () => {
-            try {
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', session.user.id)
-                .single();
-              
-              if (!error && data) {
-                setIsAdmin(data.role === 'admin');
-                console.log('User role:', data.role);
-              } else {
-                console.log('Error checking admin status or no profile found:', error);
-                setIsAdmin(false);
-              }
-            } catch (error) {
-              console.error('Error checking admin status:', error);
-              setIsAdmin(false);
-            } finally {
-              // Only set loading to false after admin check is complete
-              setIsLoading(false);
-            }
-          }, 100);
+          // Check admin status from user metadata instead of profiles table
+          const userRole = session.user.user_metadata?.role;
+          setIsAdmin(userRole === 'admin');
+          console.log('User role from metadata:', userRole);
         } else {
           // No user, definitely not admin
           setIsAdmin(false);
-          setIsLoading(false);
         }
+        
+        // Set loading to false immediately since we don't need async operations
+        setIsLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Check admin status for existing session and wait for completion
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (!error && data) {
-            setIsAdmin(data.role === 'admin');
-            console.log('Initial user role:', data.role);
-          } else {
-            console.log('Error checking initial admin status or no profile found:', error);
-            setIsAdmin(false);
-          }
-        } catch (error) {
-          console.error('Error in initial admin check:', error);
-          setIsAdmin(false);
-        }
+        // Check admin status from user metadata instead of profiles table
+        const userRole = session.user.user_metadata?.role;
+        setIsAdmin(userRole === 'admin');
+        console.log('Initial user role from metadata:', userRole);
+      } else {
+        setIsAdmin(false);
       }
       
       // Set loading to false after everything is checked
