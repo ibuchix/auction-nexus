@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, User } from "lucide-react";
 import { SearchBar } from "@/components/dashboard/SearchBar";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface UserActionsMenuProps {
   searchQuery: string;
@@ -21,6 +23,14 @@ export function UserActionsMenu({
   setSearchQuery, 
   notificationCount = 3 
 }: UserActionsMenuProps) {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth", { replace: true });
+  };
+
   return (
     <div className="flex items-center gap-4">
       <div className="hidden sm:block max-w-xs">
@@ -47,7 +57,7 @@ export function UserActionsMenu({
           <DropdownMenuContent align="end">
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
