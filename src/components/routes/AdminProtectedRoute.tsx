@@ -30,6 +30,11 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   }
 
   if (!isAdmin) {
+    const handleGoToLogin = () => {
+      console.log('Navigating to /auth');
+      navigate("/auth", { replace: true });
+    };
+
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="space-y-4 text-center max-w-lg">
@@ -38,7 +43,7 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
             You don't have admin privileges. Please contact an administrator if you believe this is an error.
           </p>
           <Button 
-            onClick={() => navigate("/auth")}
+            onClick={handleGoToLogin}
             className="mt-4"
           >
             Go to Login
