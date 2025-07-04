@@ -184,7 +184,9 @@ export const edgeFunctionAdminOperations = {
   // Auction management
   getActiveAuctions: async () => {
     console.log('=== Calling getActiveAuctions ===');
-    return performAdminOperation('getActiveAuctions', {});
+    return performAdminOperation('getActiveAuctions', { 
+      filterEnded: true // Only get auctions that haven't ended
+    });
   },
   
   getAuctionListings: async (params: { 

@@ -2303,15 +2303,7 @@ export type Database = {
         Returns: boolean
       }
       place_bid: {
-        Args:
-          | { p_car_id: string; p_dealer_id: string; p_amount: number }
-          | {
-              p_car_id: string
-              p_dealer_id: string
-              p_amount: number
-              p_is_proxy?: boolean
-              p_max_proxy_amount?: number
-            }
+        Args: { p_car_id: string; p_dealer_id: string; p_amount: number }
         Returns: Json
       }
       process_auction_end: {

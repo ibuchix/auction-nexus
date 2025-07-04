@@ -108,26 +108,7 @@ export function useAuth() {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      return { data, error: null };
-    } catch (error) {
-      console.error('Sign up error:', error);
-      return { data: null, error };
-    }
-  };
+  // Removed signUp function - admin only system
 
   const signOut = async () => {
     try {
@@ -154,7 +135,6 @@ export function useAuth() {
     isLoading,
     isAdmin,
     signIn,
-    signUp,
     signOut,
   };
 }

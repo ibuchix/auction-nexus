@@ -201,8 +201,9 @@ export const adminOperations = {
           *,
           seller:profiles (*)
         `)
-        .eq('status', 'approved')
-        .is('auction_status', null);
+        .eq('status', 'available')
+        .or('auction_status.is.null,auction_status.eq.ready')
+        .not('auction_status', 'in', '(ended,sold,cancelled,completed)');
     });
   },
   
@@ -213,7 +214,7 @@ export const adminOperations = {
         .from('cars')
         .select('*')
         .in('auction_status', ['active', 'pending'])
-        .eq('is_auction', true)
+        .gt('auction_end_time', new Date().toISOString())
         .order('auction_end_time', { ascending: true });
     });
   },

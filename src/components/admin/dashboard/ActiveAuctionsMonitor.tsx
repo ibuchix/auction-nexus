@@ -24,7 +24,7 @@ export function ActiveAuctionsMonitor() {
     async function fetchActiveAuctions() {
       try {
         setLoading(true);
-        // Fetch active auctions
+        // Fetch active auctions that haven't ended yet
         const { data: auctionData, error: auctionError } = await adminSupabase
           .from('cars')
           .select(`
@@ -35,6 +35,7 @@ export function ActiveAuctionsMonitor() {
             bids(count)
           `)
           .eq('auction_status', 'active')
+          .gt('auction_end_time', new Date().toISOString())
           .order('auction_end_time', { ascending: true })
           .limit(5);
 

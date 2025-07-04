@@ -88,7 +88,7 @@ export function AuctionStatusActions({
                 <Pause className="h-4 w-4 mr-1" />
                 Pause
               </Button>
-              {onExtendTime && (
+              {onExtendTime && endTime && new Date(endTime) > new Date() && (
                 <Button
                   variant="outline"
                   size="sm"

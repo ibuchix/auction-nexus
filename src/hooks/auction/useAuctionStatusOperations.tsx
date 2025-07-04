@@ -92,17 +92,31 @@ export function useAuctionStatusOperations() {
 
   const extendAuctionTime = async (auctionId: string): Promise<void> => {
     try {
-      // Get current auction end time
+      // Get current auction end time and status
       const { data: auction, error: fetchError } = await supabase
         .from('cars')
-        .select('auction_end_time')
+        .select('auction_end_time, auction_status')
         .eq('id', auctionId)
         .single();
       
       if (fetchError) throw fetchError;
       
-      // Add 1 hour to the current end time
+      // Check if auction has already ended
       const currentEndTime = new Date(auction.auction_end_time);
+      const now = new Date();
+      
+      if (currentEndTime <= now) {
+        toast.error("Cannot extend auction time - auction has already ended");
+        return;
+      }
+      
+      // Check if auction is still active
+      if (auction.auction_status !== 'active') {
+        toast.error("Can only extend time for active auctions");
+        return;
+      }
+      
+      // Add 1 hour to the current end time
       const newEndTime = addHours(currentEndTime, 1).toISOString();
       
       const { error } = await supabase
