@@ -2087,6 +2087,10 @@ export type Database = {
           dealer_name: string
         }[]
       }
+      get_dealer_id_by_user_id: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
       get_dealer_profile_id: {
         Args: Record<PropertyKey, never>
         Returns: string
