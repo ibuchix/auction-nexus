@@ -20,13 +20,13 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Handle redirect when user is authenticated AND is admin
+  // Handle redirect when user is authenticated AND admin check is complete
   useEffect(() => {
     if (user && !authLoading) {
       if (isAdmin) {
         navigate("/", { replace: true });
       } else {
-        // Non-admin user somehow got authenticated - sign them out immediately
+        // Non-admin user - sign them out
         handleNonAdminAccess();
       }
     }

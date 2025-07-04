@@ -20,73 +20,65 @@ export function useAuth() {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Only check admin status if user is authenticated
-          // Use setTimeout to avoid blocking the auth state change
-          setTimeout(async () => {
-            try {
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', session.user.id)
-                .single();
-              
-              if (!error && data) {
-                setIsAdmin(data.role === 'admin');
-                console.log('User role:', data.role);
-              } else {
-                console.log('Error checking admin status or no profile found:', error);
-                setIsAdmin(false);
-              }
-            } catch (error) {
-              console.error('Error checking admin status:', error);
-              setIsAdmin(false);
-            }
-          }, 0);
-        } else {
-          // No user, definitely not admin
-          setIsAdmin(false);
-        }
-        
-        setIsLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Check if user is admin for existing session
-        const checkAdminStatus = async () => {
+          // Check admin status immediately and wait for it to complete
           try {
             const { data, error } = await supabase
               .from('profiles')
               .select('role')
               .eq('id', session.user.id)
               .single();
-              
+            
             if (!error && data) {
               setIsAdmin(data.role === 'admin');
-              console.log('Initial user role:', data.role);
+              console.log('User role:', data.role);
             } else {
-              console.log('Error checking initial admin status or no profile found:', error);
+              console.log('Error checking admin status or no profile found:', error);
               setIsAdmin(false);
             }
           } catch (error) {
-            console.error('Error in initial admin check:', error);
+            console.error('Error checking admin status:', error);
             setIsAdmin(false);
-          } finally {
-            setIsLoading(false);
           }
-        };
+        } else {
+          // No user, definitely not admin
+          setIsAdmin(false);
+        }
         
-        checkAdminStatus();
-      } else {
-        // No session, not loading anymore
+        // Only set loading to false after admin check is complete
         setIsLoading(false);
       }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.id);
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Check admin status for existing session and wait for completion
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (!error && data) {
+            setIsAdmin(data.role === 'admin');
+            console.log('Initial user role:', data.role);
+          } else {
+            console.log('Error checking initial admin status or no profile found:', error);
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error('Error in initial admin check:', error);
+          setIsAdmin(false);
+        }
+      }
+      
+      // Set loading to false after everything is checked
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
