@@ -24,6 +24,9 @@ export function ActiveAuctionsMonitor() {
     async function fetchActiveAuctions() {
       try {
         setLoading(true);
+        // First transition any ended auctions, then fetch active ones
+        await adminSupabase.rpc('transition_ended_auctions');
+        
         // Fetch active auctions that haven't ended yet
         const { data: auctionData, error: auctionError } = await adminSupabase
           .from('cars')

@@ -2312,7 +2312,7 @@ export type Database = {
       }
       process_ended_auctions: {
         Args: Record<PropertyKey, never>
-        Returns: Json
+        Returns: number
       }
       process_pending_proxy_bids: {
         Args: Record<PropertyKey, never>
@@ -2367,6 +2367,10 @@ export type Database = {
       transition_car_status: {
         Args: { p_car_id: string; p_new_status: string; p_is_draft?: boolean }
         Returns: Json
+      }
+      transition_ended_auctions: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       update_auction_status: {
         Args: Record<PropertyKey, never>

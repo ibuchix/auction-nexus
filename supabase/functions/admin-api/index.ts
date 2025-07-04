@@ -143,6 +143,10 @@ serve(async (req) => {
 
       case 'getAuctionListings':
         console.log('Fetching auction listings with params:', params)
+        
+        // First transition any ended auctions
+        await supabase.rpc('transition_ended_auctions')
+        
         let query = supabase.from('cars').select('*')
         
         if (!params.showAllCars && params.status) {
@@ -166,11 +170,15 @@ serve(async (req) => {
 
       case 'getActiveAuctions':
         console.log('Fetching active auctions...')
+        
+        // First call the transition function to update any ended auctions
+        await supabase.rpc('transition_ended_auctions')
+        
         const { data: activeData, error: activeError } = await supabase
           .from('cars')
           .select('*')
-          .in('auction_status', ['active', 'pending'])
-          .eq('is_auction', true)
+          .eq('auction_status', 'active')
+          .gt('auction_end_time', new Date().toISOString()) // Only include auctions that haven't ended
           .order('auction_end_time', { ascending: true })
         
         if (activeError) {

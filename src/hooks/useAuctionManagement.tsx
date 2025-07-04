@@ -157,15 +157,32 @@ export function useAuctionManagement() {
     listing.auction_status === 'ready' || !listing.auction_status
   );
   
-  const activeAuctions = filteredListings.filter(listing => 
-    listing.auction_status === 'active'
-  );
+  const activeAuctions = filteredListings.filter(listing => {
+    // Only show auctions that are marked as active AND haven't ended yet
+    if (listing.auction_status !== 'active') return false;
+    if (!listing.auction_end_time) return true; // No end time set, show it
+    
+    const endTime = new Date(listing.auction_end_time);
+    const now = new Date();
+    return endTime > now; // Only include if end time is in the future
+  });
   
-  const otherAuctions = filteredListings.filter(listing => 
-    listing.auction_status !== 'ready' && 
-    listing.auction_status !== 'active' && 
-    listing.auction_status !== undefined
-  );
+  const endedAuctions = filteredListings.filter(listing => {
+    // Show auctions that are explicitly ended OR active but past their end time
+    if (listing.auction_status === 'ended') return true;
+    if (listing.auction_status === 'cancelled') return true;
+    if (listing.auction_status === 'paused') return true;
+    if (listing.auction_status === 'sold') return true;
+    
+    // Also include active auctions that have passed their end time
+    if (listing.auction_status === 'active' && listing.auction_end_time) {
+      const endTime = new Date(listing.auction_end_time);
+      const now = new Date();
+      return endTime <= now;
+    }
+    
+    return false;
+  });
 
   const notConfiguredListings = filteredListings.filter(listing =>
     !listing.auction_status && !listing.is_auction
@@ -199,7 +216,7 @@ export function useAuctionManagement() {
     filteredListings,
     readyAuctions,
     activeAuctions,
-    otherAuctions,
+    endedAuctions,
     notConfiguredListings,
     selectedAuction,
     isScheduleDialogOpen,

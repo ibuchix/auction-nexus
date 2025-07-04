@@ -1,5 +1,5 @@
 
-import { Clock, CheckCircle, PauseCircle, XCircle, Package } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Package } from "lucide-react";
 import { useAuctionManagement } from "@/hooks/useAuctionManagement";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,7 +21,7 @@ const AuctionManagement = () => {
     error,
     readyAuctions,
     activeAuctions,
-    otherAuctions,
+    endedAuctions,
     notConfiguredListings,
     selectedAuction,
     isScheduleDialogOpen,
@@ -84,11 +84,11 @@ const AuctionManagement = () => {
               <Badge variant="secondary" className="ml-1">{activeAuctions.length}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="other" className="flex items-center gap-1">
-            <PauseCircle className="h-4 w-4" />
-            Other Auctions
-            {otherAuctions && otherAuctions.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{otherAuctions.length}</Badge>
+          <TabsTrigger value="ended" className="flex items-center gap-1">
+            <XCircle className="h-4 w-4" />
+            Ended Auctions
+            {endedAuctions && endedAuctions.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{endedAuctions.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="notConfigured" className="flex items-center gap-1">
@@ -126,11 +126,11 @@ const AuctionManagement = () => {
           />
         </TabsContent>
 
-        <TabsContent value="other" className="space-y-4">
+        <TabsContent value="ended" className="space-y-4">
           <AuctionTabContent
-            title="Other Auctions (Paused, Ended, Cancelled)"
+            title="Ended Auctions (Paused, Ended, Cancelled)"
             icon={<XCircle className="h-5 w-5 text-gray-600" />}
-            auctions={otherAuctions}
+            auctions={endedAuctions}
             isLoading={isLoading}
             onPause={pauseAuction}
             onCancel={cancelAuction}
