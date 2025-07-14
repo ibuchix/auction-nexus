@@ -23,14 +23,22 @@ export function SellerPerformanceMetrics({ sellerId }: SellerPerformanceMetricsP
   const { data: metrics, isLoading, error } = useQuery({
     queryKey: ['sellerPerformanceMetrics', sellerId, timeframe],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('seller_performance_metrics')
-        .select('*')
-        .eq('seller_id', sellerId)
-        .single();
-        
-      if (error) throw error;
-      return data;
+      // For now, return mock data since seller_performance_metrics doesn't exist
+      // This will be replaced when the actual table/view is created
+      return {
+        total_listings: 0,
+        active_listings: 0,
+        sold_listings: 0,
+        listing_approval_rate: 0,
+        total_earnings: 0,
+        highest_price_sold: 0,
+        average_price: 0,
+        average_time_to_sell: null,
+        reserve_price_met_rate: 0,
+        last_listing_date: null,
+        last_sale_date: null,
+        cancelled_listings: 0
+      };
     },
     enabled: !!sellerId,
   });

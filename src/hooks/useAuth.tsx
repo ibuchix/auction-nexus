@@ -20,16 +20,14 @@ export function useAuth() {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check admin status from user metadata instead of profiles table
-          const userRole = session.user.user_metadata?.role;
-          setIsAdmin(userRole === 'admin');
-          console.log('User role from metadata:', userRole);
+          // Simple admin check - direct user ID comparison
+          const isAdminUser = session.user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e';
+          setIsAdmin(isAdminUser);
+          console.log('Admin status:', isAdminUser);
         } else {
-          // No user, definitely not admin
           setIsAdmin(false);
         }
         
-        // Set loading to false immediately since we don't need async operations
         setIsLoading(false);
       }
     );
@@ -41,15 +39,14 @@ export function useAuth() {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Check admin status from user metadata instead of profiles table
-        const userRole = session.user.user_metadata?.role;
-        setIsAdmin(userRole === 'admin');
-        console.log('Initial user role from metadata:', userRole);
+        // Simple admin check - direct user ID comparison
+        const isAdminUser = session.user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e';
+        setIsAdmin(isAdminUser);
+        console.log('Initial admin status:', isAdminUser);
       } else {
         setIsAdmin(false);
       }
       
-      // Set loading to false after everything is checked
       setIsLoading(false);
     });
 

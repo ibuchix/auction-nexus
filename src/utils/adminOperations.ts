@@ -29,31 +29,30 @@ export async function performAdminOperation<T>(
   }
 }
 
-// Test admin access function using service role
-export const testAdminAccess = async () => {
+// Simplified admin access check using direct user ID
+export const checkAdminAccess = async () => {
   try {
-    console.log('Testing admin access via service role...');
+    const { data: { user } } = await adminSupabase.auth.getUser();
     
-    // Use service role to call the test function directly
-    const { data, error } = await adminSupabase.rpc('test_admin_access');
-    
-    if (error) {
-      console.error('Admin access test failed:', error);
-      return { success: false, error: error.message, details: error };
+    if (!user) {
+      console.log('No authenticated user found');
+      return false;
     }
-    
-    console.log('Admin access test result:', data);
-    return { success: true, data };
+
+    // Simple admin check - direct user ID comparison
+    const isAdmin = user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e';
+    console.log('Admin check result:', isAdmin);
+    return isAdmin;
   } catch (error) {
-    console.error('Exception in admin access test:', error);
-    return { success: false, error: (error as Error).message };
+    console.error('Admin access check failed:', error);
+    return false;
   }
 };
 
 // Direct admin operations using Supabase admin client
 export const adminOperations = {
   // Test admin access
-  testAccess: testAdminAccess,
+  testAccess: checkAdminAccess,
   
   // Fetch all dealers using direct admin access with email information
   getAllDealers: async (status?: string) => {

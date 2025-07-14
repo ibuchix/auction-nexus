@@ -72,11 +72,11 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id)
 
-    // Check if user is admin
-    const { data: isAdminResult, error: adminError } = await supabase.rpc('is_admin')
+    // Simplified admin check - direct user ID comparison
+    const isAdmin = user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e'
     
-    if (adminError || !isAdminResult) {
-      console.error('Admin check failed:', adminError)
+    if (!isAdmin) {
+      console.error('Admin check failed - not admin user')
       return new Response(
         JSON.stringify({ 
           success: false,
@@ -144,8 +144,8 @@ serve(async (req) => {
       case 'getAuctionListings':
         console.log('Fetching auction listings with params:', params)
         
-        // First transition any ended auctions
-        await supabase.rpc('transition_ended_auctions')
+        // First update auction status
+        await supabase.rpc('update_auction_status')
         
         let query = supabase.from('cars').select('*')
         
@@ -171,8 +171,8 @@ serve(async (req) => {
       case 'getActiveAuctions':
         console.log('Fetching active auctions...')
         
-        // First call the transition function to update any ended auctions
-        await supabase.rpc('transition_ended_auctions')
+        // First update auction status
+        await supabase.rpc('update_auction_status')
         
         const { data: activeData, error: activeError } = await supabase
           .from('cars')
