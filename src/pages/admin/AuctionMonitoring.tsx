@@ -13,7 +13,7 @@ const AuctionMonitoring = () => {
   const [sortBy, setSortBy] = useState("end_time");
 
   const filteredAndSortedAuctions = useMemo(() => {
-    if (!auctions) return [];
+    if (!auctions || !Array.isArray(auctions)) return [];
 
     return auctions
       .filter(auction => {
