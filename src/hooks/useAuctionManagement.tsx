@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Auction, AuctionStatus } from "@/types/auction";
 import { useToast } from "@/hooks/use-toast";
@@ -11,14 +11,14 @@ export function useAuctionManagement() {
   const [showAllCars, setShowAllCars] = useState(true);
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
-  const [errorCount, setErrorCount] = useState(0);
+  const errorCountRef = useRef(0);
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
   const { data: listings = [], isLoading, error, refetch } = useQuery({
     queryKey: ['adminVehicleListings', showAllCars, statusFilter],
     queryFn: async () => {
-      console.log('Fetching car listings via admin operations');
+      console.log('🔍 [AuctionMgmt] Fetching car listings via admin operations', { showAllCars, statusFilter });
       try {
         const response = await adminOperations.getAuctionListings(
           showAllCars, 
@@ -26,10 +26,9 @@ export function useAuctionManagement() {
         );
         
         if (!response) {
-          console.error('No response from admin operations');
-          // Only show error if this is a repeated failure
-          setErrorCount(prev => prev + 1);
-          if (errorCount < 3) {
+          console.error('❌ [AuctionMgmt] No response from admin operations');
+          errorCountRef.current = errorCountRef.current + 1;
+          if (errorCountRef.current < 3) {
             return [];
           }
           toast({
@@ -41,17 +40,17 @@ export function useAuctionManagement() {
         }
         
         // Reset error count on success
-        setErrorCount(0);
+        errorCountRef.current = 0;
         
         const auctionData = Array.isArray(response) ? response : [response];
-        console.log(`Successfully fetched ${auctionData.length} car listings`);
+        console.log(`✅ [AuctionMgmt] Successfully fetched ${auctionData.length} car listings`);
+        console.log('📊 [AuctionMgmt] Sample data structure:', auctionData.slice(0, 2));
         
         return auctionData;
       } catch (err) {
-        console.error('Exception in queryFn:', err);
-        setErrorCount(prev => prev + 1);
-        // Only show toast on repeated failures to prevent spam
-        if (errorCount >= 2) {
+        console.error('💥 [AuctionMgmt] Exception in queryFn:', err);
+        errorCountRef.current = errorCountRef.current + 1;
+        if (errorCountRef.current >= 2) {
           toast({
             title: "Error",
             description: "Failed to load auction listings",
@@ -86,22 +85,41 @@ export function useAuctionManagement() {
     // 2. Cars with 'ready' status
     // 3. Cars that ended but are still available for restart
     // 4. Cars marked as available but not currently in auction
-    if (!listing.auction_status || listing.auction_status === 'ready') {
-      return true;
-    }
+    const isReady = (() => {
+      if (!listing.auction_status || listing.auction_status === 'ready') {
+        console.log(`🟢 [ReadyFilter] Car ${listing.id} ready: no auction_status or ready status`);
+        return true;
+      }
+      
+      // Include ended auctions that are still available
+      if (listing.auction_status === 'ended' && listing.status === 'available') {
+        console.log(`🟡 [ReadyFilter] Car ${listing.id} ready: ended but available`);
+        return true;
+      }
+      
+      // Include cancelled or paused auctions that can be restarted
+      if ((listing.auction_status === 'cancelled' || listing.auction_status === 'paused') && 
+          listing.status === 'available') {
+        console.log(`🟠 [ReadyFilter] Car ${listing.id} ready: cancelled/paused but available`);
+        return true;
+      }
+      
+      console.log(`🔴 [ReadyFilter] Car ${listing.id} NOT ready: auction_status=${listing.auction_status}, status=${listing.status}`);
+      return false;
+    })();
     
-    // Include ended auctions that are still available
-    if (listing.auction_status === 'ended' && listing.status === 'available') {
-      return true;
-    }
-    
-    // Include cancelled or paused auctions that can be restarted
-    if ((listing.auction_status === 'cancelled' || listing.auction_status === 'paused') && 
-        listing.status === 'available') {
-      return true;
-    }
-    
-    return false;
+    return isReady;
+  });
+  
+  console.log(`📈 [AuctionMgmt] Filter results:`, {
+    totalListings: filteredListings.length,
+    readyAuctions: readyAuctions.length,
+    sampleReady: readyAuctions.slice(0, 2).map(car => ({
+      id: car.id,
+      title: car.title,
+      auction_status: car.auction_status,
+      status: car.status
+    }))
   });
   
   const activeAuctions = filteredListings.filter(listing => {
