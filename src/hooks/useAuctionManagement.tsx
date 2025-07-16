@@ -93,17 +93,10 @@ export function useAuctionManagement() {
     // Cars ready for auction include:
     // 1. New cars with no auction_status
     // 2. Cars with 'ready' status
-    // 3. Cars that ended but are still available for restart
-    // 4. Cars marked as available but not currently in auction
+    // Note: Ended auctions should NOT appear here, only in ended tab
     const isReady = (() => {
       if (!listing.auctionStatus || listing.auctionStatus === 'ready') {
         console.log(`🟢 [ReadyFilter] Car ${listing.id} ready: no auctionStatus or ready status`);
-        return true;
-      }
-      
-      // Include ended auctions that are still available
-      if (listing.auctionStatus === 'ended' && listing.status === 'available') {
-        console.log(`🟡 [ReadyFilter] Car ${listing.id} ready: ended but available`);
         return true;
       }
       
