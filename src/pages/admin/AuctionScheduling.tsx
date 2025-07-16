@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { AvailableCarsTable } from "@/components/admin/auction-scheduling/AvailableCarsTable";
 import { AuctionScheduleDialog } from "@/components/admin/auction-scheduling/AuctionScheduleDialog";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 const AuctionScheduling = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,22 +28,24 @@ const AuctionScheduling = () => {
     queryFn: async () => {
       console.log('Fetching available cars for scheduling via admin operations');
       
-      const data = await adminOperations.getAvailableCarsForScheduling();
-      
-      if (!data) {
-        console.error('No data returned from getAvailableCarsForScheduling');
-        toast({
-          title: "Error",
-          description: "Failed to load available cars for scheduling",
-          variant: "destructive",
-        });
+      try {
+        const data = await adminOperations.getAvailableCarsForScheduling();
+        
+        if (!data) {
+          console.error('No data returned from getAvailableCarsForScheduling');
+          return [];
+        }
+        
+        const auctionData = Array.isArray(data) ? data : [data];
+        console.log(`Successfully fetched ${auctionData.length} available cars`);
+        return auctionData as Auction[];
+      } catch (error) {
+        console.error('Error fetching available cars:', error);
         return [];
       }
-      
-      console.log(`Successfully fetched ${(data as Auction[]).length || 0} available cars`);
-      return data as Auction[];
     },
-    retry: 2,
+    retry: 1,
+    refetchOnWindowFocus: false
   });
 
   const handleRefresh = () => {
@@ -69,33 +72,34 @@ const AuctionScheduling = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          Auction Scheduling
-        </h1>
-        <div className="flex gap-4">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search schedules..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+    <ErrorBoundary>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Auction Scheduling
+          </h1>
+          <div className="flex gap-4">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search schedules..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value)}
+            >
+              <option value="all">All Status</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="running">Running</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </Select>
           </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value)}
-          >
-            <option value="all">All Status</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="running">Running</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </Select>
         </div>
-      </div>
 
       <Tabs defaultValue="schedules" className="space-y-4">
         <TabsList>
@@ -153,7 +157,8 @@ const AuctionScheduling = () => {
           onScheduled={handleScheduleSuccess}
         />
       )}
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 };
 

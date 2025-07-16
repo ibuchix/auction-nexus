@@ -1,8 +1,9 @@
 
 import { adminSupabase } from '@/integrations/supabase/adminClient';
+import { supabase } from '@/integrations/supabase/client';
 import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
-import { AuctionScheduleStatus } from '@/types/auction';
+import { AuctionScheduleStatus, Auction } from '@/types/auction';
 
 // Generic admin operation handler with error handling and case conversion
 export async function performAdminOperation<T>(
@@ -192,18 +193,37 @@ export const adminOperations = {
   },
   
   // Get available cars for auction scheduling with admin access
-  getAvailableCarsForScheduling: async () => {
-    return performAdminOperation('getAvailableCarsForScheduling', async () => {
-      return await adminSupabase
+  getAvailableCarsForScheduling: async (): Promise<Auction[]> => {
+    console.log('Fetching cars available for scheduling');
+    
+    try {
+      // Get all cars that don't have active schedules
+      const { data, error } = await adminSupabase
         .from('cars')
-        .select(`
-          *,
-          seller:profiles (*)
-        `)
-        .eq('status', 'available')
-        .or('auction_status.is.null,auction_status.eq.ready')
-        .not('auction_status', 'in', '(ended,sold,cancelled,completed)');
-    });
+        .select('*')
+        .not('auction_status', 'in', '("sold","ended","cancelled")')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching available cars:', error);
+        throw new Error(error.message);
+      }
+      
+      // Filter out cars that already have schedules
+      const { data: scheduledCars } = await adminSupabase
+        .from('auction_schedules')
+        .select('car_id')
+        .eq('status', 'scheduled');
+      
+      const scheduledCarIds = new Set(scheduledCars?.map(s => s.car_id) || []);
+      const availableCars = data?.filter(car => !scheduledCarIds.has(car.id)) || [];
+      
+      console.log(`Found ${availableCars.length} cars available for scheduling out of ${data?.length || 0} total cars`);
+      return availableCars as Auction[];
+    } catch (error) {
+      console.error('Error in getAvailableCarsForScheduling:', error);
+      return [];
+    }
   },
   
   // Get active auctions with admin access - direct table access

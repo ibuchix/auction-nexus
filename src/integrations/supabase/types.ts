@@ -2238,6 +2238,10 @@ export type Database = {
         }
         Returns: string
       }
+      manual_auction_status_update: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       perform_admin_action: {
         Args: {
           p_action: string
@@ -2346,6 +2350,10 @@ export type Database = {
           p_details?: Json
         }
         Returns: undefined
+      }
+      update_won_vehicle_payment_status: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       upsert_car_listing: {
         Args: { car_data: Json; is_draft?: boolean }
