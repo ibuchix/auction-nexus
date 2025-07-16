@@ -25,6 +25,14 @@ export function useAuctionManagement() {
           statusFilter === "all" ? undefined : statusFilter
         );
         
+        console.log('🔬 [AuctionMgmt] RAW RESPONSE DEBUG:');
+        console.log('  - Type:', typeof response);
+        console.log('  - Is Array:', Array.isArray(response));
+        console.log('  - Length/Keys:', Array.isArray(response) ? response.length : Object.keys(response || {}));
+        console.log('  - Constructor:', response?.constructor?.name);
+        console.log('  - First item keys:', Array.isArray(response) && response[0] ? Object.keys(response[0]).slice(0, 15) : 'No first item');
+        console.log('  - Sample items:', Array.isArray(response) ? response.slice(0, 2) : 'Not an array');
+        
         if (!response) {
           console.error('❌ [AuctionMgmt] No response from admin operations');
           errorCountRef.current = errorCountRef.current + 1;
@@ -43,8 +51,10 @@ export function useAuctionManagement() {
         errorCountRef.current = 0;
         
         const auctionData = Array.isArray(response) ? response : [response];
-        console.log(`✅ [AuctionMgmt] Successfully fetched ${auctionData.length} car listings`);
-        console.log('📊 [AuctionMgmt] Sample data structure:', auctionData.slice(0, 2));
+        console.log('🔬 [AuctionMgmt] PROCESSED DATA DEBUG:');
+        console.log('  - Processed length:', auctionData.length);
+        console.log('  - First 3 items field names:', auctionData.slice(0, 3).map(item => Object.keys(item || {}).slice(0, 10)));
+        console.log('  - Sample auctionStatus values:', auctionData.slice(0, 5).map(item => ({ id: item?.id, auctionStatus: item?.auctionStatus, status: item?.status })));
         
         return auctionData;
       } catch (err) {
