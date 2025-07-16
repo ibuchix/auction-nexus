@@ -53,8 +53,14 @@ export async function performAdminOperation<T>(
     }
     
     console.log(`Admin operation successful (${operationName}):`, data);
+    
     // Convert snake_case to camelCase for frontend use
-    return data ? objectToCamelCase(data) as T : null;
+    // Handle arrays specially to preserve array structure
+    if (Array.isArray(data)) {
+      return data.map(item => item && typeof item === 'object' ? objectToCamelCase(item) : item) as T;
+    } else {
+      return data ? objectToCamelCase(data) as T : null;
+    }
   } catch (error) {
     console.error(`Admin operation failed (${operationName}):`, error);
     toast.error(`Operation failed: ${(error as Error).message || 'Unknown error'}`);
