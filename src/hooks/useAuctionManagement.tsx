@@ -80,9 +80,29 @@ export function useAuctionManagement() {
     return matchesSearch && matchesStatus;
   });
 
-  const readyAuctions = filteredListings.filter(listing => 
-    listing.auction_status === 'ready' || !listing.auction_status
-  );
+  const readyAuctions = filteredListings.filter(listing => {
+    // Cars ready for auction include:
+    // 1. New cars with no auction_status
+    // 2. Cars with 'ready' status
+    // 3. Cars that ended but are still available for restart
+    // 4. Cars marked as available but not currently in auction
+    if (!listing.auction_status || listing.auction_status === 'ready') {
+      return true;
+    }
+    
+    // Include ended auctions that are still available
+    if (listing.auction_status === 'ended' && listing.status === 'available') {
+      return true;
+    }
+    
+    // Include cancelled or paused auctions that can be restarted
+    if ((listing.auction_status === 'cancelled' || listing.auction_status === 'paused') && 
+        listing.status === 'available') {
+      return true;
+    }
+    
+    return false;
+  });
   
   const activeAuctions = filteredListings.filter(listing => {
     // Only show auctions that are marked as active AND haven't ended yet
