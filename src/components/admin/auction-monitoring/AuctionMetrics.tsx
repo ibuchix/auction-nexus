@@ -8,7 +8,7 @@ interface AuctionMetricsProps {
 }
 
 export function AuctionMetrics({ auctions }: AuctionMetricsProps) {
-  if (!auctions) {
+  if (!auctions || !Array.isArray(auctions)) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
