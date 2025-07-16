@@ -5,13 +5,45 @@ import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
 import { AuctionScheduleStatus, Auction } from '@/types/auction';
 
+// Check if current user is the admin
+export const verifyCurrentUserIsAdmin = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('No authenticated user found');
+      return false;
+    }
+
+    // Simple admin check - direct user ID comparison
+    const isAdmin = user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e';
+    console.log('Admin check result:', isAdmin);
+    return isAdmin;
+  } catch (error) {
+    console.error('Admin access check failed:', error);
+    return false;
+  }
+};
+
 // Generic admin operation handler with error handling and case conversion
 export async function performAdminOperation<T>(
   operationName: string,
-  operation: () => Promise<{ data: any; error: any }>
+  operation: () => Promise<{ data: any; error: any }>,
+  requireAuth: boolean = true
 ): Promise<T | null> {
   try {
     console.log(`Starting admin operation: ${operationName}`);
+    
+    // Verify admin access for operations that require it
+    if (requireAuth) {
+      const isAdmin = await verifyCurrentUserIsAdmin();
+      if (!isAdmin) {
+        console.error(`Admin operation failed (${operationName}): Not authorized`);
+        toast.error('Admin access required');
+        return null;
+      }
+    }
+    
     const { data, error } = await operation();
     
     if (error) {
@@ -118,10 +150,10 @@ export const adminOperations = {
     }
   },
   
-  // Verify dealer using direct database access
+  // Verify dealer using authenticated admin client
   verifyDealer: async (dealerId: string, adminId: string, notes?: string) => {
     return performAdminOperation('verifyDealer', async () => {
-      const { data, error } = await adminSupabase
+      const { data, error } = await supabase
         .from('dealers')
         .update({
           verification_status: 'approved',
@@ -136,10 +168,10 @@ export const adminOperations = {
     });
   },
   
-  // Reject dealer using direct database access
+  // Reject dealer using authenticated admin client
   rejectDealer: async (dealerId: string, adminId: string, rejectionReason: string, notes?: string) => {
     return performAdminOperation('rejectDealer', async () => {
-      const { data, error } = await adminSupabase
+      const { data, error } = await supabase
         .from('dealers')
         .update({
           verification_status: 'rejected',
@@ -154,24 +186,24 @@ export const adminOperations = {
     });
   },
   
-  // Fetch all users with admin access
+  // Fetch all users with admin access using authenticated client
   getAllUsers: async () => {
     return performAdminOperation('getAllUsers', async () => {
-      return await adminSupabase.from('profiles').select('*').order('updated_at', { ascending: false });
+      return await supabase.from('profiles').select('*').order('updated_at', { ascending: false });
     });
   },
   
-  // Fetch all sellers with admin access
+  // Fetch all sellers with admin access using authenticated client
   getAllSellers: async () => {
     return performAdminOperation('getAllSellers', async () => {
-      return await adminSupabase.from('sellers').select('*').order('created_at', { ascending: false });
+      return await supabase.from('sellers').select('*').order('created_at', { ascending: false });
     });
   },
   
-  // Update user role with admin access
+  // Update user role with admin access using authenticated client
   updateUserRole: async (userId: string, role: 'admin' | 'dealer' | 'seller') => {
     return performAdminOperation('updateUserRole', async () => {
-      return await adminSupabase
+      return await supabase
         .from('profiles')
         .update({ role })
         .eq('id', userId)
@@ -180,10 +212,10 @@ export const adminOperations = {
     });
   },
   
-  // Suspend user with admin access
+  // Suspend user with admin access using authenticated client
   suspendUser: async (userId: string, suspended: boolean) => {
     return performAdminOperation('suspendUser', async () => {
-      return await adminSupabase
+      return await supabase
         .from('profiles')
         .update({ suspended })
         .eq('id', userId)
@@ -192,13 +224,20 @@ export const adminOperations = {
     });
   },
   
-  // Get available cars for auction scheduling with admin access
+  // Get available cars for auction scheduling with admin access using authenticated client
   getAvailableCarsForScheduling: async (): Promise<Auction[]> => {
     console.log('Fetching cars available for scheduling');
     
+    // Check admin access first
+    const isAdmin = await verifyCurrentUserIsAdmin();
+    if (!isAdmin) {
+      console.error('Admin access required for scheduling operations');
+      return [];
+    }
+    
     try {
-      // Get all cars that don't have active schedules
-      const { data, error } = await adminSupabase
+      // Get all cars that don't have active schedules using authenticated client
+      const { data, error } = await supabase
         .from('cars')
         .select('*')
         .not('auction_status', 'in', '("sold","ended","cancelled")')
@@ -210,7 +249,7 @@ export const adminOperations = {
       }
       
       // Filter out cars that already have schedules
-      const { data: scheduledCars } = await adminSupabase
+      const { data: scheduledCars } = await supabase
         .from('auction_schedules')
         .select('car_id')
         .eq('status', 'scheduled');
@@ -226,10 +265,10 @@ export const adminOperations = {
     }
   },
   
-  // Get active auctions with admin access - direct table access
+  // Get active auctions with admin access using authenticated client
   getActiveAuctions: async () => {
     return performAdminOperation('getActiveAuctions', async () => {
-      return await adminSupabase
+      return await supabase
         .from('cars')
         .select('*')
         .in('auction_status', ['active', 'pending'])
@@ -238,10 +277,10 @@ export const adminOperations = {
     });
   },
   
-  // Get auction listings with admin access - direct table access
+  // Get auction listings with admin access using authenticated client
   getAuctionListings: async (showAllCars: boolean = true, status?: string) => {
     return performAdminOperation('getAuctionListings', async () => {
-      let query = adminSupabase.from('cars').select('*');
+      let query = supabase.from('cars').select('*');
       
       if (!showAllCars && status) {
         query = query.eq('auction_status', status);
@@ -251,14 +290,14 @@ export const adminOperations = {
     });
   },
   
-  // Delete seller with admin access
+  // Delete seller with admin access using authenticated client
   deleteSeller: async (sellerId: string) => {
     return performAdminOperation('deleteSeller', async () => {
       // First delete any cars associated with this seller
-      await adminSupabase.from('cars').delete().eq('seller_id', sellerId);
+      await supabase.from('cars').delete().eq('seller_id', sellerId);
       
       // Then delete the seller profile
-      return await adminSupabase.from('sellers').delete().eq('user_id', sellerId);
+      return await supabase.from('sellers').delete().eq('user_id', sellerId);
     });
   },
 
@@ -291,8 +330,8 @@ export const adminOperations = {
 
       console.log('Inserting schedule data:', scheduleData);
 
-      // Insert directly into auction_schedules table
-      const { data, error } = await adminSupabase
+      // Insert directly into auction_schedules table using authenticated client
+      const { data, error } = await supabase
         .from('auction_schedules')
         .insert(scheduleData)
         .select()
@@ -313,7 +352,7 @@ export const adminOperations = {
     console.log('Fetching all auction schedules');
     
     return performAdminOperation('getAllAuctionSchedules', async () => {
-      const { data, error } = await adminSupabase
+      const { data, error } = await supabase
         .from('auction_schedules')
         .select(`
           *,
@@ -336,7 +375,7 @@ export const adminOperations = {
     console.log('Updating schedule status:', { scheduleId, status, adminId });
     
     return performAdminOperation('updateAuctionScheduleStatus', async () => {
-      const { data, error } = await adminSupabase
+      const { data, error } = await supabase
         .from('auction_schedules')
         .update({
           status: status,
@@ -362,7 +401,7 @@ export const adminOperations = {
     console.log('Deleting auction schedule:', scheduleId);
     
     return performAdminOperation('deleteAuctionSchedule', async () => {
-      const { data, error } = await adminSupabase
+      const { data, error } = await supabase
         .from('auction_schedules')
         .delete()
         .eq('id', scheduleId);
