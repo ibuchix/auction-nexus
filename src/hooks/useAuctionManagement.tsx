@@ -74,7 +74,7 @@ export function useAuctionManagement() {
       (listing.model?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (listing.vin?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     
-    const matchesStatus = statusFilter === "all" || listing.auction_status === statusFilter;
+    const matchesStatus = statusFilter === "all" || listing.auctionStatus === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -86,25 +86,25 @@ export function useAuctionManagement() {
     // 3. Cars that ended but are still available for restart
     // 4. Cars marked as available but not currently in auction
     const isReady = (() => {
-      if (!listing.auction_status || listing.auction_status === 'ready') {
-        console.log(`🟢 [ReadyFilter] Car ${listing.id} ready: no auction_status or ready status`);
+      if (!listing.auctionStatus || listing.auctionStatus === 'ready') {
+        console.log(`🟢 [ReadyFilter] Car ${listing.id} ready: no auctionStatus or ready status`);
         return true;
       }
       
       // Include ended auctions that are still available
-      if (listing.auction_status === 'ended' && listing.status === 'available') {
+      if (listing.auctionStatus === 'ended' && listing.status === 'available') {
         console.log(`🟡 [ReadyFilter] Car ${listing.id} ready: ended but available`);
         return true;
       }
       
       // Include cancelled or paused auctions that can be restarted
-      if ((listing.auction_status === 'cancelled' || listing.auction_status === 'paused') && 
+      if ((listing.auctionStatus === 'cancelled' || listing.auctionStatus === 'paused') && 
           listing.status === 'available') {
         console.log(`🟠 [ReadyFilter] Car ${listing.id} ready: cancelled/paused but available`);
         return true;
       }
       
-      console.log(`🔴 [ReadyFilter] Car ${listing.id} NOT ready: auction_status=${listing.auction_status}, status=${listing.status}`);
+      console.log(`🔴 [ReadyFilter] Car ${listing.id} NOT ready: auctionStatus=${listing.auctionStatus}, status=${listing.status}`);
       return false;
     })();
     
@@ -117,31 +117,31 @@ export function useAuctionManagement() {
     sampleReady: readyAuctions.slice(0, 2).map(car => ({
       id: car.id,
       title: car.title,
-      auction_status: car.auction_status,
+      auctionStatus: car.auctionStatus,
       status: car.status
     }))
   });
   
   const activeAuctions = filteredListings.filter(listing => {
     // Only show auctions that are marked as active AND haven't ended yet
-    if (listing.auction_status !== 'active') return false;
-    if (!listing.auction_end_time) return true; // No end time set, show it
+    if (listing.auctionStatus !== 'active') return false;
+    if (!listing.auctionEndTime) return true; // No end time set, show it
     
-    const endTime = new Date(listing.auction_end_time);
+    const endTime = new Date(listing.auctionEndTime);
     const now = new Date();
     return endTime > now; // Only include if end time is in the future
   });
   
   const endedAuctions = filteredListings.filter(listing => {
     // Show auctions that are explicitly ended OR active but past their end time
-    if (listing.auction_status === 'ended') return true;
-    if (listing.auction_status === 'cancelled') return true;
-    if (listing.auction_status === 'paused') return true;
-    if (listing.auction_status === 'sold') return true;
+    if (listing.auctionStatus === 'ended') return true;
+    if (listing.auctionStatus === 'cancelled') return true;
+    if (listing.auctionStatus === 'paused') return true;
+    if (listing.auctionStatus === 'sold') return true;
     
     // Also include active auctions that have passed their end time
-    if (listing.auction_status === 'active' && listing.auction_end_time) {
-      const endTime = new Date(listing.auction_end_time);
+    if (listing.auctionStatus === 'active' && listing.auctionEndTime) {
+      const endTime = new Date(listing.auctionEndTime);
       const now = new Date();
       return endTime <= now;
     }
@@ -150,7 +150,7 @@ export function useAuctionManagement() {
   });
 
   const notConfiguredListings = filteredListings.filter(listing =>
-    !listing.auction_status && !listing.is_auction
+    !listing.auctionStatus && !listing.isAuction
   );
 
   const handleScheduleClick = (auction: Auction) => {
