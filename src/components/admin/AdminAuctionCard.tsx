@@ -35,7 +35,7 @@ export function AdminAuctionCard({
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editedPrice, setEditedPrice] = useState(auction.price?.toString() || "");
-  const [editedNotes, setEditedNotes] = useState(auction.seller_notes || "");
+  const [editedNotes, setEditedNotes] = useState(auction.sellerNotes || "");
   
   // Use the hook directly for any operations not passed as props
   const { pauseAuction, cancelAuction, startAuction, extendAuctionTime } = useAuctionOperations();
@@ -51,7 +51,7 @@ export function AdminAuctionCard({
       const { error } = await supabase
         .from('cars')
         .update({
-          price: parseFloat(editedPrice),
+          reserve_price: parseFloat(editedPrice),
           seller_notes: editedNotes,
           title: updatedTitle
         })
@@ -81,7 +81,7 @@ export function AdminAuctionCard({
   const handleScheduleClick = () => onScheduleClick ? onScheduleClick(auction) : undefined;
 
   // Get proper pricing from valuation data if available
-  const reservePrice = auction.valuation_data?.reservePrice || auction.reserve_price;
+  const reservePrice = auction.valuationData?.reservePrice || auction.reservePrice;
 
   // Generate display title if current title is generic
   const displayTitle = isGenericTitle(auction.title) && auction.make && auction.model && auction.year
@@ -89,23 +89,23 @@ export function AdminAuctionCard({
     : auction.title;
 
   return (
-    <Card className={`hover:shadow-md transition-shadow ${auction.is_damaged ? 'border-red-500' : ''}`}>
+    <Card className={`hover:shadow-md transition-shadow ${auction.isDamaged ? 'border-red-500' : ''}`}>
       <CardHeader className="pb-2">
         <AuctionHeader
           title={displayTitle}
           vin={auction.vin}
-          isDamaged={auction.is_damaged}
+          isDamaged={auction.isDamaged}
           isEditing={isEditing}
           onEditToggle={() => setIsEditing(!isEditing)}
           onCancel={handleCancel}
-          onStart={auction.auction_status === 'ready' || auction.auction_status === 'paused' ? handleStart : undefined}
-          onPause={auction.auction_status === 'active' ? handlePause : undefined}
-          onExtendTime={auction.auction_status === 'active' ? handleExtendTime : undefined}
+          onStart={auction.auctionStatus === 'ready' || auction.auctionStatus === 'paused' ? handleStart : undefined}
+          onPause={auction.auctionStatus === 'active' ? handlePause : undefined}
+          onExtendTime={auction.auctionStatus === 'active' ? handleExtendTime : undefined}
           onScheduleClick={onScheduleClick ? handleScheduleClick : undefined}
-          status={auction.auction_status as AuctionStatus}
-          startTime={auction.auction_start_time}
-          endTime={auction.auction_end_time}
-          isManuallyControlled={auction.is_manually_controlled}
+          status={auction.auctionStatus as AuctionStatus}
+          startTime={auction.auctionStartTime}
+          endTime={auction.auctionEndTime}
+          isManuallyControlled={auction.isManuallyControlled}
         />
       </CardHeader>
       <CardContent>
@@ -120,19 +120,19 @@ export function AdminAuctionCard({
             />
           ) : (
             <AuctionDetails
-              price={auction.price}
-              endTime={auction.auction_end_time}
-              notes={auction.seller_notes}
+              price={auction.reservePrice || auction.price}
+              endTime={auction.auctionEndTime}
+              notes={auction.sellerNotes}
               reservePrice={reservePrice}
-              valuation_data={auction.valuation_data}
+              valuation_data={auction.valuationData}
             />
           )}
 
           <SellerInfo
             seller={auction.seller}
-            mobileNumber={auction.mobile_number}
+            mobileNumber={auction.mobileNumber}
             address={auction.address}
-            seller_name={auction.seller_name}
+            seller_name={auction.sellerName}
           />
 
           <VehicleImages car={auction} />
