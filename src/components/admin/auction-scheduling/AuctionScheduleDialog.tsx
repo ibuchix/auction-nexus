@@ -183,6 +183,7 @@ export function AuctionScheduleDialog({
                         setStartDate(date);
                         setValue("startDate", date as Date);
                       }}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                       initialFocus
                     />
                   </PopoverContent>
@@ -236,6 +237,7 @@ export function AuctionScheduleDialog({
                         setEndDate(date);
                         setValue("endDate", date as Date);
                       }}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                       initialFocus
                     />
                   </PopoverContent>
