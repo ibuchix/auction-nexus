@@ -12,7 +12,15 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "https://sdvakfhmoaoucmhbhw
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY || "");
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY || "", {
+  auth: { persistSession: false, autoRefreshToken: false },
+  global: {
+    headers: {
+      apikey: SERVICE_ROLE_KEY || "",
+      Authorization: `Bearer ${SERVICE_ROLE_KEY || ""}`,
+    },
+  },
+});
 const resend = new Resend(RESEND_API_KEY || "");
 
 interface NotifyRequest {
