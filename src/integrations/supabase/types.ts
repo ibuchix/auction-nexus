@@ -451,10 +451,13 @@ export type Database = {
           car_id: string | null
           category: string | null
           created_at: string | null
+          display_order: number | null
           file_path: string
           file_type: string
           id: string
           image_metadata: Json | null
+          seller_id: string
+          session_id: string | null
           updated_at: string | null
           upload_status: string | null
         }
@@ -462,10 +465,13 @@ export type Database = {
           car_id?: string | null
           category?: string | null
           created_at?: string | null
+          display_order?: number | null
           file_path: string
           file_type: string
           id?: string
           image_metadata?: Json | null
+          seller_id: string
+          session_id?: string | null
           updated_at?: string | null
           upload_status?: string | null
         }
@@ -473,10 +479,13 @@ export type Database = {
           car_id?: string | null
           category?: string | null
           created_at?: string | null
+          display_order?: number | null
           file_path?: string
           file_type?: string
           id?: string
           image_metadata?: Json | null
+          seller_id?: string
+          session_id?: string | null
           updated_at?: string | null
           upload_status?: string | null
         }
@@ -500,8 +509,7 @@ export type Database = {
           awaiting_seller_decision: boolean
           created_at: string
           current_bid: number | null
-          email_notification_sent: boolean | null
-          email_sent_at: string | null
+          email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
           form_metadata: Json | null
@@ -524,6 +532,7 @@ export type Database = {
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
+          rim_photos: Json | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -546,8 +555,7 @@ export type Database = {
           awaiting_seller_decision?: boolean
           created_at?: string
           current_bid?: number | null
-          email_notification_sent?: boolean | null
-          email_sent_at?: string | null
+          email_notification_sent?: boolean
           features?: Json | null
           finance_amount?: number | null
           form_metadata?: Json | null
@@ -570,6 +578,7 @@ export type Database = {
           registration_number?: string | null
           required_photos?: Json | null
           reserve_price?: number
+          rim_photos?: Json | null
           seat_material?: string | null
           seller_id?: string | null
           seller_name?: string | null
@@ -592,8 +601,7 @@ export type Database = {
           awaiting_seller_decision?: boolean
           created_at?: string
           current_bid?: number | null
-          email_notification_sent?: boolean | null
-          email_sent_at?: string | null
+          email_notification_sent?: boolean
           features?: Json | null
           finance_amount?: number | null
           form_metadata?: Json | null
@@ -616,6 +624,7 @@ export type Database = {
           registration_number?: string | null
           required_photos?: Json | null
           reserve_price?: number
+          rim_photos?: Json | null
           seat_material?: string | null
           seller_id?: string | null
           seller_name?: string | null
@@ -1384,6 +1393,102 @@ export type Database = {
         }
         Relationships: []
       }
+      photo_upload_audit_logs: {
+        Row: {
+          action: string
+          car_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          file_size_total: number | null
+          id: string
+          ip_address: string | null
+          photo_count: number | null
+          processing_time_ms: number | null
+          request_id: string
+          security_checks: Json | null
+          session_id: string | null
+          status: string
+          user_agent: string | null
+          user_id: string
+          validation_errors: Json | null
+        }
+        Insert: {
+          action: string
+          car_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_size_total?: number | null
+          id?: string
+          ip_address?: string | null
+          photo_count?: number | null
+          processing_time_ms?: number | null
+          request_id: string
+          security_checks?: Json | null
+          session_id?: string | null
+          status: string
+          user_agent?: string | null
+          user_id: string
+          validation_errors?: Json | null
+        }
+        Update: {
+          action?: string
+          car_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_size_total?: number | null
+          id?: string
+          ip_address?: string | null
+          photo_count?: number | null
+          processing_time_ms?: number | null
+          request_id?: string
+          security_checks?: Json | null
+          session_id?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id?: string
+          validation_errors?: Json | null
+        }
+        Relationships: []
+      }
+      photo_upload_rate_limits: {
+        Row: {
+          created_at: string | null
+          daily_quota: number | null
+          hourly_quota: number | null
+          id: string
+          last_upload_date: string | null
+          last_upload_hour: string | null
+          updated_at: string | null
+          uploads_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          daily_quota?: number | null
+          hourly_quota?: number | null
+          id?: string
+          last_upload_date?: string | null
+          last_upload_hour?: string | null
+          updated_at?: string | null
+          uploads_count?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          daily_quota?: number | null
+          hourly_quota?: number | null
+          id?: string
+          last_upload_date?: string | null
+          last_upload_hour?: string | null
+          updated_at?: string | null
+          uploads_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1695,8 +1800,7 @@ export type Database = {
           awaiting_seller_decision: boolean
           created_at: string
           current_bid: number | null
-          email_notification_sent: boolean | null
-          email_sent_at: string | null
+          email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
           form_metadata: Json | null
@@ -1719,6 +1823,7 @@ export type Database = {
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
+          rim_photos: Json | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -1761,8 +1866,7 @@ export type Database = {
           awaiting_seller_decision: boolean
           created_at: string
           current_bid: number | null
-          email_notification_sent: boolean | null
-          email_sent_at: string | null
+          email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
           form_metadata: Json | null
@@ -1785,6 +1889,7 @@ export type Database = {
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
+          rim_photos: Json | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -1849,6 +1954,10 @@ export type Database = {
       }
       check_tax_id_exists: {
         Args: { tax_id: string }
+        Returns: Json
+      }
+      check_upload_rate_limit: {
+        Args: { p_user_id: string; p_upload_count?: number }
         Returns: Json
       }
       check_vin_reservation: {
@@ -2025,6 +2134,31 @@ export type Database = {
           changed_by: string
         }[]
       }
+      get_car_summary_for_notifications: {
+        Args: { p_car_id: string }
+        Returns: {
+          seller_id: string
+          title: string
+          make: string
+          model: string
+          year: number
+          auction_end_time: string
+        }[]
+      }
+      get_correct_auction_status: {
+        Args: {
+          p_start_time: string
+          p_end_time: string
+          p_current_status?: Database["public"]["Enums"]["auction_schedule_status"]
+        }
+        Returns: Database["public"]["Enums"]["auction_schedule_status"]
+      }
+      get_dealer_bidding_car_ids: {
+        Args: { p_dealer_user_id: string }
+        Returns: {
+          car_id: string
+        }[]
+      }
       get_dealer_by_user_id: {
         Args: { p_user_id: string } | { user_id: number }
         Returns: {
@@ -2043,6 +2177,10 @@ export type Database = {
       get_dealer_profile_safe: {
         Args: { p_user_id?: string }
         Returns: Json
+      }
+      get_dealer_user_id: {
+        Args: { p_dealer_id: string }
+        Returns: string
       }
       get_live_auction_schedules: {
         Args: Record<PropertyKey, never>
@@ -2076,8 +2214,7 @@ export type Database = {
           awaiting_seller_decision: boolean
           created_at: string
           current_bid: number | null
-          email_notification_sent: boolean | null
-          email_sent_at: string | null
+          email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
           form_metadata: Json | null
@@ -2100,6 +2237,7 @@ export type Database = {
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
+          rim_photos: Json | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -2125,8 +2263,7 @@ export type Database = {
           awaiting_seller_decision: boolean
           created_at: string
           current_bid: number | null
-          email_notification_sent: boolean | null
-          email_sent_at: string | null
+          email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
           form_metadata: Json | null
@@ -2149,6 +2286,7 @@ export type Database = {
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
+          rim_photos: Json | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -2242,6 +2380,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      mark_car_email_notification_sent: {
+        Args: { p_car_id: string }
+        Returns: boolean
+      }
       perform_admin_action: {
         Args: {
           p_action: string
@@ -2265,13 +2407,37 @@ export type Database = {
       }
       process_ended_auctions: {
         Args: Record<PropertyKey, never>
-        Returns: number
+        Returns: Json
+      }
+      process_ended_auctions_securely: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      process_ended_auctions_workflow: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      process_missed_auctions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       process_pending_proxy_bids: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      process_seller_auction_end: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       process_specific_ended_auction: {
+        Args: { p_car_id: string }
+        Returns: Json
+      }
+      process_stuck_auction: {
+        Args: { p_car_id: string }
+        Returns: Json
+      }
+      process_stuck_auction_safe: {
         Args: { p_car_id: string }
         Returns: Json
       }
@@ -2321,6 +2487,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      test_live_auction_schedules_no_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          car_id: string
+          status: string
+          start_time: string
+          end_time: string
+          is_manually_controlled: boolean
+        }[]
+      }
       transition_car_status: {
         Args: { p_car_id: string; p_new_status: string; p_is_draft?: boolean }
         Returns: Json
@@ -2331,7 +2507,7 @@ export type Database = {
       }
       update_auction_status: {
         Args: Record<PropertyKey, never>
-        Returns: Json
+        Returns: number
       }
       update_dealer_profile: {
         Args: {
@@ -2355,6 +2531,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      upload_car_photo: {
+        Args: {
+          p_car_id: string
+          p_file_path: string
+          p_category: string
+          p_file_type?: string
+        }
+        Returns: Json
+      }
       upsert_car_listing: {
         Args: { car_data: Json; is_draft?: boolean }
         Returns: Json
@@ -2362,6 +2547,14 @@ export type Database = {
       validate_and_normalize_phone: {
         Args: { phone_number: string }
         Returns: Json
+      }
+      validate_car_photos: {
+        Args: { p_car_id: string }
+        Returns: Json
+      }
+      validate_image_category: {
+        Args: { category_value: string }
+        Returns: boolean
       }
       validate_polish_nip: {
         Args: { nip_number: string }
@@ -2379,6 +2572,10 @@ export type Database = {
       validate_vin: {
         Args: { p_vin: string }
         Returns: boolean
+      }
+      verify_auction_status_consistency: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       verify_dealer: {
         Args: { p_dealer_id: string; p_admin_id: string; p_notes?: string }
@@ -2406,6 +2603,7 @@ export type Database = {
         | "running"
         | "completed"
         | "cancelled"
+        | "active"
       auction_status:
         | "draft"
         | "scheduled"
@@ -2589,6 +2787,7 @@ export const Constants = {
         "running",
         "completed",
         "cancelled",
+        "active",
       ],
       auction_status: [
         "draft",

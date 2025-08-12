@@ -30,23 +30,14 @@ interface NotifyRequest {
 }
 
 async function getSellerUserId(carId: string) {
-  const { data, error } = await supabase
-    .from("cars")
-    .select("seller_id, title, make, model, year")
-    .eq("id", carId)
-    .maybeSingle();
-  if (error) throw error;
-  return data?.seller_id as string | undefined;
+  const summary = await getCarSummary(carId);
+  return (summary as any)?.seller_id as string | undefined;
 }
 
 async function getDealerUserId(dealerId: string) {
-  const { data, error } = await supabase
-    .from("dealers")
-    .select("user_id, dealership_name")
-    .eq("id", dealerId)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('get_dealer_user_id', { p_dealer_id: dealerId });
   if (error) throw error;
-  return data?.user_id as string | undefined;
+  return data as string | undefined;
 }
 
 async function getUserEmail(userId: string) {
@@ -56,13 +47,10 @@ async function getUserEmail(userId: string) {
 }
 
 async function getCarSummary(carId: string) {
-  const { data, error } = await supabase
-    .from("cars")
-    .select("title, make, model, year, auction_end_time")
-    .eq("id", carId)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('get_car_summary_for_notifications', { p_car_id: carId });
   if (error) throw error;
-  return data;
+  const row = Array.isArray(data) ? data[0] : data;
+  return row as { seller_id?: string; title?: string; make?: string; model?: string; year?: number; auction_end_time?: string } | null;
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
@@ -113,8 +101,8 @@ serve(async (req) => {
          <p><a href="/seller/auctions">Go to your dashboard</a></p>`
       );
 
-      // Mark that we sent notification
-      await supabase.from("cars").update({ email_notification_sent: true }).eq("id", carId);
+      // Mark that we sent notification (via SECURITY DEFINER RPC)
+      await supabase.rpc('mark_car_email_notification_sent', { p_car_id: carId });
     } else if (type === "dealer_bid_accepted") {
       if (!dealerId) throw new Error("dealerId is required");
       const dealerUserId = await getDealerUserId(dealerId);
