@@ -8,9 +8,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Existing envs
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "https://sdvakfhmoaoucmhbhwvy.supabase.co";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+// New configurable envs (with safe defaults)
+const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "noreply@auto-strada.pl";
+const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") ?? "Auto‑Strada";
+const SITE_URL = Deno.env.get("SITE_URL") ?? "https://auto-strada.pl";
+const FROM_HEADER = `${FROM_NAME} <${FROM_EMAIL}>`;
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY || "", {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -54,13 +61,34 @@ async function getCarSummary(carId: string) {
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const res = await resend.emails.send({
-    from: "Admin <no-reply@resend.dev>",
+  console.log("[send-notifications] email_sending", { to, from: FROM_HEADER, subject });
+
+  // Use Resend's standard response shape
+  const { data, error } = await resend.emails.send({
+    from: FROM_HEADER,
     to: [to],
     subject,
     html,
   });
-  return res;
+
+  if (error) {
+    console.error("[send-notifications] email_failed", {
+      to,
+      from: FROM_HEADER,
+      subject,
+      error: { name: error.name, message: error.message },
+    });
+    throw new Error(error.message || "Resend send failed");
+  }
+
+  console.log("[send-notifications] email_sent", {
+    to,
+    from: FROM_HEADER,
+    subject,
+    messageId: data?.id,
+  });
+
+  return { messageId: data?.id };
 }
 
 serve(async (req) => {
@@ -82,68 +110,123 @@ serve(async (req) => {
       );
     }
 
+    // Parse and log the request
     const { type, carId, dealerId }: NotifyRequest = await req.json();
+    console.log("[send-notifications] request_received", { type, carId, dealerId, from: FROM_HEADER });
 
     const car = await getCarSummary(carId);
     const carLabel = car ? `${car.year ?? ""} ${car.make ?? ""} ${car.model ?? ""}`.trim() : `Car ${carId}`;
+    console.log("[send-notifications] car_summary", { carId, carLabel, title: car?.title });
 
     if (type === "seller_auction_ended") {
       const sellerUserId = await getSellerUserId(carId);
+      console.log("[send-notifications] seller_lookup", { carId, sellerUserId });
       if (!sellerUserId) throw new Error("Seller not found for car");
+
       const email = await getUserEmail(sellerUserId);
+      console.log("[send-notifications] seller_email_resolved", { sellerUserId, email });
       if (!email) throw new Error("Seller email not found");
 
-      await sendEmail(
-        email,
-        `Your auction has ended: ${carLabel}`,
-        `<h2>Your auction has ended</h2>
-         <p>Your listing ${carLabel} has ended. Please log in to your dashboard to accept or decline the highest bid.</p>
-         <p><a href="/seller/auctions">Go to your dashboard</a></p>`
-      );
+      const subject = `Your auction has ended: ${carLabel}`;
+      const html = `
+        <h2>Your auction has ended</h2>
+        <p>Your listing ${carLabel} has ended. Please log in to your dashboard to accept or decline the highest bid.</p>
+        <p><a href="${SITE_URL}/seller/auctions">Go to your dashboard</a></p>
+      `;
+
+      const { messageId } = await sendEmail(email, subject, html);
 
       // Mark that we sent notification (via SECURITY DEFINER RPC)
-      await supabase.rpc('mark_car_email_notification_sent', { p_car_id: carId });
+      const { data: markData, error: markError } = await supabase.rpc('mark_car_email_notification_sent', { p_car_id: carId });
+      console.log("[send-notifications] notification_marked", { carId, result: markData, error: markError?.message });
+
+      return new Response(JSON.stringify({
+        success: true,
+        type,
+        to: email,
+        from: FROM_HEADER,
+        subject,
+        messageId,
+        carId,
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+
     } else if (type === "dealer_bid_accepted") {
       if (!dealerId) throw new Error("dealerId is required");
       const dealerUserId = await getDealerUserId(dealerId);
+      console.log("[send-notifications] dealer_lookup", { dealerId, dealerUserId });
       if (!dealerUserId) throw new Error("Dealer user not found");
+
       const email = await getUserEmail(dealerUserId);
+      console.log("[send-notifications] dealer_email_resolved", { dealerUserId, email });
       if (!email) throw new Error("Dealer email not found");
 
-      await sendEmail(
-        email,
-        `Bid accepted for ${carLabel}`,
-        `<h2>Congratulations!</h2>
-         <p>Your bid for ${carLabel} has been accepted by the seller. Please log in to complete the next steps.</p>
-         <p><a href="/dealer/wins">View your wins</a></p>`
-      );
+      const subject = `Bid accepted for ${carLabel}`;
+      const html = `
+        <h2>Congratulations!</h2>
+        <p>Your bid for ${carLabel} has been accepted by the seller. Please log in to complete the next steps.</p>
+        <p><a href="${SITE_URL}/dealer/wins">View your wins</a></p>
+      `;
+
+      const { messageId } = await sendEmail(email, subject, html);
+
+      return new Response(JSON.stringify({
+        success: true,
+        type,
+        to: email,
+        from: FROM_HEADER,
+        subject,
+        messageId,
+        carId,
+        dealerId,
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+
     } else if (type === "dealer_bid_declined") {
       if (!dealerId) throw new Error("dealerId is required");
       const dealerUserId = await getDealerUserId(dealerId);
+      console.log("[send-notifications] dealer_lookup", { dealerId, dealerUserId });
       if (!dealerUserId) throw new Error("Dealer user not found");
+
       const email = await getUserEmail(dealerUserId);
+      console.log("[send-notifications] dealer_email_resolved", { dealerUserId, email });
       if (!email) throw new Error("Dealer email not found");
 
-      await sendEmail(
-        email,
-        `Bid declined for ${carLabel}`,
-        `<h2>Update on your bid</h2>
-         <p>Your bid for ${carLabel} was declined by the seller. You can continue browsing and bidding on other vehicles.</p>
-         <p><a href="/auctions">Browse auctions</a></p>`
-      );
+      const subject = `Bid declined for ${carLabel}`;
+      const html = `
+        <h2>Update on your bid</h2>
+        <p>Your bid for ${carLabel} was declined by the seller. You can continue browsing and bidding on other vehicles.</p>
+        <p><a href="${SITE_URL}/auctions">Browse auctions</a></p>
+      `;
+
+      const { messageId } = await sendEmail(email, subject, html);
+
+      return new Response(JSON.stringify({
+        success: true,
+        type,
+        to: email,
+        from: FROM_HEADER,
+        subject,
+        messageId,
+        carId,
+        dealerId,
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+
     } else {
       return new Response(JSON.stringify({ error: "Unsupported type" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
   } catch (err: any) {
-    console.error("send-notifications error", err);
+    console.error("[send-notifications] error", { message: err?.message, stack: err?.stack });
     return new Response(JSON.stringify({ error: err.message || "Unknown error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
