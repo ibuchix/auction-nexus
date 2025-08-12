@@ -1,4 +1,3 @@
-
 project_id = "sdvakfhmoaoucmhbhwvy"
 [build]
   engine = "deno"
@@ -21,3 +20,7 @@ project_id = "sdvakfhmoaoucmhbhwvy"
   # Schedule the proxy bid processor to run every 2 minutes
   [functions.proxy-bid-scheduler.schedule]
     cron = "*/2 * * * *"
+
+[functions.send-notifications]
+  verify_jwt = false
+  import_map = "./import_map.json"
