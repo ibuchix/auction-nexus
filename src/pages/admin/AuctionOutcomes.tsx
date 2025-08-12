@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Clock, Mail, CheckCircle, XCircle, User, Building2 } from "lucide-react";
-
+import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 // Types from generated Database
 import type { Database } from "@/integrations/supabase/types";
 
@@ -134,11 +134,15 @@ const AuctionOutcomeCard = ({
   decision,
   sellerName,
   dealerPersonName,
+  counts,
+  onEmailSent,
 }: {
   item: OutcomeItem;
   decision?: string | null;
   sellerName?: string | null;
   dealerPersonName?: string | null;
+  counts: { seller_auction_ended: number; dealer_bid_accepted: number; dealer_bid_declined: number };
+  onEmailSent: () => void;
 }) => {
   const car = item.cars;
   const dealer = item.dealers;
@@ -185,12 +189,14 @@ const AuctionOutcomeCard = ({
               try {
                 await sendEmail("seller_auction_ended", { carId: item.car_id });
                 toast.success("Seller notified about auction end");
+                onEmailSent();
               } catch (e: any) {
                 toast.error(e.message || "Failed to notify seller");
               }
             }}
           >
             <Mail className="w-4 h-4 mr-1" /> Email seller: auction ended
+            <Badge variant="secondary" className="ml-2">{counts.seller_auction_ended}</Badge>
           </Button>
           <Button
             size="sm"
@@ -200,12 +206,14 @@ const AuctionOutcomeCard = ({
               try {
                 await sendEmail("dealer_bid_accepted", { carId: item.car_id, dealerId: item.dealer_id });
                 toast.success("Dealer notified: bid accepted");
+                onEmailSent();
               } catch (e: any) {
                 toast.error(e.message || "Failed to notify dealer");
               }
             }}
           >
             <Mail className="w-4 h-4 mr-1" /> Email dealer: bid accepted
+            <Badge variant="secondary" className="ml-2">{counts.dealer_bid_accepted}</Badge>
           </Button>
           <Button
             size="sm"
@@ -215,12 +223,14 @@ const AuctionOutcomeCard = ({
               try {
                 await sendEmail("dealer_bid_declined", { carId: item.car_id, dealerId: item.dealer_id });
                 toast.success("Dealer notified: bid declined");
+                onEmailSent();
               } catch (e: any) {
                 toast.error(e.message || "Failed to notify dealer");
               }
             }}
           >
             <Mail className="w-4 h-4 mr-1" /> Email dealer: bid declined
+            <Badge variant="secondary" className="ml-2">{counts.dealer_bid_declined}</Badge>
           </Button>
         </div>
       </CardContent>
@@ -240,14 +250,18 @@ const AuctionOutcomes = () => {
   const items = data?.outcomes || [];
   const decisionMap = data?.decisionsByCar || new Map();
 
+  const carIds = useMemo(() => items.map((i) => i.car_id), [items]);
+  const { data: countsMap, refetch: refetchCounts } = useNotificationCounts(carIds);
+
   const enhanced = useMemo(() => {
     return items.map((item) => {
       const sellerName = item.cars?.seller_id ? data?.profileById.get(item.cars.seller_id)?.full_name : undefined;
       const dealerPersonName = item.dealers?.user_id ? data?.dealerProfileByUser.get(item.dealers.user_id)?.full_name : undefined;
       const decision = decisionMap.get(item.car_id)?.decision;
-      return { item, sellerName, dealerPersonName, decision };
+      const counts = countsMap?.get(item.car_id) || { seller_auction_ended: 0, dealer_bid_accepted: 0, dealer_bid_declined: 0 } as any;
+      return { item, sellerName, dealerPersonName, decision, counts };
     });
-  }, [items, data, decisionMap]);
+  }, [items, data, decisionMap, countsMap]);
 
   if (isLoading) return <div>Loading outcomes...</div>;
   if (error) return <div className="text-destructive">Failed to load outcomes</div>;
@@ -259,13 +273,19 @@ const AuctionOutcomes = () => {
         {enhanced.length === 0 ? (
           <div className="text-sm text-muted-foreground">No recent outcomes found.</div>
         ) : (
-          enhanced.map(({ item, sellerName, dealerPersonName, decision }) => (
+          enhanced.map(({ item, sellerName, dealerPersonName, decision, counts }) => (
             <AuctionOutcomeCard
               key={item.id}
               item={item}
               sellerName={sellerName}
               dealerPersonName={dealerPersonName}
               decision={decision}
+              counts={counts}
+              onEmailSent={() => {
+                // refresh counts and data
+                refetchCounts();
+                refetch();
+              }}
             />
           ))
         )}

@@ -30,6 +30,53 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY || "", {
 });
 const resend = new Resend(RESEND_API_KEY || "");
 
+// Branding assets
+const BRAND_LOGO_URL = Deno.env.get("BRAND_LOGO_URL") ?? `${SITE_URL}/lovable-uploads/4e69fd8b-b4ed-44b6-a32d-5a7193af37f3.png`;
+
+function buildEmailHtml(opts: { title: string; body: string; ctaText: string; ctaHref: string }) {
+  const { title, body, ctaText, ctaHref } = opts;
+  return `
+  <div style="background:#f6f7f9;padding:24px;font-family:Inter,Segoe UI,Arial,sans-serif;color:#111827;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width:640px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.06)">
+      <tr>
+        <td style="padding:20px 24px;border-bottom:1px solid #eef2f7;background:linear-gradient(90deg,#111827, #1f2937);">
+          <img src="${BRAND_LOGO_URL}" alt="Auto‑Strada logo" style="height:28px;display:block;filter:brightness(200%)" />
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:28px 24px 8px 24px;">
+          <h1 style="margin:0 0 8px 0;font-size:20px;line-height:28px;color:#111827;">${title}</h1>
+          <p style="margin:0 0 16px 0;font-size:14px;line-height:22px;color:#374151;">${body}</p>
+          <a href="${ctaHref}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px">${ctaText}</a>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 24px;color:#6b7280;font-size:12px;border-top:1px solid #eef2f7">
+          © ${new Date().getFullYear()} Auto‑Strada. All rights reserved.
+        </td>
+      </tr>
+    </table>
+  </div>`;
+}
+
+async function logEmailEvent(event: { type: string; carId: string; dealerId?: string; to: string; subject: string; messageId?: string }) {
+  try {
+    await supabase.from('email_notification_events').insert([
+      {
+        type: event.type,
+        car_id: event.carId,
+        dealer_id: event.dealerId ?? null,
+        recipient_email: event.to,
+        subject: event.subject,
+        message_id: event.messageId ?? null,
+        metadata: {}
+      }
+    ]);
+  } catch (e) {
+    console.error('[send-notifications] log_event_failed', { error: (e as Error)?.message });
+  }
+}
+
 interface NotifyRequest {
   type: "seller_auction_ended" | "dealer_bid_accepted" | "dealer_bid_declined";
   carId: string;
@@ -128,18 +175,20 @@ serve(async (req) => {
       if (!email) throw new Error("Seller email not found");
 
       const subject = `Your auction has ended: ${carLabel}`;
-      const html = `
-        <h2>Your auction has ended</h2>
-        <p>Your listing ${carLabel} has ended. Please log in to your dashboard to accept or decline the highest bid.</p>
-        <p><a href="${SITE_URL}/seller/auctions">Go to your dashboard</a></p>
-      `;
-
+      const html = buildEmailHtml({
+        title: 'Your auction has ended',
+        body: `Your listing <strong>${carLabel}</strong> has ended. Please log in to your dashboard to accept or decline the highest bid.`,
+        ctaText: 'Go to your dashboard',
+        ctaHref: `${SITE_URL}/seller/auctions`
+      });
       const { messageId } = await sendEmail(email, subject, html);
 
       // Mark that we sent notification (via SECURITY DEFINER RPC)
       const { data: markData, error: markError } = await supabase.rpc('mark_car_email_notification_sent', { p_car_id: carId });
       console.log("[send-notifications] notification_marked", { carId, result: markData, error: markError?.message });
 
+      // Log event
+      await logEmailEvent({ type, carId, to: email, subject, messageId });
       return new Response(JSON.stringify({
         success: true,
         type,
@@ -164,14 +213,16 @@ serve(async (req) => {
       if (!email) throw new Error("Dealer email not found");
 
       const subject = `Bid accepted for ${carLabel}`;
-      const html = `
-        <h2>Congratulations!</h2>
-        <p>Your bid for ${carLabel} has been accepted by the seller. Please log in to complete the next steps.</p>
-        <p><a href="${SITE_URL}/dealer/wins">View your wins</a></p>
-      `;
-
+      const html = buildEmailHtml({
+        title: 'Congratulations! Bid accepted',
+        body: `Your bid for <strong>${carLabel}</strong> has been accepted by the seller. Please log in to complete the next steps.`,
+        ctaText: 'View your wins',
+        ctaHref: `${SITE_URL}/dealer/wins`
+      });
       const { messageId } = await sendEmail(email, subject, html);
 
+      // Log event
+      await logEmailEvent({ type, carId, dealerId, to: email, subject, messageId });
       return new Response(JSON.stringify({
         success: true,
         type,
@@ -197,14 +248,16 @@ serve(async (req) => {
       if (!email) throw new Error("Dealer email not found");
 
       const subject = `Bid declined for ${carLabel}`;
-      const html = `
-        <h2>Update on your bid</h2>
-        <p>Your bid for ${carLabel} was declined by the seller. You can continue browsing and bidding on other vehicles.</p>
-        <p><a href="${SITE_URL}/auctions">Browse auctions</a></p>
-      `;
-
+      const html = buildEmailHtml({
+        title: 'Update on your bid',
+        body: `Your bid for <strong>${carLabel}</strong> was declined by the seller. You can continue browsing and bidding on other vehicles.`,
+        ctaText: 'Browse auctions',
+        ctaHref: `${SITE_URL}/auctions`
+      });
       const { messageId } = await sendEmail(email, subject, html);
 
+      // Log event
+      await logEmailEvent({ type, carId, dealerId, to: email, subject, messageId });
       return new Response(JSON.stringify({
         success: true,
         type,
