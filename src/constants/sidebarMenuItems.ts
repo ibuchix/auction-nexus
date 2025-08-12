@@ -55,6 +55,10 @@ export const menuItems: SidebarMenuItem[] = [
         path: "/admin/auctions/scheduling",
       },
       {
+        title: "Auction Outcomes",
+        path: "/admin/auctions/outcomes",
+      },
+      {
         title: "Proxy Bids",
         path: "/admin/proxy-bids",
       }
