@@ -1141,6 +1141,42 @@ export type Database = {
           },
         ]
       }
+      email_notification_events: {
+        Row: {
+          car_id: string
+          created_at: string
+          dealer_id: string | null
+          id: string
+          message_id: string | null
+          metadata: Json
+          recipient_email: string
+          subject: string
+          type: string
+        }
+        Insert: {
+          car_id: string
+          created_at?: string
+          dealer_id?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json
+          recipient_email: string
+          subject: string
+          type: string
+        }
+        Update: {
+          car_id?: string
+          created_at?: string
+          dealer_id?: string | null
+          id?: string
+          message_id?: string | null
+          metadata?: Json
+          recipient_email?: string
+          subject?: string
+          type?: string
+        }
+        Relationships: []
+      }
       export_history: {
         Row: {
           created_at: string | null
@@ -2181,6 +2217,14 @@ export type Database = {
       get_dealer_user_id: {
         Args: { p_dealer_id: string }
         Returns: string
+      }
+      get_email_notification_counts: {
+        Args: { p_car_ids: string[] }
+        Returns: {
+          car_id: string
+          type: string
+          send_count: number
+        }[]
       }
       get_live_auction_schedules: {
         Args: Record<PropertyKey, never>
