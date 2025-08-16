@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { adminSupabase } from "@/integrations/supabase/adminClient";
 import { toast } from "sonner";
 
 interface DealerDocument {
@@ -28,12 +28,14 @@ export const useDealerDocuments = (dealerId: string | null) => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      console.log('Fetching documents for dealer ID:', dealerId);
+      const { data, error } = await adminSupabase
         .from('dealer_documents')
         .select('*')
         .eq('dealer_id', dealerId)
         .order('uploaded_at', { ascending: false });
 
+      console.log('Query result:', { data, error });
       if (error) throw error;
       setDocuments(data || []);
     } catch (error) {
@@ -46,10 +48,12 @@ export const useDealerDocuments = (dealerId: string | null) => {
 
   const getSignedUrl = async (filePath: string) => {
     try {
-      const { data, error } = await supabase.storage
+      console.log('Creating signed URL for:', filePath);
+      const { data, error } = await adminSupabase.storage
         .from('dealer-documents')
         .createSignedUrl(filePath, 3600); // 1 hour expiry
 
+      console.log('Signed URL result:', { data, error });
       if (error) throw error;
       return data.signedUrl;
     } catch (error) {
