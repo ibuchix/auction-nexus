@@ -11,6 +11,7 @@ import VerificationStatus from "./components/VerificationStatus";
 import AdminNotesInput from "./components/AdminNotesInput";
 import RejectionReasonInput from "./components/RejectionReasonInput";
 import DialogActions from "./components/DialogActions";
+import DocumentViewer from "./components/DocumentViewer";
 
 interface DealerReviewDialogProps {
   selectedDealer: DealerData | null;
@@ -49,6 +50,7 @@ export const DealerReviewDialog = ({
         <div className="grid grid-cols-2 gap-6 py-4">
           <div className="space-y-4">
             <DealerInformation dealer={selectedDealer} />
+            <DocumentViewer dealerId={selectedDealer.id} />
             <VerificationToggle 
               dealer={selectedDealer} 
               isProcessing={isProcessing} 
