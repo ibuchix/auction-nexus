@@ -15,6 +15,8 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
   const [allImages, setAllImages] = useState<CategorizedImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageIndex, setImageIndex] = useState<number>(0);
 
   useEffect(() => {
     const loadImages = async () => {
@@ -54,6 +56,22 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
     loadImages();
   }, [car?.id, images]);
 
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedImage && imageIndex < allImages.length - 1) {
+      setImageIndex(imageIndex + 1);
+      setSelectedImage(allImages[imageIndex + 1].url);
+    }
+  };
+  
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedImage && imageIndex > 0) {
+      setImageIndex(imageIndex - 1);
+      setSelectedImage(allImages[imageIndex - 1].url);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="mt-4">
@@ -83,25 +101,6 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
       </div>
     );
   }
-  
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [imageIndex, setImageIndex] = useState<number>(0);
-  
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (selectedImage && imageIndex < allImages.length - 1) {
-      setImageIndex(imageIndex + 1);
-      setSelectedImage(allImages[imageIndex + 1].url);
-    }
-  };
-  
-  const handlePrevious = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (selectedImage && imageIndex > 0) {
-      setImageIndex(imageIndex - 1);
-      setSelectedImage(allImages[imageIndex - 1].url);
-    }
-  };
 
   return (
     <div className="mt-4">
