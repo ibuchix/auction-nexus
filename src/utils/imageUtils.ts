@@ -1,10 +1,13 @@
 
+import { adminSupabase } from "@/integrations/supabase/adminClient";
+
 export interface CategorizedImage {
   url: string;
   category: string;
   index: number;
 }
 
+// Legacy function for backward compatibility
 export function extractAllCarImages(car: any): CategorizedImage[] {
   const allImages: CategorizedImage[] = [];
   let imageIndex = 0;
@@ -47,6 +50,95 @@ export function extractAllCarImages(car: any): CategorizedImage[] {
   }
 
   return allImages;
+}
+
+// New async function to fetch images from car_file_uploads table
+export async function fetchCarImagesFromDatabase(carId: string): Promise<CategorizedImage[]> {
+  if (!carId) return [];
+
+  try {
+    console.log('Fetching car images from database for car ID:', carId);
+    
+    const { data: fileUploads, error } = await adminSupabase
+      .from('car_file_uploads')
+      .select('*')
+      .eq('car_id', carId)
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching car file uploads:', error);
+      return [];
+    }
+
+    if (!fileUploads || fileUploads.length === 0) {
+      console.log('No file uploads found for car:', carId);
+      return [];
+    }
+
+    console.log('Found file uploads:', fileUploads);
+
+    // Create signed URLs for each image
+    const imagesWithUrls: CategorizedImage[] = [];
+    
+    for (let i = 0; i < fileUploads.length; i++) {
+      const upload = fileUploads[i];
+      
+      try {
+        // Generate signed URL from storage
+        const { data: urlData, error: urlError } = await adminSupabase.storage
+          .from('car-images')
+          .createSignedUrl(upload.file_path, 3600); // 1 hour expiry
+
+        if (urlError) {
+          console.error('Error creating signed URL for:', upload.file_path, urlError);
+          continue;
+        }
+
+        if (urlData?.signedUrl) {
+          imagesWithUrls.push({
+            url: urlData.signedUrl,
+            category: formatImageCategory(upload.category || 'General'),
+            index: i
+          });
+        }
+      } catch (urlErr) {
+        console.error('Exception creating signed URL:', urlErr);
+      }
+    }
+
+    console.log('Successfully created signed URLs for', imagesWithUrls.length, 'images');
+    return imagesWithUrls;
+
+  } catch (error) {
+    console.error('Error in fetchCarImagesFromDatabase:', error);
+    return [];
+  }
+}
+
+// Helper function to format category names
+function formatImageCategory(category: string): string {
+  if (!category) return 'General';
+  
+  const categoryMap: { [key: string]: string } = {
+    'exterior_front': 'Exterior Front',
+    'exterior_rear': 'Exterior Rear', 
+    'exterior_left': 'Exterior Left',
+    'exterior_right': 'Exterior Right',
+    'interior_front': 'Interior Front',
+    'interior_rear': 'Interior Rear',
+    'engine_bay': 'Engine Bay',
+    'dashboard': 'Dashboard',
+    'rim_front_left': 'Front Left Rim',
+    'rim_front_right': 'Front Right Rim',
+    'rim_rear_left': 'Rear Left Rim',
+    'rim_rear_right': 'Rear Right Rim',
+    'additional_1': 'Additional',
+    'additional_2': 'Additional',
+    'additional_3': 'Additional',
+    'additional_4': 'Additional'
+  };
+
+  return categoryMap[category] || category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 export function getImageUrlsOnly(car: any): string[] {

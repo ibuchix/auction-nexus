@@ -1,10 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { extractAllCarImages, type CategorizedImage } from "@/utils/imageUtils";
+import { extractAllCarImages, fetchCarImagesFromDatabase, type CategorizedImage } from "@/utils/imageUtils";
 
 interface VehicleImagesProps {
   images?: string[];
@@ -12,9 +12,68 @@ interface VehicleImagesProps {
 }
 
 export function VehicleImages({ images, car }: VehicleImagesProps) {
-  // Use the utility to get all images from all sources
-  const allImages = car ? extractAllCarImages(car) : 
-    (images || []).map((url, index) => ({ url, category: 'General', index }));
+  const [allImages, setAllImages] = useState<CategorizedImage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadImages = async () => {
+      if (car?.id) {
+        // For admin, fetch images from database using car ID
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+          const dbImages = await fetchCarImagesFromDatabase(car.id);
+          
+          if (dbImages.length > 0) {
+            setAllImages(dbImages);
+          } else {
+            // Fallback to legacy method if no database images found
+            const legacyImages = extractAllCarImages(car);
+            setAllImages(legacyImages);
+          }
+        } catch (err) {
+          console.error('Error loading images:', err);
+          setError('Failed to load images');
+          // Fallback to legacy method on error
+          const legacyImages = extractAllCarImages(car);
+          setAllImages(legacyImages);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (images) {
+        // Use provided images array
+        const imageList = images.map((url, index) => ({ url, category: 'General', index }));
+        setAllImages(imageList);
+      } else {
+        setAllImages([]);
+      }
+    };
+
+    loadImages();
+  }, [car?.id, images]);
+
+  if (isLoading) {
+    return (
+      <div className="mt-4">
+        <h4 className="text-sm font-semibold mb-2">Vehicle Images</h4>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading images...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mt-4">
+        <h4 className="text-sm font-semibold mb-2">Vehicle Images</h4>
+        <div className="text-sm text-destructive">{error}</div>
+      </div>
+    );
+  }
   
   if (!allImages.length) {
     return (
