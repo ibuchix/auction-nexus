@@ -155,7 +155,8 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
       isVerified: dealer.is_verified,
       createdAt: dealer.created_at,
       updatedAt: dealer.updated_at,
-      email: dealer.email // Include email from admin operations
+      email: dealer.email, // Include email from admin operations
+      phoneNumber: dealer.phoneNumber // Include phone number from admin operations
     }));
     
     console.log(`Returning ${typedDealers.length} dealers`);

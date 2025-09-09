@@ -123,29 +123,40 @@ export const adminOperations = {
       if (dealersData && dealersData.length > 0) {
         const userIds = dealersData.map(dealer => dealer.user_id);
         
-        const emailPromises = userIds.map(async (userId) => {
+        const userDataPromises = userIds.map(async (userId) => {
           try {
             const { data: user, error: userError } = await adminSupabase.auth.admin.getUserById(userId);
-            return { userId, email: user?.user?.email || null };
+            const phoneNumber = user?.user?.user_metadata?.phone_number || 
+                               user?.user?.phone || 
+                               null;
+            return { 
+              userId, 
+              email: user?.user?.email || null,
+              phoneNumber 
+            };
           } catch (error) {
-            console.warn(`Failed to fetch email for user ${userId}:`, error);
-            return { userId, email: null };
+            console.warn(`Failed to fetch user data for user ${userId}:`, error);
+            return { userId, email: null, phoneNumber: null };
           }
         });
 
-        const emailResults = await Promise.all(emailPromises);
-        const emailMap = emailResults.reduce((acc, result) => {
-          acc[result.userId] = result.email;
+        const userDataResults = await Promise.all(userDataPromises);
+        const userDataMap = userDataResults.reduce((acc, result) => {
+          acc[result.userId] = { 
+            email: result.email, 
+            phoneNumber: result.phoneNumber 
+          };
           return acc;
-        }, {} as Record<string, string | null>);
+        }, {} as Record<string, { email: string | null; phoneNumber: string | null }>);
 
-        const dealersWithEmails = dealersData.map(dealer => ({
+        const dealersWithUserData = dealersData.map(dealer => ({
           ...dealer,
-          email: emailMap[dealer.user_id]
+          email: userDataMap[dealer.user_id]?.email,
+          phoneNumber: userDataMap[dealer.user_id]?.phoneNumber
         }));
 
-        console.log(`Successfully added emails to ${dealersWithEmails.length} dealers`);
-        return dealersWithEmails;
+        console.log(`Successfully added emails to ${dealersWithUserData.length} dealers`);
+        return dealersWithUserData;
       }
 
       return dealersData || [];

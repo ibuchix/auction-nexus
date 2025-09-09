@@ -16,4 +16,5 @@ export interface DealerData {
   createdAt: string;
   updatedAt: string;
   email?: string; // Add email field
+  phoneNumber?: string; // Add phone number field
 }
