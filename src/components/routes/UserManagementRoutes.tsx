@@ -5,8 +5,7 @@ import DealerVerification from "@/pages/admin/DealerVerification";
 import DealerManagement from "@/pages/admin/DealerManagement";
 import UserManagement from "@/pages/admin/UserManagement";
 import SellerManagement from "@/pages/admin/SellerManagement";
-import ListingVerification from "@/pages/admin/ListingVerification";
-import Purchases from "@/pages/admin/Purchases";
+import ManualValuation from "@/pages/admin/ManualValuation";
 
 export const UserManagementRoutes = (
   <>
@@ -43,18 +42,10 @@ export const UserManagementRoutes = (
       } 
     />
     <Route 
-      path="/admin/listings/verification" 
+      path="/admin/manual-valuation" 
       element={
         <AdminProtectedRoute>
-          <ListingVerification />
-        </AdminProtectedRoute>
-      } 
-    />
-    <Route 
-      path="/admin/purchases" 
-      element={
-        <AdminProtectedRoute>
-          <Purchases />
+          <ManualValuation />
         </AdminProtectedRoute>
       } 
     />

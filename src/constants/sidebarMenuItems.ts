@@ -87,12 +87,8 @@ export const menuItems: SidebarMenuItem[] = [
     icon: FileCheck,
     submenu: [
       {
-        title: "Verify Listings",
-        path: "/admin/listings/verification",
-      },
-      {
-        title: "Purchases",
-        path: "/admin/purchases",
+        title: "Manual Valuation",
+        path: "/admin/manual-valuation",
       }
     ],
   },

@@ -100,14 +100,14 @@ export function useSystemStatus() {
       // Transform the data to match the SystemHealth type
       const transformedHealthData: SystemHealth[] = healthData?.map(item => ({
         id: item.id,
-        component_name: item.component_name,
+        component_name: (item as any).component_name || item.metric_name,
         status: item.status as SystemHealth['status'],
-        last_check_time: item.last_check_time,
+        last_check_time: (item as any).last_check_time || item.created_at,
         details: typeof item.details === 'string' 
           ? { message: item.details } 
           : item.details as SystemHealth['details'],
         created_at: item.created_at,
-        updated_at: item.updated_at
+        updated_at: (item as any).updated_at || item.created_at
       })) || [];
       
       setSystemHealth(transformedHealthData);
