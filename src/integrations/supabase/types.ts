@@ -2013,7 +2013,9 @@ export type Database = {
       }
       admin_get_manual_valuations: {
         Args: { p_status?: string }
-        Returns: Json[]
+        Returns: {
+          valuation_data: Json
+        }[]
       }
       admin_transfer_manual_valuation_to_cars: {
         Args: { p_reserve_price: number; p_valuation_id: string }
