@@ -62,14 +62,29 @@ export function useManualValuation() {
     queryKey: ["manual-valuations", activeStatus],
     queryFn: async () => {
       try {
+        console.log("Fetching manual valuations with status:", activeStatus);
         const { data, error } = await supabase.rpc('admin_get_manual_valuations', {
           p_status: activeStatus === "all" ? null : activeStatus
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("RPC error:", error);
+          throw error;
+        }
 
-        const parsedData = data?.[0] || [];
-        return Array.isArray(parsedData) ? parsedData as unknown as ManualValuationData[] : [] as ManualValuationData[];
+        console.log("Raw RPC data:", data);
+
+        // The RPC returns TABLE(valuation_data jsonb), so data is an array of { valuation_data: ... }
+        if (!data || !Array.isArray(data)) {
+          console.log("No data or invalid format");
+          return [];
+        }
+
+        // Extract the valuation_data from each row
+        const parsedData = data.map((row: any) => row.valuation_data);
+        console.log("Parsed valuations:", parsedData);
+
+        return parsedData as ManualValuationData[];
       } catch (error) {
         console.error("Error fetching manual valuations:", error);
         throw error;
