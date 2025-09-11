@@ -47,7 +47,11 @@ export function ManualValuationImages({ images }: ManualValuationImagesProps) {
   }
 
   const getImageUrl = (filePath: string) => {
-    return `https://sdvakfhmoaoucmhbhwvy.supabase.co/storage/v1/object/public/${filePath}`;
+    // Remove 'manual-valuations/' prefix if it exists and use the correct bucket name
+    const cleanPath = filePath.startsWith('manual-valuations/') 
+      ? filePath.replace('manual-valuations/', '') 
+      : filePath;
+    return `https://sdvakfhmoaoucmhbhwvy.supabase.co/storage/v1/object/public/manual-valuation-photos/${cleanPath}`;
   };
 
   return (
