@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Image as ImageIcon, Eye, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ManualValuationImage } from "@/hooks/useManualValuation";
+import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { toast } from "sonner";
 
 interface ManualValuationImagesProps {
   images: ManualValuationImage[];
@@ -36,6 +38,61 @@ const getCategoryBadge = (category: string | null) => {
 
 export function ManualValuationImages({ images }: ManualValuationImagesProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const generateSignedUrls = async () => {
+      if (!images || images.length === 0) {
+        setIsLoading(false);
+        return;
+      }
+
+      const urlMap: Record<string, string> = {};
+      
+      for (const image of images) {
+        try {
+          // Try both original path and cleaned path for compatibility
+          const paths = [
+            image.file_path,
+            image.file_path.startsWith('manual-valuations/') 
+              ? image.file_path.replace('manual-valuations/', '')
+              : `manual-valuations/${image.file_path}`
+          ];
+
+          let signedUrl = null;
+          
+          for (const path of paths) {
+            try {
+              const { data, error } = await adminSupabase.storage
+                .from('manual-valuation-photos')
+                .createSignedUrl(path, 3600); // 1 hour expiry
+
+              if (!error && data) {
+                signedUrl = data.signedUrl;
+                break;
+              }
+            } catch (pathError) {
+              console.log(`Path ${path} failed, trying next...`);
+            }
+          }
+
+          if (signedUrl) {
+            urlMap[image.id] = signedUrl;
+          } else {
+            console.error(`Failed to create signed URL for image ${image.id}`);
+          }
+        } catch (error) {
+          console.error(`Error processing image ${image.id}:`, error);
+        }
+      }
+
+      setSignedUrls(urlMap);
+      setIsLoading(false);
+    };
+
+    generateSignedUrls();
+  }, [images]);
 
   if (!images || images.length === 0) {
     return (
@@ -46,57 +103,72 @@ export function ManualValuationImages({ images }: ManualValuationImagesProps) {
     );
   }
 
-  const getImageUrl = (filePath: string) => {
-    // Remove 'manual-valuations/' prefix if it exists and use the correct bucket name
-    const cleanPath = filePath.startsWith('manual-valuations/') 
-      ? filePath.replace('manual-valuations/', '') 
-      : filePath;
-    return `https://sdvakfhmoaoucmhbhwvy.supabase.co/storage/v1/object/public/manual-valuation-photos/${cleanPath}`;
-  };
+  if (isLoading) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <ImageIcon className="h-12 w-12 mx-auto mb-2 animate-pulse" />
+        <p>Loading images...</p>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {images.map((image) => (
-          <Card key={image.id} className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="relative group">
-                <img
-                  src={getImageUrl(image.file_path)}
-                  alt={`Manual valuation ${image.category || 'photo'}`}
-                  className="w-full h-48 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder.svg';
-                  }}
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => setSelectedImage(getImageUrl(image.file_path))}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
+        {images.map((image) => {
+          const imageUrl = signedUrls[image.id];
+          
+          return (
+            <Card key={image.id} className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="relative group">
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={`Manual valuation ${image.category || 'photo'}`}
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.svg';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                      <ImageIcon className="h-8 w-8 text-gray-400" />
+                    </div>
+                  )}
+                  
+                  {imageUrl && (
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setSelectedImage(imageUrl)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {image.category && (
+                    <div className="absolute top-2 left-2">
+                      {getCategoryBadge(image.category)}
+                    </div>
+                  )}
                 </div>
-                {image.category && (
-                  <div className="absolute top-2 left-2">
-                    {getCategoryBadge(image.category)}
-                  </div>
-                )}
-              </div>
-              <div className="p-3">
-                <p className="text-sm text-muted-foreground">
-                  Order: {image.display_order}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {image.file_type}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="p-3">
+                  <p className="text-sm text-muted-foreground">
+                    Order: {image.display_order}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {image.file_type}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
