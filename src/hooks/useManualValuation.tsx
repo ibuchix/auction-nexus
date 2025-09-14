@@ -64,7 +64,7 @@ export function useManualValuation() {
       try {
         console.log("Fetching manual valuations with status:", activeStatus);
         const { data, error } = await supabase.rpc('admin_get_manual_valuations', {
-          p_status: activeStatus === "all" ? null : activeStatus
+          p_status: activeStatus === "all" ? "all" : activeStatus
         });
 
         if (error) {
@@ -74,17 +74,20 @@ export function useManualValuation() {
 
         console.log("Raw RPC data:", data);
 
-        // The RPC returns TABLE(valuation_data jsonb), so data is an array of { valuation_data: ... }
-        if (!data || !Array.isArray(data)) {
+        // The RPC returns a direct jsonb object with { success: true, data: [...] }
+        if (!data || typeof data !== 'object') {
           console.log("No data or invalid format");
           return [];
         }
 
-        // Extract the valuation_data from each row
-        const parsedData = data.map((row: any) => row.valuation_data);
-        console.log("Parsed valuations:", parsedData);
-
-        return parsedData as ManualValuationData[];
+        // Handle the jsonb return format - data is the actual response object
+        if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+          console.log("Parsed valuations:", data.data);
+          return data.data as ManualValuationData[];
+        } else {
+          console.log("RPC returned unexpected format:", data);
+          return [];
+        }
       } catch (error) {
         console.error("Error fetching manual valuations:", error);
         throw error;
@@ -128,7 +131,7 @@ export function useManualValuation() {
       queryClient.invalidateQueries({ queryKey: ["manual-valuations"] });
       
       if (result?.success) {
-        toast.success("Car transferred to auction successfully!");
+        toast.success("Car transferred to cars table successfully!");
         setSelectedValuation(null);
         setIsDetailsOpen(false);
         setReservePrice("");
@@ -139,7 +142,7 @@ export function useManualValuation() {
     },
     onError: (error) => {
       console.error("Transfer error:", error);
-      toast.error("Failed to transfer car to auction");
+      toast.error("Failed to transfer car to cars table");
       setIsTransferring(false);
     },
   });

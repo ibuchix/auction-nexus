@@ -171,23 +171,23 @@ export const ManualValuationDialog = ({
                   onChange={(e) => handleUpdateField("name", e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="contact_email">Email</Label>
-                <Input
-                  id="contact_email"
-                  type="email"
-                  value={editData.contact_email !== undefined ? editData.contact_email : (selectedValuation.contact_email || "")}
-                  onChange={(e) => handleUpdateField("contact_email", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mobile_number">Mobile Number</Label>
-                <Input
-                  id="mobile_number"
-                  value={editData.mobile_number !== undefined ? editData.mobile_number : (selectedValuation.mobile_number || "")}
-                  onChange={(e) => handleUpdateField("mobile_number", e.target.value)}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="contact_email">Email</Label>
+              <Input
+                id="contact_email"
+                type="email"
+                value={editData.contact_email !== undefined ? editData.contact_email : (selectedValuation.contact_email || "")}
+                onChange={(e) => handleUpdateField("contact_email", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mobile_number">Mobile Number</Label>
+              <Input
+                id="mobile_number"
+                value={editData.mobile_number !== undefined ? editData.mobile_number : (selectedValuation.mobile_number || selectedValuation.contact_phone || "")}
+                onChange={(e) => handleUpdateField("mobile_number", e.target.value)}
+              />
+            </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Address</Label>
                 <Input
@@ -213,7 +213,7 @@ export const ManualValuationDialog = ({
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                Set Reserve Price & Transfer to Auction
+                Set Reserve Price & Transfer to Cars Table
               </h3>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
@@ -236,7 +236,7 @@ export const ManualValuationDialog = ({
                   ) : (
                     <>
                       <ArrowRight className="mr-2 h-4 w-4" />
-                      Transfer to Auction
+                      Transfer to Cars Table
                     </>
                   )}
                 </Button>
