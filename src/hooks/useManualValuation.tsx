@@ -75,18 +75,19 @@ export function useManualValuation() {
 
         console.log("Raw RPC data:", data);
 
-        // The RPC returns a direct jsonb object with { success: true, data: [...] }
-        if (!data || typeof data !== 'object') {
-          console.log("No data or invalid format");
+        // The RPC returns a direct array of JSONB objects
+        if (!data) {
+          console.log("No data received");
           return [];
         }
 
-        // Handle the jsonb return format - data is the actual response object
-        if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
-          console.log("Parsed valuations:", data.data);
-          return data.data as ManualValuationData[];
+        // Handle direct array response from RPC
+        if (Array.isArray(data)) {
+          console.log("Parsed valuations:", data);
+          // Each item in the array has a valuation_data property containing the actual data
+          return data.map(item => item.valuation_data as unknown as ManualValuationData);
         } else {
-          console.log("RPC returned unexpected format:", data);
+          console.log("RPC returned unexpected format (not an array):", data);
           return [];
         }
       } catch (error) {
