@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useManualValuation } from "@/hooks/useManualValuation";
 import { ManualValuationTable } from "@/components/admin/manual-valuation/ManualValuationTable";
 import { ManualValuationDialog } from "@/components/admin/manual-valuation/ManualValuationDialog";
+import { ManualValuationStagingDialog } from "@/components/admin/manual-valuation/ManualValuationStagingDialog";
 
 const ManualValuation = () => {
   const {
@@ -14,6 +15,8 @@ const ManualValuation = () => {
     selectedValuation,
     isDetailsOpen,
     setIsDetailsOpen,
+    isStagingOpen,
+    setIsStagingOpen,
     reservePrice,
     setReservePrice,
     isTransferring,
@@ -22,6 +25,8 @@ const ManualValuation = () => {
     openDetailsDialog,
     handleUpdateValuation,
     handleTransferToCars,
+    handleConfirmTransfer,
+    handleCancelStaging,
     isUpdating
   } = useManualValuation();
 
@@ -36,7 +41,7 @@ const ManualValuation = () => {
       </div>
 
       <Tabs defaultValue="all" value={activeStatus} onValueChange={setActiveStatus}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all" className="flex items-center gap-2">
             <Calculator className="h-4 w-4" />
             All
@@ -53,9 +58,13 @@ const ManualValuation = () => {
             <Car className="h-4 w-4" />
             Completed
           </TabsTrigger>
+          <TabsTrigger value="ready_for_transfer" className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Ready
+          </TabsTrigger>
         </TabsList>
 
-        {["all", "draft", "pending", "completed"].map((status) => (
+        {["all", "draft", "pending", "completed", "ready_for_transfer"].map((status) => (
           <TabsContent value={status} key={status}>
             <Card>
               <CardHeader>
@@ -64,7 +73,8 @@ const ManualValuation = () => {
                   {status === "all" ? "All Manual Valuations" : 
                    status === "draft" ? "Draft Valuations" :
                    status === "pending" ? "Pending Valuations" : 
-                   "Completed Valuations"}
+                   status === "completed" ? "Completed Valuations" :
+                   "Ready for Transfer"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -89,6 +99,17 @@ const ManualValuation = () => {
         isUpdating={isUpdating}
         onUpdateValuation={handleUpdateValuation}
         onTransferToCars={handleTransferToCars}
+      />
+
+      <ManualValuationStagingDialog
+        selectedValuation={selectedValuation}
+        isOpen={isStagingOpen}
+        onOpenChange={setIsStagingOpen}
+        reservePrice={reservePrice}
+        onReservePriceChange={setReservePrice}
+        isTransferring={isTransferring}
+        onConfirmTransfer={handleConfirmTransfer}
+        onCancel={handleCancelStaging}
       />
     </div>
   );

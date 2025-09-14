@@ -51,6 +51,7 @@ export interface ManualValuationData {
 export function useManualValuation() {
   const [selectedValuation, setSelectedValuation] = useState<ManualValuationData | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isStagingOpen, setIsStagingOpen] = useState(false);
   const [reservePrice, setReservePrice] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState(false);
   const [activeStatus, setActiveStatus] = useState<string>("all");
@@ -116,12 +117,17 @@ export function useManualValuation() {
     },
   });
 
-  // Transfer to cars table
-  const transferToCarsOperationMutation = useMutation({
-    mutationFn: async ({ valuationId, reservePrice }: { valuationId: string; reservePrice: number }) => {
-      const { data: result, error } = await supabase.rpc('admin_transfer_manual_valuation_to_cars', {
+  // Enhanced transfer to cars table with staging
+  const enhancedTransferToCarsOperationMutation = useMutation({
+    mutationFn: async ({ valuationId, reservePrice, carUpdates }: { 
+      valuationId: string; 
+      reservePrice: number; 
+      carUpdates?: any;
+    }) => {
+      const { data: result, error } = await supabase.rpc('admin_transfer_manual_valuation_to_cars_enhanced', {
         p_valuation_id: valuationId,
-        p_reserve_price: reservePrice
+        p_reserve_price: reservePrice,
+        p_car_updates: carUpdates || null
       });
 
       if (error) throw error;
@@ -134,6 +140,7 @@ export function useManualValuation() {
         toast.success("Car transferred to cars table successfully!");
         setSelectedValuation(null);
         setIsDetailsOpen(false);
+        setIsStagingOpen(false);
         setReservePrice("");
       } else {
         toast.error(result?.error || "Transfer failed");
@@ -141,7 +148,7 @@ export function useManualValuation() {
       setIsTransferring(false);
     },
     onError: (error) => {
-      console.error("Transfer error:", error);
+      console.error("Enhanced transfer error:", error);
       toast.error("Failed to transfer car to cars table");
       setIsTransferring(false);
     },
@@ -174,11 +181,39 @@ export function useManualValuation() {
       return;
     }
 
+    // Open staging dialog instead of immediate transfer
+    setIsStagingOpen(true);
+  };
+
+  const handlePrepareTransfer = () => {
+    if (!selectedValuation) return;
+    setIsDetailsOpen(false);
+    setIsStagingOpen(true);
+  };
+
+  const handleConfirmTransfer = async (carUpdates: any) => {
+    if (!selectedValuation || !reservePrice) {
+      toast.error("Please enter a reserve price");
+      return;
+    }
+
+    const priceNumber = parseFloat(reservePrice);
+    if (isNaN(priceNumber) || priceNumber <= 0) {
+      toast.error("Please enter a valid reserve price");
+      return;
+    }
+
     setIsTransferring(true);
-    transferToCarsOperationMutation.mutate({
+    enhancedTransferToCarsOperationMutation.mutate({
       valuationId: selectedValuation.id,
-      reservePrice: priceNumber
+      reservePrice: priceNumber,
+      carUpdates: carUpdates
     });
+  };
+
+  const handleCancelStaging = () => {
+    setIsStagingOpen(false);
+    setIsDetailsOpen(true);
   };
 
   return {
@@ -188,6 +223,8 @@ export function useManualValuation() {
     selectedValuation,
     isDetailsOpen,
     setIsDetailsOpen,
+    isStagingOpen,
+    setIsStagingOpen,
     reservePrice,
     setReservePrice,
     isTransferring,
@@ -196,6 +233,9 @@ export function useManualValuation() {
     openDetailsDialog,
     handleUpdateValuation,
     handleTransferToCars,
+    handlePrepareTransfer,
+    handleConfirmTransfer,
+    handleCancelStaging,
     isUpdating: updateValuationMutation.isPending
   };
 }

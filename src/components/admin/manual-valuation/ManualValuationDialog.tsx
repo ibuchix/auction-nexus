@@ -54,7 +54,8 @@ export const ManualValuationDialog = ({
       case "pending": return "bg-yellow-100 text-yellow-800";
       case "completed": return "bg-green-100 text-green-800";
       case "draft": return "bg-gray-100 text-gray-800";
-      case "transferred": return "bg-blue-100 text-blue-800";
+      case "ready_for_transfer": return "bg-blue-100 text-blue-800";
+      case "transferred": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -213,7 +214,7 @@ export const ManualValuationDialog = ({
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                Set Reserve Price & Transfer to Cars Table
+                Set Reserve Price & Prepare Transfer
               </h3>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
@@ -232,18 +233,23 @@ export const ManualValuationDialog = ({
                   className="mt-6"
                 >
                   {isTransferring ? (
-                    "Transferring..."
+                    "Preparing..."
                   ) : (
                     <>
                       <ArrowRight className="mr-2 h-4 w-4" />
-                      Transfer to Cars Table
+                      Prepare for Transfer
                     </>
                   )}
                 </Button>
               </div>
               {selectedValuation.status === "transferred" && (
                 <p className="text-sm text-muted-foreground mt-2">
-                  This valuation has already been transferred to the auction system.
+                  This valuation has already been transferred to the cars table.
+                </p>
+              )}
+              {selectedValuation.status !== "transferred" && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Click "Prepare for Transfer" to review and finalize the car details before adding to the cars table.
                 </p>
               )}
             </div>
