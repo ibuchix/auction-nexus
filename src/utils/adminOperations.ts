@@ -319,13 +319,13 @@ export const adminOperations = {
         filteredData = filteredData?.filter((car: any) => car.auction_status === status);
       }
 
-      console.log('[Admin Operations] Successfully fetched auction listings', { 
-        count: filteredData?.length,
-        showAllCars,
-        status 
-      });
+    console.log('[Admin Operations] Successfully fetched auction listings', { 
+      count: filteredData?.length,
+      showAllCars,
+      status 
+    });
 
-      return { data: filteredData, error: null };
+    return { data: filteredData, error: rpcError };
     });
   },
   
