@@ -19,6 +19,7 @@ export type Auction = Car & {
   is_manually_controlled?: boolean;
   auction_start_time?: string;
   auction_end_time?: string;
+  sellerEmail?: string;
 };
 
 export type AuctionStatus = "active" | "ended" | "paused" | "cancelled" | "sold" | "ready";

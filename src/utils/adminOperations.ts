@@ -297,13 +297,35 @@ export const adminOperations = {
   // Get auction listings with admin access using authenticated client
   getAuctionListings: async (showAllCars: boolean = true, status?: string) => {
     return performAdminOperation('getAuctionListings', async () => {
-      let query = supabase.from('cars').select('*');
+      console.log('[Admin Operations] Fetching auction listings', { showAllCars, status });
       
-      if (!showAllCars && status) {
-        query = query.eq('auction_status', status);
+      // Use the secure function to get cars with seller email
+      const { data: carsWithEmail, error: rpcError } = await supabase
+        .rpc('get_cars_with_seller_info');
+
+      if (rpcError) {
+        console.error('[Admin Operations] Error fetching cars with seller info:', rpcError);
+        throw rpcError;
       }
-      
-      return await query.order('created_at', { ascending: false });
+
+      let filteredData = carsWithEmail;
+
+      // Apply filters
+      if (!showAllCars) {
+        filteredData = filteredData?.filter((car: any) => car.is_auction === true);
+      }
+
+      if (status) {
+        filteredData = filteredData?.filter((car: any) => car.auction_status === status);
+      }
+
+      console.log('[Admin Operations] Successfully fetched auction listings', { 
+        count: filteredData?.length,
+        showAllCars,
+        status 
+      });
+
+      return { data: filteredData, error: null };
     });
   },
   

@@ -133,6 +133,7 @@ export function AdminAuctionCard({
             mobileNumber={auction.mobileNumber}
             address={auction.address}
             seller_name={auction.sellerName}
+            sellerEmail={auction.sellerEmail}
           />
 
           <VehicleImages car={auction} />

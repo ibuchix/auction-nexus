@@ -502,11 +502,11 @@ export type Database = {
       cars: {
         Row: {
           additional_photos: Json | null
-          address: string | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          county: string | null
           created_at: string
           current_bid: number | null
           email_notification_sent: boolean
@@ -529,6 +529,7 @@ export type Database = {
           mobile_number: string | null
           model: string | null
           number_of_keys: number | null
+          postcode: string | null
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
@@ -539,7 +540,9 @@ export type Database = {
           seller_notes: string | null
           service_history_type: string | null
           status: string | null
+          street_address: string | null
           title: string | null
+          town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
@@ -548,11 +551,11 @@ export type Database = {
         }
         Insert: {
           additional_photos?: Json | null
-          address?: string | null
           auction_end_time?: string | null
           auction_scheduled?: boolean
           auction_status?: string | null
           awaiting_seller_decision?: boolean
+          county?: string | null
           created_at?: string
           current_bid?: number | null
           email_notification_sent?: boolean
@@ -575,6 +578,7 @@ export type Database = {
           mobile_number?: string | null
           model?: string | null
           number_of_keys?: number | null
+          postcode?: string | null
           registration_number?: string | null
           required_photos?: Json | null
           reserve_price?: number
@@ -585,7 +589,9 @@ export type Database = {
           seller_notes?: string | null
           service_history_type?: string | null
           status?: string | null
+          street_address?: string | null
           title?: string | null
+          town?: string | null
           transmission?: string | null
           updated_at?: string
           valuation_data?: Json | null
@@ -594,11 +600,11 @@ export type Database = {
         }
         Update: {
           additional_photos?: Json | null
-          address?: string | null
           auction_end_time?: string | null
           auction_scheduled?: boolean
           auction_status?: string | null
           awaiting_seller_decision?: boolean
+          county?: string | null
           created_at?: string
           current_bid?: number | null
           email_notification_sent?: boolean
@@ -621,6 +627,7 @@ export type Database = {
           mobile_number?: string | null
           model?: string | null
           number_of_keys?: number | null
+          postcode?: string | null
           registration_number?: string | null
           required_photos?: Json | null
           reserve_price?: number
@@ -631,7 +638,9 @@ export type Database = {
           seller_notes?: string | null
           service_history_type?: string | null
           status?: string | null
+          street_address?: string | null
           title?: string | null
+          town?: string | null
           transmission?: string | null
           updated_at?: string
           valuation_data?: Json | null
@@ -1343,9 +1352,9 @@ export type Database = {
       }
       manual_valuations: {
         Row: {
-          address: string | null
           contact_email: string | null
           contact_phone: string | null
+          county: string | null
           created_at: string | null
           features: Json | null
           finance_amount: number | null
@@ -1364,12 +1373,15 @@ export type Database = {
           name: string | null
           notes: string | null
           number_of_keys: number | null
+          postcode: string | null
           registration_number: string | null
           seat_material: string | null
           seller_notes: string | null
           service_history_files: string[] | null
           service_history_type: string | null
           status: string | null
+          street_address: string | null
+          town: string | null
           transmission:
             | Database["public"]["Enums"]["car_transmission_type"]
             | null
@@ -1381,9 +1393,9 @@ export type Database = {
           year: number | null
         }
         Insert: {
-          address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          county?: string | null
           created_at?: string | null
           features?: Json | null
           finance_amount?: number | null
@@ -1402,12 +1414,15 @@ export type Database = {
           name?: string | null
           notes?: string | null
           number_of_keys?: number | null
+          postcode?: string | null
           registration_number?: string | null
           seat_material?: string | null
           seller_notes?: string | null
           service_history_files?: string[] | null
           service_history_type?: string | null
           status?: string | null
+          street_address?: string | null
+          town?: string | null
           transmission?:
             | Database["public"]["Enums"]["car_transmission_type"]
             | null
@@ -1419,9 +1434,9 @@ export type Database = {
           year?: number | null
         }
         Update: {
-          address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          county?: string | null
           created_at?: string | null
           features?: Json | null
           finance_amount?: number | null
@@ -1440,12 +1455,15 @@ export type Database = {
           name?: string | null
           notes?: string | null
           number_of_keys?: number | null
+          postcode?: string | null
           registration_number?: string | null
           seat_material?: string | null
           seller_notes?: string | null
           service_history_files?: string[] | null
           service_history_type?: string | null
           status?: string | null
+          street_address?: string | null
+          town?: string | null
           transmission?:
             | Database["public"]["Enums"]["car_transmission_type"]
             | null
@@ -1900,11 +1918,11 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           additional_photos: Json | null
-          address: string | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          county: string | null
           created_at: string
           current_bid: number | null
           email_notification_sent: boolean
@@ -1927,6 +1945,7 @@ export type Database = {
           mobile_number: string | null
           model: string | null
           number_of_keys: number | null
+          postcode: string | null
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
@@ -1937,7 +1956,9 @@ export type Database = {
           seller_notes: string | null
           service_history_type: string | null
           status: string | null
+          street_address: string | null
           title: string | null
+          town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
@@ -1966,11 +1987,11 @@ export type Database = {
         Args: { p_show_all?: boolean; p_status?: string }
         Returns: {
           additional_photos: Json | null
-          address: string | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          county: string | null
           created_at: string
           current_bid: number | null
           email_notification_sent: boolean
@@ -1993,6 +2014,7 @@ export type Database = {
           mobile_number: string | null
           model: string | null
           number_of_keys: number | null
+          postcode: string | null
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
@@ -2003,7 +2025,9 @@ export type Database = {
           seller_notes: string | null
           service_history_type: string | null
           status: string | null
+          street_address: string | null
           title: string | null
+          town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
@@ -2334,6 +2358,59 @@ export type Database = {
           year: number
         }[]
       }
+      get_cars_with_seller_info: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          additional_photos: Json
+          auction_end_time: string
+          auction_scheduled: boolean
+          auction_status: string
+          awaiting_seller_decision: boolean
+          county: string
+          created_at: string
+          current_bid: number
+          email_notification_sent: boolean
+          features: Json
+          finance_amount: number
+          form_metadata: Json
+          fuel_type: string
+          has_private_plate: boolean
+          has_service_history: boolean
+          id: string
+          images: string[]
+          is_auction: boolean
+          is_damaged: boolean
+          is_manually_controlled: boolean
+          is_registered_in_poland: boolean
+          last_saved: string
+          make: string
+          mileage: number
+          minimum_bid_increment: number
+          mobile_number: string
+          model: string
+          number_of_keys: number
+          postcode: string
+          registration_number: string
+          required_photos: Json
+          reserve_price: number
+          rim_photos: Json
+          seat_material: string
+          seller_email: string
+          seller_id: string
+          seller_name: string
+          seller_notes: string
+          service_history_type: string
+          status: string
+          street_address: string
+          title: string
+          town: string
+          transmission: string
+          updated_at: string
+          valuation_data: Json
+          vin: string
+          year: number
+        }[]
+      }
       get_correct_auction_status: {
         Args: {
           p_current_status?: Database["public"]["Enums"]["auction_schedule_status"]
@@ -2392,9 +2469,9 @@ export type Database = {
       get_manual_valuations_for_seller: {
         Args: { p_user_id?: string }
         Returns: {
-          address: string | null
           contact_email: string | null
           contact_phone: string | null
+          county: string | null
           created_at: string | null
           features: Json | null
           finance_amount: number | null
@@ -2413,12 +2490,15 @@ export type Database = {
           name: string | null
           notes: string | null
           number_of_keys: number | null
+          postcode: string | null
           registration_number: string | null
           seat_material: string | null
           seller_notes: string | null
           service_history_files: string[] | null
           service_history_type: string | null
           status: string | null
+          street_address: string | null
+          town: string | null
           transmission:
             | Database["public"]["Enums"]["car_transmission_type"]
             | null
@@ -2445,11 +2525,11 @@ export type Database = {
         Args: { p_seller_id: string }
         Returns: {
           additional_photos: Json | null
-          address: string | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          county: string | null
           created_at: string
           current_bid: number | null
           email_notification_sent: boolean
@@ -2472,6 +2552,7 @@ export type Database = {
           mobile_number: string | null
           model: string | null
           number_of_keys: number | null
+          postcode: string | null
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
@@ -2482,7 +2563,9 @@ export type Database = {
           seller_notes: string | null
           service_history_type: string | null
           status: string | null
+          street_address: string | null
           title: string | null
+          town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
@@ -2494,11 +2577,11 @@ export type Database = {
         Args: { p_seller_id: string }
         Returns: {
           additional_photos: Json | null
-          address: string | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          county: string | null
           created_at: string
           current_bid: number | null
           email_notification_sent: boolean
@@ -2521,6 +2604,7 @@ export type Database = {
           mobile_number: string | null
           model: string | null
           number_of_keys: number | null
+          postcode: string | null
           registration_number: string | null
           required_photos: Json | null
           reserve_price: number
@@ -2531,7 +2615,9 @@ export type Database = {
           seller_notes: string | null
           service_history_type: string | null
           status: string | null
+          street_address: string | null
           title: string | null
+          town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
