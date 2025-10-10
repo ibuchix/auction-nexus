@@ -77,16 +77,13 @@ export function useAuctionManagement() {
 
   // Removed real-time subscription to prevent refetch loops
 
-  console.log('[useAuctionManagement] Raw listings received:', {
-    total: listings?.length,
-    isArray: Array.isArray(listings),
-    sampleIds: listings?.slice(0, 5).map((l: any) => l?.id),
-    opelAstra: listings?.find((l: any) => l?.id === '889213dc-9fec-41b9-b8f0-f815292eb86c') ? 'FOUND' : 'NOT FOUND'
-  });
-
-  console.log('[useAuctionManagement] Filter state:', {
-    searchTerm,
-    statusFilter
+  const filipReceived = listings?.find((l: any) => l?.id === '889213dc-9fec-41b9-b8f0-f815292eb86c');
+  const lolReceived = listings?.find((l: any) => l?.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3');
+  console.log('🔍 [5/6] Received in React hook:', {
+    filipCar: filipReceived ? '✅ FOUND' : '❌ MISSING',
+    lolCar: lolReceived ? '✅ FOUND' : '❌ MISSING',
+    totalListings: listings?.length,
+    currentFilters: { searchTerm, statusFilter }
   });
 
   const filteredListings = (Array.isArray(listings) ? listings : []).filter(listing => {
@@ -101,14 +98,37 @@ export function useAuctionManagement() {
     return matchesSearch && matchesStatus;
   });
 
-  console.log('[useAuctionManagement] After filtering:', {
-    filtered: filteredListings.length,
-    sampleFiltered: filteredListings.slice(0, 3).map(l => ({
-      id: l.id,
-      title: l.title,
-      auctionStatus: l.auctionStatus
-    })),
-    opelAstra: filteredListings.find(l => l.id === '889213dc-9fec-41b9-b8f0-f815292eb86c') ? 'FOUND' : 'NOT FOUND'
+  const filipFiltered = filteredListings.find(l => l.id === '889213dc-9fec-41b9-b8f0-f815292eb86c');
+  const lolFiltered = filteredListings.find(l => l.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3');
+  console.log('🔍 [6/6] After final filter:', {
+    filipCar: filipFiltered ? '✅ FOUND' : '❌ MISSING',
+    lolCar: lolFiltered ? '✅ FOUND' : '❌ MISSING',
+    totalFiltered: filteredListings.length,
+    // Show why they were filtered out if missing
+    ...((!filipFiltered && filipReceived) && {
+      filipReason: {
+        matchesSearch: (
+          (filipReceived.title?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (filipReceived.make?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (filipReceived.model?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (filipReceived.vin?.toLowerCase().includes(searchTerm.toLowerCase()))
+        ),
+        matchesStatus: statusFilter === "all" || filipReceived.auctionStatus === statusFilter,
+        auctionStatus: filipReceived.auctionStatus
+      }
+    }),
+    ...((!lolFiltered && lolReceived) && {
+      lolReason: {
+        matchesSearch: (
+          (lolReceived.title?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (lolReceived.make?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (lolReceived.model?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (lolReceived.vin?.toLowerCase().includes(searchTerm.toLowerCase()))
+        ),
+        matchesStatus: statusFilter === "all" || lolReceived.auctionStatus === statusFilter,
+        auctionStatus: lolReceived.auctionStatus
+      }
+    })
   });
 
   const readyAuctions = filteredListings.filter(listing => {
