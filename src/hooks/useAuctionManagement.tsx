@@ -77,6 +77,15 @@ export function useAuctionManagement() {
 
   // Removed real-time subscription to prevent refetch loops
 
+  console.log('🔍 [DEBUG] React Query State:', {
+    listingsIsArray: Array.isArray(listings),
+    listingsLength: listings?.length,
+    isLoading,
+    error: error,
+    hasError: !!error,
+    errorMessage: error?.message
+  });
+
   const filipReceived = listings?.find((l: any) => l?.id === '889213dc-9fec-41b9-b8f0-f815292eb86c');
   const lolReceived = listings?.find((l: any) => l?.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3');
   console.log('🔍 [5/6] Received in React hook:', {
