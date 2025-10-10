@@ -1,5 +1,5 @@
 
-import { Clock, CheckCircle, XCircle, Package } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Package, Loader2 } from "lucide-react";
 import { useAuctionManagement } from "@/hooks/useAuctionManagement";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +32,17 @@ const AuctionManagement = () => {
     handleScheduleClose,
     handleScheduleSuccess,
   } = useAuctionManagement();
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading auction listings...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

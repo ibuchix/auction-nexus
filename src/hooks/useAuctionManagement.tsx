@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Auction, AuctionStatus } from "@/types/auction";
 import { useToast } from "@/hooks/use-toast";
@@ -15,8 +15,17 @@ export function useAuctionManagement() {
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
+  // Track query key changes
+  useEffect(() => {
+    console.log('🔑 [DEBUG] Query Key Changed:', { 
+      showAllCars, 
+      statusFilter,
+      queryKey: ['adminVehicleListings', showAllCars]
+    });
+  }, [showAllCars, statusFilter]);
+
   const { data: listings = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['adminVehicleListings', showAllCars, statusFilter],
+    queryKey: ['adminVehicleListings', showAllCars],
     queryFn: async () => {
       console.log('🔍 [AuctionMgmt] Fetching car listings via admin operations', { showAllCars, statusFilter });
       try {
@@ -76,6 +85,17 @@ export function useAuctionManagement() {
   });
 
   // Removed real-time subscription to prevent refetch loops
+
+  // Track successful data loading
+  useEffect(() => {
+    if (!isLoading && listings.length > 0) {
+      console.log('✅ [DEBUG] Data Successfully Loaded:', {
+        listingsCount: listings.length,
+        filipFound: !!listings.find((l: any) => l?.id === '889213dc-9fec-41b9-b8f0-f815292eb86c'),
+        lolFound: !!listings.find((l: any) => l?.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3')
+      });
+    }
+  }, [isLoading, listings]);
 
   console.log('🔍 [DEBUG] React Query State:', {
     listingsIsArray: Array.isArray(listings),
