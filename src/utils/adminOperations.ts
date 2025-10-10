@@ -45,6 +45,13 @@ export async function performAdminOperation<T>(
     }
     
     const { data, error } = await operation();
+
+    console.log(`[performAdminOperation] ${operationName} raw data:`, {
+      isArray: Array.isArray(data),
+      length: Array.isArray(data) ? data.length : 'N/A',
+      hasError: !!error,
+      sampleIds: Array.isArray(data) ? data.slice(0, 3).map((d: any) => d?.id) : 'N/A'
+    });
     
     if (error) {
       console.error(`Admin operation failed (${operationName}):`, error);
@@ -57,7 +64,13 @@ export async function performAdminOperation<T>(
     // Convert snake_case to camelCase for frontend use
     // Handle arrays specially to preserve array structure
     if (Array.isArray(data)) {
-      return data.map(item => item && typeof item === 'object' ? objectToCamelCase(item) : item) as T;
+      const converted = data.map(item => item && typeof item === 'object' ? objectToCamelCase(item) : item) as T;
+      console.log(`[performAdminOperation] ${operationName} after camelCase:`, {
+        length: Array.isArray(converted) ? converted.length : 'N/A',
+        sampleIds: Array.isArray(converted) ? converted.slice(0, 3).map((c: any) => c?.id) : 'N/A',
+        opelAstra: Array.isArray(converted) && converted.find((c: any) => c?.id === '889213dc-9fec-41b9-b8f0-f815292eb86c') ? 'FOUND' : 'NOT FOUND'
+      });
+      return converted;
     } else {
       return data ? objectToCamelCase(data) as T : null;
     }
@@ -303,6 +316,13 @@ export const adminOperations = {
       const { data: carsWithEmail, error: rpcError } = await supabase
         .rpc('get_cars_with_seller_info');
 
+      console.log('[getAuctionListings] RPC returned:', {
+        total: carsWithEmail?.length,
+        hasError: !!rpcError,
+        sampleCarIds: carsWithEmail?.slice(0, 3).map((c: any) => c.id),
+        opelAstra: carsWithEmail?.find((c: any) => c.id === '889213dc-9fec-41b9-b8f0-f815292eb86c') ? 'FOUND' : 'NOT FOUND'
+      });
+
       if (rpcError) {
         console.error('[Admin Operations] Error fetching cars with seller info:', rpcError);
         throw rpcError;
@@ -319,10 +339,11 @@ export const adminOperations = {
         filteredData = filteredData?.filter((car: any) => car.auction_status === status);
       }
 
-    console.log('[Admin Operations] Successfully fetched auction listings', { 
-      count: filteredData?.length,
-      showAllCars,
-      status 
+    console.log('[getAuctionListings] After filtering:', {
+      filtered: filteredData?.length,
+      filters: { showAllCars, status },
+      sampleCarIds: filteredData?.slice(0, 3).map((c: any) => c.id),
+      opelAstra: filteredData?.find((c: any) => c.id === '889213dc-9fec-41b9-b8f0-f815292eb86c') ? 'FOUND' : 'NOT FOUND'
     });
 
     return { data: filteredData, error: rpcError };

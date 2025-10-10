@@ -77,6 +77,18 @@ export function useAuctionManagement() {
 
   // Removed real-time subscription to prevent refetch loops
 
+  console.log('[useAuctionManagement] Raw listings received:', {
+    total: listings?.length,
+    isArray: Array.isArray(listings),
+    sampleIds: listings?.slice(0, 5).map((l: any) => l?.id),
+    opelAstra: listings?.find((l: any) => l?.id === '889213dc-9fec-41b9-b8f0-f815292eb86c') ? 'FOUND' : 'NOT FOUND'
+  });
+
+  console.log('[useAuctionManagement] Filter state:', {
+    searchTerm,
+    statusFilter
+  });
+
   const filteredListings = (Array.isArray(listings) ? listings : []).filter(listing => {
     const matchesSearch = 
       (listing.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
@@ -87,6 +99,16 @@ export function useAuctionManagement() {
     const matchesStatus = statusFilter === "all" || listing.auctionStatus === statusFilter;
     
     return matchesSearch && matchesStatus;
+  });
+
+  console.log('[useAuctionManagement] After filtering:', {
+    filtered: filteredListings.length,
+    sampleFiltered: filteredListings.slice(0, 3).map(l => ({
+      id: l.id,
+      title: l.title,
+      auctionStatus: l.auctionStatus
+    })),
+    opelAstra: filteredListings.find(l => l.id === '889213dc-9fec-41b9-b8f0-f815292eb86c') ? 'FOUND' : 'NOT FOUND'
   });
 
   const readyAuctions = filteredListings.filter(listing => {
