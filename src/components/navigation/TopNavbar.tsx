@@ -26,7 +26,6 @@ export function TopNavbar() {
         <UserActionsMenu 
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          notificationCount={3}
         />
       </div>
     </header>

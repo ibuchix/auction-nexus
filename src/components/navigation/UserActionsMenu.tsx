@@ -6,22 +6,20 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Bell, User } from "lucide-react";
+import { User } from "lucide-react";
 import { SearchBar } from "@/components/dashboard/SearchBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 interface UserActionsMenuProps {
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-  notificationCount?: number;
 }
 
 export function UserActionsMenu({ 
   searchQuery, 
-  setSearchQuery, 
-  notificationCount = 3 
+  setSearchQuery
 }: UserActionsMenuProps) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -34,19 +32,13 @@ export function UserActionsMenu({
   return (
     <div className="flex items-center gap-4">
       <div className="hidden sm:block max-w-xs">
-        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} notificationCount={notificationCount} />
+        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
       </div>
       
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" className="relative hidden sm:flex">
-          <Bell className="h-4 w-4" />
-          <Badge 
-            variant="destructive" 
-            className="absolute -top-2 -right-2 px-1.5 min-w-5 h-5 flex items-center justify-center"
-          >
-            {notificationCount}
-          </Badge>
-        </Button>
+        <div className="hidden sm:block">
+          <NotificationDropdown />
+        </div>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

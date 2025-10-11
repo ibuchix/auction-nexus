@@ -2137,6 +2137,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      create_admin_notification: {
+        Args: {
+          p_action_url?: string
+          p_message: string
+          p_related_entity_id?: string
+          p_related_entity_type?: string
+          p_title: string
+          p_type: string
+        }
+        Returns: string
+      }
       create_admin_user: {
         Args: { p_full_name?: string; p_user_id: string }
         Returns: boolean
