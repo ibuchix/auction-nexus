@@ -2361,54 +2361,8 @@ export type Database = {
       get_cars_with_seller_info: {
         Args: Record<PropertyKey, never>
         Returns: {
-          additional_photos: Json
-          auction_end_time: string
-          auction_scheduled: boolean
-          auction_status: string
-          awaiting_seller_decision: boolean
-          county: string
-          created_at: string
-          current_bid: number
-          email_notification_sent: boolean
-          features: Json
-          finance_amount: number
-          form_metadata: Json
-          fuel_type: string
-          has_private_plate: boolean
-          has_service_history: boolean
-          id: string
-          images: string[]
-          is_auction: boolean
-          is_damaged: boolean
-          is_manually_controlled: boolean
-          is_registered_in_poland: boolean
-          last_saved: string
-          make: string
-          mileage: number
-          minimum_bid_increment: number
-          mobile_number: string
-          model: string
-          number_of_keys: number
-          postcode: string
-          registration_number: string
-          required_photos: Json
-          reserve_price: number
-          rim_photos: Json
-          seat_material: string
           seller_email: string
           seller_id: string
-          seller_name: string
-          seller_notes: string
-          service_history_type: string
-          status: string
-          street_address: string
-          title: string
-          town: string
-          transmission: string
-          updated_at: string
-          valuation_data: Json
-          vin: string
-          year: number
         }[]
       }
       get_correct_auction_status: {
@@ -2427,10 +2381,7 @@ export type Database = {
       }
       get_dealer_by_user_id: {
         Args: { p_user_id: string } | { user_id: number }
-        Returns: {
-          dealer_id: number
-          dealer_name: string
-        }[]
+        Returns: Json
       }
       get_dealer_id_by_user_id: {
         Args: { p_user_id: string }

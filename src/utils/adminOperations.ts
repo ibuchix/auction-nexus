@@ -319,44 +319,69 @@ export const adminOperations = {
     return performAdminOperation('getAuctionListings', async () => {
       console.log('[Admin Operations] Fetching auction listings', { showAllCars, status });
       
-      // Use the secure function to get cars with seller email
-      const { data: carsWithEmail, error: rpcError } = await supabase
-        .rpc('get_cars_with_seller_info');
+      // Step 1: Get all cars using the original working direct query
+      const { data: cars, error: carsError } = await supabase
+        .from('cars')
+        .select('*');
 
-      const filipCar = carsWithEmail?.find((c: any) => c.id === '889213dc-9fec-41b9-b8f0-f815292eb86c');
-      const lolCar = carsWithEmail?.find((c: any) => c.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3');
-      console.log('🔍 [1/6] RPC returned:', {
-        filipCar: filipCar ? '✅ FOUND' : '❌ MISSING',
-        lolCar: lolCar ? '✅ FOUND' : '❌ MISSING',
-        totalCars: carsWithEmail?.length
-      });
-
-      if (rpcError) {
-        console.error('[Admin Operations] Error fetching cars with seller info:', rpcError);
-        throw rpcError;
+      if (carsError) {
+        console.error('[Admin Operations] Error fetching cars:', carsError);
+        throw carsError;
       }
 
+      console.log('🚗 [Step 1/3] Cars fetched:', { 
+        totalCars: cars?.length,
+        filipFound: !!cars?.find(c => c.id === '889213dc-9fec-41b9-b8f0-f815292eb86c'),
+        lolFound: !!cars?.find(c => c.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3')
+      });
+
+      // Step 2: Get seller emails separately
+      const { data: sellerEmails, error: emailError } = await supabase
+        .rpc('get_cars_with_seller_info');
+
+      if (emailError) {
+        console.warn('[Admin Operations] Could not fetch seller emails:', emailError);
+        // Non-fatal: continue without emails
+      }
+
+      console.log('📧 [Step 2/3] Seller emails fetched:', { 
+        totalEmails: sellerEmails?.length 
+      });
+
+      // Step 3: Merge seller emails into car data
+      const emailMap = new Map(
+        sellerEmails?.map(e => [e.seller_id, e.seller_email]) || []
+      );
+
+      const carsWithEmail = cars?.map(car => ({
+        ...car,
+        sellerEmail: emailMap.get(car.seller_id) || null
+      })) || [];
+
+      console.log('🔗 [Step 3/3] Data merged:', { 
+        totalCars: carsWithEmail.length,
+        carsWithEmail: carsWithEmail.filter(c => c.sellerEmail).length
+      });
+
+      // Apply filters (same as before)
       let filteredData = carsWithEmail;
 
-      // Apply filters
       if (!showAllCars) {
-        filteredData = filteredData?.filter((car: any) => car.is_auction === true);
+        filteredData = filteredData.filter(car => car.is_auction === true);
       }
 
       if (status) {
-        filteredData = filteredData?.filter((car: any) => car.auction_status === status);
+        filteredData = filteredData.filter(car => car.auction_status === status);
       }
 
-    const filipAfterFilter = filteredData?.find((c: any) => c.id === '889213dc-9fec-41b9-b8f0-f815292eb86c');
-    const lolAfterFilter = filteredData?.find((c: any) => c.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3');
-    console.log('🔍 [2/6] After filtering:', {
-      filipCar: filipAfterFilter ? '✅ FOUND' : '❌ MISSING',
-      lolCar: lolAfterFilter ? '✅ FOUND' : '❌ MISSING',
-      totalCars: filteredData?.length,
-      filters: { showAllCars, status }
-    });
+      console.log('✅ [Final] After filtering:', {
+        totalCars: filteredData.length,
+        filipFound: !!filteredData.find(c => c.id === '889213dc-9fec-41b9-b8f0-f815292eb86c'),
+        lolFound: !!filteredData.find(c => c.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3'),
+        filters: { showAllCars, status }
+      });
 
-    return { data: filteredData, error: rpcError };
+      return { data: filteredData, error: null };
     });
   },
   
