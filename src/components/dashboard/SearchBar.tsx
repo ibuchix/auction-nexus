@@ -6,13 +6,11 @@ import { Input } from "@/components/ui/input";
 interface SearchBarProps {
   searchQuery: string;
   setSearchQuery: Dispatch<SetStateAction<string>>;
-  notificationCount?: number;
 }
 
 export function SearchBar({ 
   searchQuery, 
-  setSearchQuery,
-  notificationCount = 0
+  setSearchQuery
 }: SearchBarProps) {
   return (
     <div className="flex items-center gap-2">
