@@ -322,7 +322,8 @@ export const adminOperations = {
       // Step 1: Get all cars using the original working direct query
       const { data: cars, error: carsError } = await supabase
         .from('cars')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false }); // Newest first
 
       if (carsError) {
         console.error('[Admin Operations] Error fetching cars:', carsError);
