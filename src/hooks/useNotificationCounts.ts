@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 export type NotificationType =
   | "seller_auction_ended"
   | "dealer_bid_accepted"
-  | "dealer_bid_declined";
+  | "dealer_bid_declined"
+  | "seller_ready_for_pickup";
 
 export interface NotificationCountRow {
   car_id: string;
@@ -28,6 +29,7 @@ export function useNotificationCounts(carIds: string[]) {
           seller_auction_ended: 0,
           dealer_bid_accepted: 0,
           dealer_bid_declined: 0,
+          seller_ready_for_pickup: 0,
         };
         current[row.type] = row.send_count;
         map.set(row.car_id, current);

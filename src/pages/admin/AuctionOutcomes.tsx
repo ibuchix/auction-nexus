@@ -111,7 +111,7 @@ const useAuctionOutcomesData = () => {
   });
 };
 
-const sendEmail = async (type: "seller_auction_ended" | "dealer_bid_accepted" | "dealer_bid_declined", payload: any) => {
+const sendEmail = async (type: "seller_auction_ended" | "dealer_bid_accepted" | "dealer_bid_declined" | "seller_ready_for_pickup", payload: any) => {
   const { data, error } = await supabase.functions.invoke("send-notifications", {
     body: {
       type,
@@ -141,7 +141,7 @@ const AuctionOutcomeCard = ({
   decision?: string | null;
   sellerName?: string | null;
   dealerPersonName?: string | null;
-  counts: { seller_auction_ended: number; dealer_bid_accepted: number; dealer_bid_declined: number };
+  counts: { seller_auction_ended: number; dealer_bid_accepted: number; dealer_bid_declined: number; seller_ready_for_pickup: number };
   onEmailSent: () => void;
 }) => {
   const car = item.cars;
@@ -217,6 +217,23 @@ const AuctionOutcomeCard = ({
           </Button>
           <Button
             size="sm"
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={item.payment_status !== 'completed'}
+            onClick={async () => {
+              try {
+                await sendEmail("seller_ready_for_pickup", { carId: item.car_id });
+                toast.success("Seller notified: ready for pickup");
+                onEmailSent();
+              } catch (e: any) {
+                toast.error(e.message || "Failed to notify seller");
+              }
+            }}
+          >
+            <Mail className="w-4 h-4 mr-1" /> Email seller: ready for pickup
+            <Badge variant="secondary" className="ml-2">{counts.seller_ready_for_pickup}</Badge>
+          </Button>
+          <Button
+            size="sm"
             variant="destructive"
             disabled={decision !== "declined"}
             onClick={async () => {
@@ -258,7 +275,7 @@ const AuctionOutcomes = () => {
       const sellerName = item.cars?.seller_id ? data?.profileById.get(item.cars.seller_id)?.full_name : undefined;
       const dealerPersonName = item.dealers?.user_id ? data?.dealerProfileByUser.get(item.dealers.user_id)?.full_name : undefined;
       const decision = decisionMap.get(item.car_id)?.decision;
-      const counts = countsMap?.get(item.car_id) || { seller_auction_ended: 0, dealer_bid_accepted: 0, dealer_bid_declined: 0 } as any;
+      const counts = countsMap?.get(item.car_id) || { seller_auction_ended: 0, dealer_bid_accepted: 0, dealer_bid_declined: 0, seller_ready_for_pickup: 0 } as any;
       return { item, sellerName, dealerPersonName, decision, counts };
     });
   }, [items, data, decisionMap, countsMap]);

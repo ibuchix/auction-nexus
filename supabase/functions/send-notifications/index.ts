@@ -78,7 +78,7 @@ async function logEmailEvent(event: { type: string; carId: string; dealerId?: st
 }
 
 interface NotifyRequest {
-  type: "seller_auction_ended" | "dealer_bid_accepted" | "dealer_bid_declined";
+  type: "seller_auction_ended" | "dealer_bid_accepted" | "dealer_bid_declined" | "seller_ready_for_pickup";
   carId: string;
   dealerId?: string;
 }
@@ -267,6 +267,39 @@ serve(async (req) => {
         messageId,
         carId,
         dealerId,
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+
+    } else if (type === "seller_ready_for_pickup") {
+      const sellerUserId = await getSellerUserId(carId);
+      console.log("[send-notifications] seller_lookup_pickup", { carId, sellerUserId });
+      if (!sellerUserId) throw new Error("Seller not found for car");
+
+      const email = await getUserEmail(sellerUserId);
+      console.log("[send-notifications] seller_email_resolved_pickup", { sellerUserId, email });
+      if (!email) throw new Error("Seller email not found");
+
+      const subject = `Vehicle ready for pickup: ${carLabel}`;
+      const html = buildEmailHtml({
+        title: 'Vehicle ready for pickup',
+        body: `The dealer has completed payment for <strong>${carLabel}</strong> and is ready to arrange pickup. Please coordinate with the dealer for vehicle handover.`,
+        ctaText: 'View details',
+        ctaHref: `${SITE_URL}/seller/auctions`
+      });
+      const { messageId } = await sendEmail(email, subject, html);
+
+      // Log event
+      await logEmailEvent({ type, carId, to: email, subject, messageId });
+      return new Response(JSON.stringify({
+        success: true,
+        type,
+        to: email,
+        from: FROM_HEADER,
+        subject,
+        messageId,
+        carId,
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
