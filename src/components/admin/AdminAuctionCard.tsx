@@ -40,25 +40,6 @@ export function AdminAuctionCard({
   // Use the hook directly for any operations not passed as props
   const { pauseAuction, cancelAuction, startAuction, extendAuctionTime } = useAuctionOperations();
 
-  // Defensive logging to track rendering
-  useEffect(() => {
-    console.log('🎴 [AdminAuctionCard] Rendering card:', {
-      id: auction.id,
-      make: auction.make,
-      model: auction.model,
-      year: auction.year,
-      title: auction.title,
-      hasImages: auction.images?.length > 0,
-      auctionStatus: auction.auctionStatus,
-      sellerEmail: auction.sellerEmail,
-      sellerId: auction.sellerId
-    });
-    
-    if (!auction.make || !auction.model || !auction.year) {
-      console.warn('⚠️ [AdminAuctionCard] Missing critical fields:', auction.id);
-    }
-  }, [auction]);
-
   const handleSaveChanges = async () => {
     try {
       // Generate proper title if current title is generic

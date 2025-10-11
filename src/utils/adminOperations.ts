@@ -317,8 +317,6 @@ export const adminOperations = {
   // Get auction listings with admin access using authenticated client
   getAuctionListings: async (showAllCars: boolean = true, status?: string) => {
     return performAdminOperation('getAuctionListings', async () => {
-      console.log('[Admin Operations] Fetching auction listings', { showAllCars, status });
-      
       // Step 1: Get all cars using the original working direct query
       const { data: cars, error: carsError } = await supabase
         .from('cars')
@@ -330,12 +328,6 @@ export const adminOperations = {
         throw carsError;
       }
 
-      console.log('🚗 [Step 1/3] Cars fetched:', { 
-        totalCars: cars?.length,
-        filipFound: !!cars?.find(c => c.id === '889213dc-9fec-41b9-b8f0-f815292eb86c'),
-        lolFound: !!cars?.find(c => c.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3')
-      });
-
       // Step 2: Get seller emails separately
       const { data: sellerEmails, error: emailError } = await supabase
         .rpc('get_cars_with_seller_info');
@@ -344,10 +336,6 @@ export const adminOperations = {
         console.warn('[Admin Operations] Could not fetch seller emails:', emailError);
         // Non-fatal: continue without emails
       }
-
-      console.log('📧 [Step 2/3] Seller emails fetched:', { 
-        totalEmails: sellerEmails?.length 
-      });
 
       // Step 3: Merge seller emails into car data
       const emailMap = new Map(
@@ -359,11 +347,6 @@ export const adminOperations = {
         sellerEmail: emailMap.get(car.seller_id) || null
       })) || [];
 
-      console.log('🔗 [Step 3/3] Data merged:', { 
-        totalCars: carsWithEmail.length,
-        carsWithEmail: carsWithEmail.filter(c => c.sellerEmail).length
-      });
-
       // Apply filters (same as before)
       let filteredData = carsWithEmail;
 
@@ -374,13 +357,6 @@ export const adminOperations = {
       if (status) {
         filteredData = filteredData.filter(car => car.auction_status === status);
       }
-
-      console.log('✅ [Final] After filtering:', {
-        totalCars: filteredData.length,
-        filipFound: !!filteredData.find(c => c.id === '889213dc-9fec-41b9-b8f0-f815292eb86c'),
-        lolFound: !!filteredData.find(c => c.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3'),
-        filters: { showAllCars, status }
-      });
 
       return { data: filteredData, error: null };
     });
@@ -406,10 +382,6 @@ export const adminOperations = {
     isManuallyControlled?: boolean,
     createdBy?: string
   ) => {
-    console.log('Creating auction schedule with params:', {
-      carId, startTime, endTime, notes, isManuallyControlled, createdBy
-    });
-    
     return performAdminOperation('createAuctionSchedule', async () => {
       // Create schedule data without any validation
       const scheduleData = {
@@ -424,8 +396,6 @@ export const adminOperations = {
         updated_at: new Date().toISOString()
       };
 
-      console.log('Inserting schedule data:', scheduleData);
-
       // Insert directly into auction_schedules table using authenticated client
       const { data, error } = await supabase
         .from('auction_schedules')
@@ -438,15 +408,12 @@ export const adminOperations = {
         throw error;
       }
 
-      console.log('Schedule created successfully:', data);
       return { data, error: null };
     });
   },
 
   // Get all auction schedules with admin access
   getAllAuctionSchedules: async () => {
-    console.log('Fetching all auction schedules');
-    
     return performAdminOperation('getAllAuctionSchedules', async () => {
       const { data, error } = await supabase
         .from('auction_schedules')
