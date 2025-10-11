@@ -42,7 +42,7 @@ export function AuctionTabContent({
                   <CalendarClock className="h-4 w-4 mr-1" />
                   Schedule
                 </Button>}
-              <AdminAuctionCard key={listing.id} auction={listing} onPause={onPause} onCancel={onCancel} onStart={onStart} />
+              <AdminAuctionCard auction={listing} onPause={onPause} onCancel={onCancel} onStart={onStart} />
             </div>)}
       </CardContent>
     </Card>;
