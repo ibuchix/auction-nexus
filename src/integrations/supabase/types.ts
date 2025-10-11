@@ -2261,6 +2261,21 @@ export type Database = {
         Args: { p_seller_id?: string }
         Returns: Json
       }
+      get_admin_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          action_url: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          related_entity_id: string
+          related_entity_type: string
+          title: string
+          type: string
+          user_id: string
+        }[]
+      }
       get_auction_activity_metrics: {
         Args: { p_car_id: string }
         Returns: Json
@@ -2678,9 +2693,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      mark_all_notifications_read: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       mark_car_email_notification_sent: {
         Args: { p_car_id: string }
         Returns: boolean
+      }
+      mark_notification_read: {
+        Args: { p_notification_id: string }
+        Returns: undefined
       }
       perform_admin_action: {
         Args: {

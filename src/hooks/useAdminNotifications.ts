@@ -21,13 +21,10 @@ export function useAdminNotifications() {
     queryKey: ['admin-notifications'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .rpc('get_admin_notifications');
       
       if (error) throw error;
-      return data as AdminNotification[];
+      return (data || []) as AdminNotification[];
     },
     refetchInterval: 30000,
   });
@@ -37,9 +34,7 @@ export function useAdminNotifications() {
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId);
+        .rpc('mark_notification_read', { p_notification_id: notificationId });
       
       if (error) throw error;
     },
@@ -51,9 +46,7 @@ export function useAdminNotifications() {
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('is_read', false);
+        .rpc('mark_all_notifications_read');
       
       if (error) throw error;
     },
