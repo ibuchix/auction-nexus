@@ -240,7 +240,6 @@ const AuctionOutcomeCard = ({
               </div>
             )}
             <div>Reserve: {formatPLN(car?.reserve_price)}</div>
-            <div>Final Bid: {formatPLN(car?.current_bid)}</div>
             <div>VIN: {car?.vin || "—"}</div>
             <div>Mileage: {car?.mileage ? `${car.mileage.toLocaleString()} km` : "—"}</div>
           </div>
