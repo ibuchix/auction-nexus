@@ -32,6 +32,7 @@ interface AuctionHeaderProps {
   isDamaged?: boolean;
   isEditing: boolean;
   onEditToggle: () => void;
+  onOpenEditDialog?: () => void;
   onCancel: () => Promise<void>;
   onStart?: () => Promise<void>;
   onPause?: () => Promise<void>;
@@ -49,6 +50,7 @@ export function AuctionHeader({
   isDamaged,
   isEditing,
   onEditToggle,
+  onOpenEditDialog,
   onCancel,
   onStart,
   onPause,
@@ -119,7 +121,7 @@ export function AuctionHeader({
           <Button
             variant="outline"
             size="sm"
-            onClick={onEditToggle}
+            onClick={onOpenEditDialog || onEditToggle}
             disabled={isSubmitting}
           >
             {isEditing ? (

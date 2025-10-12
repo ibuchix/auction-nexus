@@ -14,6 +14,7 @@ import { AuctionDetails as AuctionDetailsView } from "@/components/admin/Auction
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { generateCarTitle, isGenericTitle } from "@/utils/carTitleGenerator";
+import { AdminCarEditDialog } from "./car-edit";
 
 interface AdminAuctionCardProps {
   auction: any;
@@ -34,6 +35,7 @@ export function AdminAuctionCard({
 }: AdminAuctionCardProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedPrice, setEditedPrice] = useState(auction.price?.toString() || "");
   const [editedNotes, setEditedNotes] = useState(auction.sellerNotes || "");
   
@@ -97,6 +99,7 @@ export function AdminAuctionCard({
           isDamaged={auction.isDamaged}
           isEditing={isEditing}
           onEditToggle={() => setIsEditing(!isEditing)}
+          onOpenEditDialog={() => setIsEditDialogOpen(true)}
           onCancel={handleCancel}
           onStart={auction.auctionStatus === 'ready' || auction.auctionStatus === 'paused' ? handleStart : undefined}
           onPause={auction.auctionStatus === 'active' ? handlePause : undefined}
@@ -149,6 +152,16 @@ export function AdminAuctionCard({
           </Accordion>
         </div>
       </CardContent>
+
+      <AdminCarEditDialog
+        auction={auction}
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSuccess={() => {
+          setIsEditDialogOpen(false);
+          window.location.reload();
+        }}
+      />
     </Card>
   );
 }
