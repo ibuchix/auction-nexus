@@ -9,6 +9,7 @@ interface AuctionTabContentProps {
   icon: React.ReactNode;
   auctions: Auction[] | undefined;
   isLoading: boolean;
+  allowEdit?: boolean;
   onPause: (id: string) => Promise<void>;
   onCancel: (id: string) => Promise<void>;
   onStart: (id: string) => Promise<void>;
@@ -20,6 +21,7 @@ export function AuctionTabContent({
   icon,
   auctions,
   isLoading,
+  allowEdit = false,
   onPause,
   onCancel,
   onStart,
@@ -42,7 +44,7 @@ export function AuctionTabContent({
                   <CalendarClock className="h-4 w-4 mr-1" />
                   Schedule
                 </Button>}
-              <AdminAuctionCard auction={listing} onPause={onPause} onCancel={onCancel} onStart={onStart} />
+              <AdminAuctionCard auction={listing} allowEdit={allowEdit} onPause={onPause} onCancel={onCancel} onStart={onStart} />
             </div>)}
       </CardContent>
     </Card>;

@@ -117,6 +117,7 @@ const AuctionManagement = () => {
             icon={<Clock className="h-5 w-5 text-blue-600" />}
             auctions={readyAuctions}
             isLoading={isLoading}
+            allowEdit={true}
             onPause={pauseAuction}
             onCancel={cancelAuction}
             onStart={startAuction}

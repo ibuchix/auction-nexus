@@ -18,6 +18,7 @@ import { AdminCarEditDialog } from "./car-edit";
 
 interface AdminAuctionCardProps {
   auction: any;
+  allowEdit?: boolean;
   onPause?: (id: string) => Promise<void>;
   onCancel?: (id: string) => Promise<void>;
   onStart?: (id: string) => Promise<void>;
@@ -26,7 +27,8 @@ interface AdminAuctionCardProps {
 }
 
 export function AdminAuctionCard({ 
-  auction, 
+  auction,
+  allowEdit = true,
   onPause, 
   onCancel, 
   onStart, 
@@ -99,7 +101,7 @@ export function AdminAuctionCard({
           isDamaged={auction.isDamaged}
           isEditing={isEditing}
           onEditToggle={() => setIsEditing(!isEditing)}
-          onOpenEditDialog={() => setIsEditDialogOpen(true)}
+          onOpenEditDialog={allowEdit ? () => setIsEditDialogOpen(true) : undefined}
           onCancel={handleCancel}
           onStart={auction.auctionStatus === 'ready' || auction.auctionStatus === 'paused' ? handleStart : undefined}
           onPause={auction.auctionStatus === 'active' ? handlePause : undefined}

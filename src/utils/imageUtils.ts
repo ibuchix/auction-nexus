@@ -63,6 +63,7 @@ export async function fetchCarImagesFromDatabase(carId: string): Promise<Categor
       .from('car_file_uploads')
       .select('*')
       .eq('car_id', carId)
+      .eq('upload_status', 'completed')
       .order('display_order', { ascending: true });
 
     if (error) {
@@ -91,6 +92,14 @@ export async function fetchCarImagesFromDatabase(carId: string): Promise<Categor
 
         if (urlError) {
           console.error('Error creating signed URL for:', upload.file_path, urlError);
+          
+          // Auto-mark as deleted if file doesn't exist in storage
+          if (urlError.message === 'Object not found') {
+            await adminSupabase
+              .from('car_file_uploads')
+              .update({ upload_status: 'deleted' })
+              .eq('id', upload.id);
+          }
           continue;
         }
 
