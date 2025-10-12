@@ -2409,6 +2409,14 @@ export type Database = {
         Args: { p_user_id: string } | { user_id: number }
         Returns: Json
       }
+      get_dealer_email_info: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          dealer_email: string
+          dealer_id: string
+          user_id: string
+        }[]
+      }
       get_dealer_id_by_user_id: {
         Args: { p_user_id: string }
         Returns: string

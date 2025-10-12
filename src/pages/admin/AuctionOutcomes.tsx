@@ -1,12 +1,13 @@
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Clock, Mail, CheckCircle, XCircle, User, Building2 } from "lucide-react";
+import { Clock, Mail, CheckCircle, XCircle, User, Building2, Search, Phone, MapPin } from "lucide-react";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 // Types from generated Database
 import type { Database } from "@/integrations/supabase/types";
@@ -63,8 +64,8 @@ const useAuctionOutcomesData = () => {
         new Set((outcomes || []).map((o) => o.dealers?.user_id).filter(Boolean) as string[])
       );
 
-      // Fetch seller decisions
-      const [decisionsRes, profilesRes, sellersRes, dealerProfilesRes] = await Promise.all([
+      // Fetch seller decisions, seller emails, and dealer emails
+      const [decisionsRes, profilesRes, sellersRes, dealerProfilesRes, sellerEmailsRes, dealerEmailsRes] = await Promise.all([
         supabase
           .from("seller_bid_decisions")
           .select("id, car_id, decision, created_at")
@@ -81,6 +82,8 @@ const useAuctionOutcomesData = () => {
           .from("profiles")
           .select("id, full_name, role")
           .in("id", dealerUserIds.length ? dealerUserIds : ["00000000-0000-0000-0000-000000000000"]),
+        supabase.rpc('get_cars_with_seller_info'),
+        supabase.rpc('get_dealer_email_info')
       ]);
 
       const decisionsByCar = new Map<string, { decision?: string | null; created_at?: string }>();
@@ -100,12 +103,30 @@ const useAuctionOutcomesData = () => {
       const dealerProfileByUser = new Map<string, { full_name?: string | null }>();
       dealerProfilesRes.data?.forEach((p) => dealerProfileByUser.set(p.id, { full_name: p.full_name }));
 
+      // Map seller_id -> email
+      const sellerEmailMap = new Map<string, string>();
+      sellerEmailsRes.data?.forEach((s: any) => {
+        if (s.seller_id && s.seller_email) {
+          sellerEmailMap.set(s.seller_id, s.seller_email);
+        }
+      });
+
+      // Map dealer_id -> email
+      const dealerEmailMap = new Map<string, string>();
+      dealerEmailsRes.data?.forEach((d: any) => {
+        if (d.dealer_id && d.dealer_email) {
+          dealerEmailMap.set(d.dealer_id, d.dealer_email);
+        }
+      });
+
       return {
         outcomes: (outcomes || []) as OutcomeItem[],
         decisionsByCar,
         profileById,
         sellerMetaByUser,
         dealerProfileByUser,
+        sellerEmailMap,
+        dealerEmailMap,
       };
     },
   });
@@ -133,14 +154,20 @@ const AuctionOutcomeCard = ({
   item,
   decision,
   sellerName,
+  sellerEmail,
+  sellerPhone,
   dealerPersonName,
+  dealerEmail,
   counts,
   onEmailSent,
 }: {
   item: OutcomeItem;
   decision?: string | null;
   sellerName?: string | null;
+  sellerEmail?: string;
+  sellerPhone?: string;
   dealerPersonName?: string | null;
+  dealerEmail?: string;
   counts: { seller_auction_ended: number; dealer_bid_accepted: number; dealer_bid_declined: number; seller_ready_for_pickup: number };
   onEmailSent: () => void;
 }) => {
@@ -164,22 +191,58 @@ const AuctionOutcomeCard = ({
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">
         <section>
-          <h3 className="font-semibold mb-2 flex items-center gap-2"><Building2 className="w-4 h-4" /> Dealer</h3>
+          <h3 className="font-semibold mb-2 flex items-center gap-2"><Building2 className="w-4 h-4" /> Dealer Details</h3>
           <div className="space-y-1 text-sm">
             <div className="flex items-center gap-2"><User className="w-4 h-4" /> <span>{dealerPersonName || "—"}</span></div>
+            {dealerEmail && (
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                <a href={`mailto:${dealerEmail}`} className="text-blue-600 hover:underline">
+                  {dealerEmail}
+                </a>
+              </div>
+            )}
             <div>Dealership: {dealer?.dealership_name || "—"}</div>
             <div>License: {dealer?.license_number || "—"}</div>
-            <div>Verified: {dealer?.is_verified ? "Yes" : "No"}</div>
+            <div>Address: {dealer?.address || "—"}</div>
+            <div>Verified: {dealer?.is_verified ? "✓ Yes" : "✗ No"}</div>
             <div>Status: {dealer?.verification_status || "—"}</div>
           </div>
         </section>
         <section>
-          <h3 className="font-semibold mb-2 flex items-center gap-2"><User className="w-4 h-4" /> Seller</h3>
+          <h3 className="font-semibold mb-2 flex items-center gap-2"><User className="w-4 h-4" /> Seller Details</h3>
           <div className="space-y-1 text-sm">
             <div className="flex items-center gap-2"><User className="w-4 h-4" /> <span>{sellerName || car?.seller_name || "—"}</span></div>
-            <div>Verified: {car?.awaiting_seller_decision ? "Awaiting decision" : "—"}</div>
+            {sellerEmail && (
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                <a href={`mailto:${sellerEmail}`} className="text-blue-600 hover:underline">
+                  {sellerEmail}
+                </a>
+              </div>
+            )}
+            {sellerPhone && (
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                <a href={`tel:${sellerPhone}`} className="text-blue-600 hover:underline">
+                  {sellerPhone}
+                </a>
+              </div>
+            )}
+            {car?.street_address && (
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span className="text-xs">
+                  {car.street_address}
+                  {car.town && `, ${car.town}`}
+                  {car.postcode && ` ${car.postcode}`}
+                </span>
+              </div>
+            )}
             <div>Reserve: {formatPLN(car?.reserve_price)}</div>
-            <div>Current bid: {formatPLN(car?.current_bid)}</div>
+            <div>Final Bid: {formatPLN(car?.current_bid)}</div>
+            <div>VIN: {car?.vin || "—"}</div>
+            <div>Mileage: {car?.mileage ? `${car.mileage.toLocaleString()} km` : "—"}</div>
           </div>
         </section>
         <div className="md:col-span-2 flex flex-wrap gap-2 mt-2">
@@ -257,6 +320,7 @@ const AuctionOutcomeCard = ({
 
 const AuctionOutcomes = () => {
   const { data, isLoading, error, refetch } = useAuctionOutcomesData();
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     document.title = "Auction Outcomes | Admin";
@@ -271,14 +335,58 @@ const AuctionOutcomes = () => {
   const { data: countsMap, refetch: refetchCounts } = useNotificationCounts(carIds);
 
   const enhanced = useMemo(() => {
-    return items.map((item) => {
+    // First, map all items with their data
+    const allItems = items.map((item) => {
+      const sellerEmail = item.cars?.seller_id ? data?.sellerEmailMap.get(item.cars.seller_id) : undefined;
+      const sellerPhone = item.cars?.mobile_number || undefined;
+      const dealerEmail = item.dealer_id ? data?.dealerEmailMap.get(item.dealer_id) : undefined;
       const sellerName = item.cars?.seller_id ? data?.profileById.get(item.cars.seller_id)?.full_name : undefined;
       const dealerPersonName = item.dealers?.user_id ? data?.dealerProfileByUser.get(item.dealers.user_id)?.full_name : undefined;
       const decision = decisionMap.get(item.car_id)?.decision;
       const counts = countsMap?.get(item.car_id) || { seller_auction_ended: 0, dealer_bid_accepted: 0, dealer_bid_declined: 0, seller_ready_for_pickup: 0 } as any;
-      return { item, sellerName, dealerPersonName, decision, counts };
+      
+      return {
+        item,
+        sellerName,
+        sellerEmail,
+        sellerPhone,
+        dealerPersonName,
+        dealerEmail,
+        decision,
+        counts
+      };
     });
-  }, [items, data, decisionMap, countsMap]);
+
+    // Then filter based on search query
+    if (!searchQuery.trim()) {
+      return allItems;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    
+    return allItems.filter(({ sellerEmail, sellerPhone, dealerEmail }) => {
+      // Search in dealer email
+      if (dealerEmail && dealerEmail.toLowerCase().includes(query)) {
+        return true;
+      }
+      
+      // Search in seller email
+      if (sellerEmail && sellerEmail.toLowerCase().includes(query)) {
+        return true;
+      }
+      
+      // Search in seller phone (remove spaces and dashes for better matching)
+      if (sellerPhone) {
+        const normalizedPhone = sellerPhone.replace(/[\s-]/g, '');
+        const normalizedQuery = query.replace(/[\s-]/g, '');
+        if (normalizedPhone.includes(normalizedQuery)) {
+          return true;
+        }
+      }
+      
+      return false;
+    });
+  }, [items, data, decisionMap, countsMap, searchQuery]);
 
   if (isLoading) return <div>Loading outcomes...</div>;
   if (error) return <div className="text-destructive">Failed to load outcomes</div>;
@@ -286,20 +394,56 @@ const AuctionOutcomes = () => {
   return (
     <main className="space-y-6">
       <SectionHeader />
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by dealer email, seller email, or seller phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {searchQuery && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Showing results matching: <span className="font-medium">{searchQuery}</span>
+          </p>
+        )}
+      </div>
       <section className="grid gap-4">
         {enhanced.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No recent outcomes found.</div>
+          <div className="text-center py-8">
+            {searchQuery ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  No results found for "{searchQuery}"
+                </p>
+                <Button
+                  variant="link"
+                  onClick={() => setSearchQuery('')}
+                  className="mt-2"
+                >
+                  Clear search
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">No recent outcomes found.</p>
+            )}
+          </div>
         ) : (
-          enhanced.map(({ item, sellerName, dealerPersonName, decision, counts }) => (
+          enhanced.map(({ item, sellerName, sellerEmail, sellerPhone, dealerPersonName, dealerEmail, decision, counts }) => (
             <AuctionOutcomeCard
               key={item.id}
               item={item}
               sellerName={sellerName}
+              sellerEmail={sellerEmail}
+              sellerPhone={sellerPhone}
               dealerPersonName={dealerPersonName}
+              dealerEmail={dealerEmail}
               decision={decision}
               counts={counts}
               onEmailSent={() => {
-                // refresh counts and data
                 refetchCounts();
                 refetch();
               }}
