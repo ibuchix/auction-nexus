@@ -48,7 +48,7 @@ const useAuctionOutcomesData = () => {
         .from("dealer_won_vehicles")
         .select(
           `id, car_id, dealer_id, winning_bid_amount, original_bid_amount, second_highest_bid, platform_fee, payment_status, auction_end_time,
-           cars:car_id (id, title, make, model, year, mileage, auction_end_time, auction_status, awaiting_seller_decision, seller_id, reserve_price, current_bid),
+           cars:car_id (id, title, make, model, year, mileage, auction_end_time, auction_status, awaiting_seller_decision, seller_id, reserve_price, current_bid, seller_name, mobile_number, vin, street_address, town, postcode, county),
            dealers:dealer_id (id, user_id, dealership_name, license_number, address, is_verified, verification_status)`
         )
         .gte("auction_end_time", since.toISOString())
