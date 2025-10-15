@@ -190,13 +190,37 @@ export const ManualValuationDialog = ({
               />
             </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={editData.address !== undefined ? editData.address : (selectedValuation.address || "")}
-                  onChange={(e) => handleUpdateField("address", e.target.value)}
-                />
-              </div>
+              <Label htmlFor="street_address">Street Address</Label>
+              <Input
+                id="street_address"
+                value={editData.street_address !== undefined ? editData.street_address : (selectedValuation.street_address || "")}
+                onChange={(e) => handleUpdateField("street_address", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="town">Town</Label>
+              <Input
+                id="town"
+                value={editData.town !== undefined ? editData.town : (selectedValuation.town || "")}
+                onChange={(e) => handleUpdateField("town", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="postcode">Postcode</Label>
+              <Input
+                id="postcode"
+                value={editData.postcode !== undefined ? editData.postcode : (selectedValuation.postcode || "")}
+                onChange={(e) => handleUpdateField("postcode", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="county">County</Label>
+              <Input
+                id="county"
+                value={editData.county !== undefined ? editData.county : (selectedValuation.county || "")}
+                onChange={(e) => handleUpdateField("county", e.target.value)}
+              />
+            </div>
             </div>
 
             {/* Notes */}

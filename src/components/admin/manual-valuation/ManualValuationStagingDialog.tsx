@@ -303,7 +303,12 @@ export const ManualValuationStagingDialog = ({
                   <div><strong>Name:</strong> {selectedValuation.name || "N/A"}</div>
                   <div><strong>Email:</strong> {selectedValuation.contact_email || "N/A"}</div>
                   <div><strong>Mobile:</strong> {selectedValuation.mobile_number || selectedValuation.contact_phone || "N/A"}</div>
-                  <div><strong>Address:</strong> {selectedValuation.address || "N/A"}</div>
+                  <div><strong>Address:</strong> {[
+                    selectedValuation.street_address,
+                    selectedValuation.town,
+                    selectedValuation.postcode,
+                    selectedValuation.county
+                  ].filter(Boolean).join(', ') || "N/A"}</div>
                 </div>
               </div>
             </div>

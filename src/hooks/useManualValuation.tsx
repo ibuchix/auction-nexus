@@ -38,7 +38,10 @@ export interface ManualValuationData {
   service_history_type: string | null;
   seller_notes: string | null;
   name: string | null;
-  address: string | null;
+  street_address: string | null;
+  town: string | null;
+  postcode: string | null;
+  county: string | null;
   mobile_number: string | null;
   created_at: string;
   status: string | null;
@@ -75,19 +78,25 @@ export function useManualValuation() {
 
         console.log("Raw RPC data:", data);
 
-        // The RPC returns a direct array of JSONB objects
+        // The RPC returns { success: true, data: [...] }
         if (!data) {
           console.log("No data received");
           return [];
         }
 
-        // Handle direct array response from RPC
-        if (Array.isArray(data)) {
-          console.log("Parsed valuations:", data);
-          // Each item in the array has a valuation_data property containing the actual data
-          return data.map(item => item.valuation_data as unknown as ManualValuationData);
+        // Type cast the response to expected format
+        const response = data as { success: boolean; data?: any[]; error?: string };
+
+        // Check if the response has the expected structure
+        if (response.success && Array.isArray(response.data)) {
+          console.log("Parsed valuations:", response.data);
+          return response.data as ManualValuationData[];
+        } else if (response.success === false) {
+          console.error("RPC returned error:", response.error);
+          toast.error(response.error || "Failed to fetch valuations");
+          return [];
         } else {
-          console.log("RPC returned unexpected format (not an array):", data);
+          console.log("RPC returned unexpected format:", data);
           return [];
         }
       } catch (error) {
