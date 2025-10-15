@@ -2062,6 +2062,7 @@ export type Database = {
               p_reserve_price: number
               p_valuation_id: string
             }
+          | { p_manual_valuation_id: string; p_reserve_price?: number }
         Returns: Json
       }
       admin_update_manual_valuation: {
