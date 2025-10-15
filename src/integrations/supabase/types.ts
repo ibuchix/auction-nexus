@@ -2037,9 +2037,7 @@ export type Database = {
       }
       admin_get_manual_valuations: {
         Args: { p_status?: string }
-        Returns: {
-          valuation_data: Json
-        }[]
+        Returns: Json
       }
       admin_prepare_manual_valuation_transfer: {
         Args: { p_valuation_id: string }
