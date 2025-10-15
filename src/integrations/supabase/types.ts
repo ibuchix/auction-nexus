@@ -1375,6 +1375,7 @@ export type Database = {
           number_of_keys: number | null
           postcode: string | null
           registration_number: string | null
+          reserve_price: number | null
           seat_material: string | null
           seller_notes: string | null
           service_history_files: string[] | null
@@ -1416,6 +1417,7 @@ export type Database = {
           number_of_keys?: number | null
           postcode?: string | null
           registration_number?: string | null
+          reserve_price?: number | null
           seat_material?: string | null
           seller_notes?: string | null
           service_history_files?: string[] | null
@@ -1457,6 +1459,7 @@ export type Database = {
           number_of_keys?: number | null
           postcode?: string | null
           registration_number?: string | null
+          reserve_price?: number | null
           seat_material?: string | null
           seller_notes?: string | null
           service_history_files?: string[] | null
@@ -2481,6 +2484,7 @@ export type Database = {
           number_of_keys: number | null
           postcode: string | null
           registration_number: string | null
+          reserve_price: number | null
           seat_material: string | null
           seller_notes: string | null
           service_history_files: string[] | null

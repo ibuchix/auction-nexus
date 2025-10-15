@@ -49,8 +49,13 @@ export const ManualValuationStagingDialog = ({
         notes: selectedValuation.notes || "",
         seller_notes: selectedValuation.seller_notes || "",
       });
+      
+      // Pre-populate reserve price from saved valuation data
+      if (selectedValuation.reserve_price && !reservePrice) {
+        onReservePriceChange(selectedValuation.reserve_price.toString());
+      }
     }
-  }, [selectedValuation]);
+  }, [selectedValuation, reservePrice, onReservePriceChange]);
 
   if (!selectedValuation) return null;
 

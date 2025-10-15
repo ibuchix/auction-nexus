@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Car, Upload, DollarSign, ArrowRight, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -36,6 +36,20 @@ export const ManualValuationDialog = ({
 }: ManualValuationDialogProps) => {
   const [editData, setEditData] = useState<any>({});
 
+  // Clear edit data when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setEditData({});
+    }
+  }, [isOpen]);
+
+  // Clear edit data when valuation updates (after successful save)
+  useEffect(() => {
+    if (selectedValuation) {
+      setEditData({});
+    }
+  }, [selectedValuation?.updated_at]);
+
   if (!selectedValuation) return null;
 
   const handleUpdateField = (field: string, value: any) => {
@@ -45,7 +59,7 @@ export const ManualValuationDialog = ({
   const handleSaveChanges = () => {
     if (Object.keys(editData).length > 0) {
       onUpdateValuation(editData);
-      setEditData({});
+      // Don't clear editData here - let the useEffect handle it after refetch
     }
   };
 
@@ -223,6 +237,22 @@ export const ManualValuationDialog = ({
             </div>
             </div>
 
+            {/* Reserve Price */}
+            <div className="space-y-2">
+              <Label htmlFor="reserve_price">Reserve Price (PLN)</Label>
+              <Input
+                id="reserve_price"
+                type="number"
+                value={editData.reserve_price !== undefined ? editData.reserve_price : (reservePrice || "")}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleUpdateField("reserve_price", value ? parseFloat(value) : null);
+                  onReservePriceChange(value);
+                }}
+                placeholder="Enter reserve price in PLN"
+              />
+            </div>
+
             {/* Notes */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
@@ -234,38 +264,26 @@ export const ManualValuationDialog = ({
               />
             </div>
 
-            {/* Reserve Price Section */}
+            {/* Prepare Transfer Section */}
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Set Reserve Price & Prepare Transfer
+                <ArrowRight className="h-5 w-5" />
+                Prepare for Transfer
               </h3>
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <Label htmlFor="reserve_price">Reserve Price (PLN)</Label>
-                  <Input
-                    id="reserve_price"
-                    type="number"
-                    value={reservePrice}
-                    onChange={(e) => onReservePriceChange(e.target.value)}
-                    placeholder="Enter reserve price in PLN"
-                  />
-                </div>
-                <Button 
-                  onClick={onTransferToCars}
-                  disabled={isTransferring || !reservePrice || selectedValuation.status === "transferred"}
-                  className="mt-6"
-                >
-                  {isTransferring ? (
-                    "Preparing..."
-                  ) : (
-                    <>
-                      <ArrowRight className="mr-2 h-4 w-4" />
-                      Prepare for Transfer
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button 
+                onClick={onTransferToCars}
+                disabled={isTransferring || !reservePrice || selectedValuation.status === "transferred"}
+                className="w-full"
+              >
+                {isTransferring ? (
+                  "Preparing..."
+                ) : (
+                  <>
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    Prepare for Transfer to Cars Table
+                  </>
+                )}
+              </Button>
               {selectedValuation.status === "transferred" && (
                 <p className="text-sm text-muted-foreground mt-2">
                   This valuation has already been transferred to the cars table.

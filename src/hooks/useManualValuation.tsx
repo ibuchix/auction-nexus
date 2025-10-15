@@ -43,6 +43,7 @@ export interface ManualValuationData {
   postcode: string | null;
   county: string | null;
   mobile_number: string | null;
+  reserve_price: number | null;
   created_at: string;
   status: string | null;
   valuation_result: any;
@@ -188,7 +189,8 @@ export function useManualValuation() {
   const openDetailsDialog = (valuation: ManualValuationData) => {
     setSelectedValuation(valuation);
     setIsDetailsOpen(true);
-    setReservePrice("");
+    // Initialize reserve price from valuation data
+    setReservePrice(valuation.reserve_price?.toString() || "");
   };
 
   const handleUpdateValuation = (data: any) => {
