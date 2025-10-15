@@ -129,37 +129,58 @@ export function useManualValuation() {
 
   // Enhanced transfer to cars table with staging
   const enhancedTransferToCarsOperationMutation = useMutation({
-    mutationFn: async ({ valuationId, reservePrice, carUpdates }: { 
+    mutationFn: async ({ valuationId, reservePrice, adminNotes }: { 
       valuationId: string; 
       reservePrice: number; 
-      carUpdates?: any;
+      adminNotes?: string;
     }) => {
       const { data: result, error } = await supabase.rpc('admin_transfer_manual_valuation_to_cars_enhanced', {
-        p_valuation_id: valuationId,
+        p_manual_valuation_id: valuationId,
         p_reserve_price: reservePrice,
-        p_car_updates: carUpdates || null
+        p_admin_notes: adminNotes || null
       });
 
       if (error) throw error;
-      return result as any;
+      
+      // Type cast the RPC response
+      const response = result as { success: boolean; car_id?: string; error?: string; message?: string };
+      
+      // The RPC returns { success, car_id?, error?, message? }
+      if (!response.success) {
+        throw new Error(response.error || 'Transfer failed');
+      }
+      
+      return response;
     },
     onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ["manual-valuations"] });
       
-      if (result?.success) {
-        toast.success("Car transferred to cars table successfully!");
-        setSelectedValuation(null);
-        setIsDetailsOpen(false);
-        setIsStagingOpen(false);
-        setReservePrice("");
-      } else {
-        toast.error(result?.error || "Transfer failed");
-      }
+      // Show success message with car details
+      const message = result.message || "Car transferred successfully and ready for auction scheduling!";
+      toast.success(message);
+      
+      setSelectedValuation(null);
+      setIsDetailsOpen(false);
+      setIsStagingOpen(false);
+      setReservePrice("");
       setIsTransferring(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Enhanced transfer error:", error);
-      toast.error("Failed to transfer car to cars table");
+      
+      // Show specific error messages
+      const errorMessage = error.message || "Failed to transfer valuation";
+      
+      if (errorMessage.includes('VIN already exists')) {
+        toast.error("A car with this VIN already exists in the system");
+      } else if (errorMessage.includes('Admin privileges')) {
+        toast.error("You need admin privileges to transfer valuations");
+      } else if (errorMessage.includes('not found')) {
+        toast.error("Manual valuation not found");
+      } else {
+        toast.error(errorMessage);
+      }
+      
       setIsTransferring(false);
     },
   });
@@ -201,7 +222,7 @@ export function useManualValuation() {
     setIsStagingOpen(true);
   };
 
-  const handleConfirmTransfer = async (carUpdates: any) => {
+  const handleConfirmTransfer = async (adminNotes?: string) => {
     if (!selectedValuation || !reservePrice) {
       toast.error("Please enter a reserve price");
       return;
@@ -217,7 +238,7 @@ export function useManualValuation() {
     enhancedTransferToCarsOperationMutation.mutate({
       valuationId: selectedValuation.id,
       reservePrice: priceNumber,
-      carUpdates: carUpdates
+      adminNotes: adminNotes
     });
   };
 
