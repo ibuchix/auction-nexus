@@ -72,6 +72,7 @@ export const DealerVerificationTable = ({
         <TableRow>
           <TableHead>Dealership</TableHead>
           <TableHead>Contact Person</TableHead>
+          <TableHead>Email</TableHead>
           <TableHead>Tax ID</TableHead>
           <TableHead>Submitted</TableHead>
           <TableHead>Status</TableHead>
@@ -88,6 +89,9 @@ export const DealerVerificationTable = ({
               </TableCell>
               <TableCell>
                 {dealer.supervisorName || 'N/A'}
+              </TableCell>
+              <TableCell>
+                {dealer.email || 'N/A'}
               </TableCell>
               <TableCell>
                 {dealer.taxId || 'N/A'}
@@ -128,7 +132,7 @@ export const DealerVerificationTable = ({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-4">
+            <TableCell colSpan={8} className="text-center py-4">
               No {activeTab === "all" ? "" : activeTab} dealers found
             </TableCell>
           </TableRow>

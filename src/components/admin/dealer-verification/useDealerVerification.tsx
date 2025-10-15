@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DealerData, VerificationStatus } from "./types";
@@ -13,6 +13,7 @@ export const useDealerVerification = () => {
   const [adminNotes, setAdminNotes] = useState("");
   const [activeTab, setActiveTab] = useState<VerificationStatus | "all">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -25,6 +26,16 @@ export const useDealerVerification = () => {
     queryFn: () => fetchDealers(activeTab),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const filteredDealers = useMemo(() => {
+    if (!dealers) return [];
+    if (!searchQuery.trim()) return dealers;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return dealers.filter(dealer => 
+      dealer.email?.toLowerCase().includes(query)
+    );
+  }, [dealers, searchQuery]);
 
   const invalidateDealersCache = async () => {
     // Invalidate queries for all tabs to ensure consistency
@@ -158,7 +169,7 @@ export const useDealerVerification = () => {
   };
 
   return {
-    dealers,
+    dealers: filteredDealers,
     isLoading,
     refetch,
     selectedDealer,
@@ -172,6 +183,8 @@ export const useDealerVerification = () => {
     activeTab,
     setActiveTab,
     isProcessing,
+    searchQuery,
+    setSearchQuery,
     handleApproveDealer,
     handleRejectDealer,
     handleToggleVerification,

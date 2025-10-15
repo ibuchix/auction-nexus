@@ -1,10 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { useDealerVerification } from "@/components/admin/dealer-verification/useDealerVerification";
 import { DealerVerificationTabs } from "@/components/admin/dealer-verification/DealerVerificationTabs";
 import { DealerReviewDialog } from "@/components/admin/dealer-verification/DealerReviewDialog";
+import { SearchBar } from "@/components/dashboard/SearchBar";
 
 const DealerVerification = () => {
   const {
@@ -21,6 +21,8 @@ const DealerVerification = () => {
     activeTab,
     setActiveTab,
     isProcessing,
+    searchQuery,
+    setSearchQuery,
     handleApproveDealer,
     handleRejectDealer,
     handleToggleVerification,
@@ -53,7 +55,21 @@ const DealerVerification = () => {
         </div>
       </div>
 
-      <DealerVerificationTabs 
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <SearchBar 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+        </div>
+        {dealers && searchQuery && (
+          <p className="text-sm text-muted-foreground">
+            Showing {dealers.length} result{dealers.length !== 1 ? 's' : ''} for "{searchQuery}"
+          </p>
+        )}
+      </div>
+
+      <DealerVerificationTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         dealers={dealers}
