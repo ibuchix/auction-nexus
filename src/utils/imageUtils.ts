@@ -96,15 +96,16 @@ export async function fetchCarImagesFromDatabase(carId: string): Promise<Categor
           .createSignedUrl(upload.file_path, 3600); // 1 hour expiry
 
         if (urlError) {
-          console.error('Error creating signed URL for:', upload.file_path, urlError);
+          console.error(`[Image Fetch Error] Failed to create signed URL
+            - File: ${upload.file_path}
+            - Bucket: ${bucket}
+            - Error: ${urlError.message}
+            - Car ID: ${carId}
+            - Upload ID: ${upload.id}`
+          );
           
-          // Auto-mark as deleted if file doesn't exist in storage
-          if (urlError.message === 'Object not found') {
-            await adminSupabase
-              .from('car_file_uploads')
-              .update({ upload_status: 'deleted' })
-              .eq('id', upload.id);
-          }
+          // DON'T auto-delete - could be temporary issue or permission problem
+          // Admin can manually mark as deleted if truly invalid
           continue;
         }
 

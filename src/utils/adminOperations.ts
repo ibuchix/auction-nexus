@@ -67,7 +67,26 @@ export async function performAdminOperation<T>(
     // Convert snake_case to camelCase for frontend use
     // Handle arrays specially to preserve array structure
     if (Array.isArray(data)) {
-      const converted = data.map(item => item && typeof item === 'object' ? objectToCamelCase(item) : item) as T;
+      const converted = data.map(item => {
+        if (item && typeof item === 'object') {
+          const camelItem = objectToCamelCase(item);
+          
+          // Combine structured address fields into single address string for display
+          if (camelItem.town || camelItem.county || camelItem.streetAddress || camelItem.postcode) {
+            const addressParts = [
+              camelItem.streetAddress,
+              camelItem.town,
+              camelItem.county,
+              camelItem.postcode
+            ].filter(Boolean);
+            
+            camelItem.address = addressParts.join(', ');
+          }
+          
+          return camelItem;
+        }
+        return item;
+      }) as T;
       if (operationName === 'getAuctionListings' && Array.isArray(converted)) {
         const filipConverted = converted.find((c: any) => c.id === '889213dc-9fec-41b9-b8f0-f815292eb86c');
         const lolConverted = converted.find((c: any) => c.id === '59519d65-9f5f-43c1-97e7-1520b21c9ec3');
