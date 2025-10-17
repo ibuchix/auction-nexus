@@ -85,9 +85,14 @@ export async function fetchCarImagesFromDatabase(carId: string): Promise<Categor
       const upload = fileUploads[i];
       
       try {
-        // Generate signed URL from storage
+        // Detect which bucket to use based on file path
+        const bucket = upload.file_path.startsWith('manual-valuations/') 
+          ? 'manual-valuation-photos' 
+          : 'car-images';
+        
+        // Generate signed URL from appropriate storage bucket
         const { data: urlData, error: urlError } = await adminSupabase.storage
-          .from('car-images')
+          .from(bucket)
           .createSignedUrl(upload.file_path, 3600); // 1 hour expiry
 
         if (urlError) {
