@@ -27,8 +27,13 @@ export function useImageManagement(carId: string, sellerId: string) {
         const imagesWithUrls: CarImage[] = [];
         
         for (const upload of fileUploads) {
+          // Detect bucket based on file path prefix
+          const bucket = upload.file_path.startsWith('manual-valuations/')
+            ? 'manual-valuation-photos'
+            : 'car-images';
+          
           const { data: urlData } = await adminSupabase.storage
-            .from('car-images')
+            .from(bucket)
             .createSignedUrl(upload.file_path, 3600);
 
           if (urlData?.signedUrl) {
@@ -119,8 +124,13 @@ export function useImageManagement(carId: string, sellerId: string) {
 
       if (dbError) throw dbError;
 
+      // Detect bucket for deletion
+      const bucket = filePath.startsWith('manual-valuations/')
+        ? 'manual-valuation-photos'
+        : 'car-images';
+
       adminSupabase.storage
-        .from('car-images')
+        .from(bucket)
         .remove([filePath])
         .catch(console.error);
 
