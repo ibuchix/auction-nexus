@@ -512,8 +512,12 @@ export type Database = {
           email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
+          finance_document_name: string | null
+          finance_document_uploaded_at: string | null
+          finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_outstanding_finance: boolean | null
           has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
@@ -561,8 +565,12 @@ export type Database = {
           email_notification_sent?: boolean
           features?: Json | null
           finance_amount?: number | null
+          finance_document_name?: string | null
+          finance_document_uploaded_at?: string | null
+          finance_document_url?: string | null
           form_metadata?: Json | null
           fuel_type?: string | null
+          has_outstanding_finance?: boolean | null
           has_private_plate?: boolean | null
           has_service_history?: boolean | null
           id?: string
@@ -610,8 +618,12 @@ export type Database = {
           email_notification_sent?: boolean
           features?: Json | null
           finance_amount?: number | null
+          finance_document_name?: string | null
+          finance_document_uploaded_at?: string | null
+          finance_document_url?: string | null
           form_metadata?: Json | null
           fuel_type?: string | null
+          has_outstanding_finance?: boolean | null
           has_private_plate?: boolean | null
           has_service_history?: boolean | null
           id?: string
@@ -1358,8 +1370,12 @@ export type Database = {
           created_at: string | null
           features: Json | null
           finance_amount: number | null
+          finance_document_name: string | null
+          finance_document_uploaded_at: string | null
+          finance_document_url: string | null
           fuel_type: string | null
           has_documentation: boolean | null
+          has_outstanding_finance: boolean | null
           has_private_plate: boolean | null
           has_tool_pack: boolean | null
           id: string
@@ -1400,8 +1416,12 @@ export type Database = {
           created_at?: string | null
           features?: Json | null
           finance_amount?: number | null
+          finance_document_name?: string | null
+          finance_document_uploaded_at?: string | null
+          finance_document_url?: string | null
           fuel_type?: string | null
           has_documentation?: boolean | null
+          has_outstanding_finance?: boolean | null
           has_private_plate?: boolean | null
           has_tool_pack?: boolean | null
           id?: string
@@ -1442,8 +1462,12 @@ export type Database = {
           created_at?: string | null
           features?: Json | null
           finance_amount?: number | null
+          finance_document_name?: string | null
+          finance_document_uploaded_at?: string | null
+          finance_document_url?: string | null
           fuel_type?: string | null
           has_documentation?: boolean | null
+          has_outstanding_finance?: boolean | null
           has_private_plate?: boolean | null
           has_tool_pack?: boolean | null
           id?: string
@@ -1931,8 +1955,12 @@ export type Database = {
           email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
+          finance_document_name: string | null
+          finance_document_uploaded_at: string | null
+          finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_outstanding_finance: boolean | null
           has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
@@ -2000,8 +2028,12 @@ export type Database = {
           email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
+          finance_document_name: string | null
+          finance_document_uploaded_at: string | null
+          finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_outstanding_finance: boolean | null
           has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
@@ -2468,8 +2500,12 @@ export type Database = {
           created_at: string | null
           features: Json | null
           finance_amount: number | null
+          finance_document_name: string | null
+          finance_document_uploaded_at: string | null
+          finance_document_url: string | null
           fuel_type: string | null
           has_documentation: boolean | null
+          has_outstanding_finance: boolean | null
           has_private_plate: boolean | null
           has_tool_pack: boolean | null
           id: string
@@ -2529,8 +2565,12 @@ export type Database = {
           email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
+          finance_document_name: string | null
+          finance_document_uploaded_at: string | null
+          finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_outstanding_finance: boolean | null
           has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
@@ -2581,8 +2621,12 @@ export type Database = {
           email_notification_sent: boolean
           features: Json | null
           finance_amount: number | null
+          finance_document_name: string | null
+          finance_document_uploaded_at: string | null
+          finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_outstanding_finance: boolean | null
           has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
