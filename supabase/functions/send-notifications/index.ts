@@ -14,7 +14,7 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 // New configurable envs (with safe defaults)
-const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "noreply@autaro.pl";
+const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "powiadomienia@autaro.pl";
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") ?? "Autaro";
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://www.autaro.pl";
 const FROM_HEADER = `${FROM_NAME} <${FROM_EMAIL}>`;
