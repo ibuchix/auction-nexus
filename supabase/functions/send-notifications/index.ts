@@ -14,9 +14,9 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 // New configurable envs (with safe defaults)
-const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "noreply@auto-strada.pl";
-const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") ?? "Auto‑Strada";
-const SITE_URL = Deno.env.get("SITE_URL") ?? "https://auto-strada.pl";
+const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "noreply@autaro.pl";
+const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") ?? "Autaro";
+const SITE_URL = Deno.env.get("SITE_URL") ?? "https://www.autaro.pl";
 const FROM_HEADER = `${FROM_NAME} <${FROM_EMAIL}>`;
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY || "", {
@@ -40,7 +40,7 @@ function buildEmailHtml(opts: { title: string; body: string; ctaText: string; ct
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width:640px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.06)">
       <tr>
         <td style="padding:20px 24px;border-bottom:1px solid #eef2f7;background:linear-gradient(90deg,#111827, #1f2937);">
-          <img src="${BRAND_LOGO_URL}" alt="Auto‑Strada logo" style="height:28px;display:block;filter:brightness(200%)" />
+          <img src="${BRAND_LOGO_URL}" alt="Autaro logo" style="height:28px;display:block;filter:brightness(200%)" />
         </td>
       </tr>
       <tr>
@@ -52,7 +52,7 @@ function buildEmailHtml(opts: { title: string; body: string; ctaText: string; ct
       </tr>
       <tr>
         <td style="padding:20px 24px;color:#6b7280;font-size:12px;border-top:1px solid #eef2f7">
-          © ${new Date().getFullYear()} Auto‑Strada. All rights reserved.
+          © ${new Date().getFullYear()} Autaro. All rights reserved.
         </td>
       </tr>
     </table>
