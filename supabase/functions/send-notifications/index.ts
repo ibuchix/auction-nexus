@@ -212,6 +212,191 @@ function buildSellerAuctionEndedEmail(carSummary: { make?: string; model?: strin
 </html>`;
 }
 
+// Custom email template for dealer bid accepted
+function buildDealerBidAcceptedEmail(carSummary: { make?: string; model?: string; year?: number }): string {
+  const carTitle = `${carSummary.year ?? ""} ${carSummary.make ?? ""} ${carSummary.model ?? ""}`.trim();
+  
+  return `<!DOCTYPE html>
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+  <link href="https://fonts.googleapis.com/css?family=Heebo:ital,wght@0,400;0,500;0,600" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css?family=Inter:ital,wght@0,400;0,500;0,700" rel="stylesheet" />
+  <title>Twoja oferta została zaakceptowana!</title>
+  <style>
+    html,body{margin:0!important;padding:0!important;min-height:100%!important;width:100%!important;-webkit-font-smoothing:antialiased}*{-ms-text-size-adjust:100%}table,td,th{mso-table-lspace:0!important;mso-table-rspace:0!important;border-collapse:collapse}body,td,th,p,div,li,a,span{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-line-height-rule:exactly}img{border:0;outline:0;line-height:100%;text-decoration:none;-ms-interpolation-mode:bicubic}@media(max-width:620px){.pc-project-body{min-width:0!important}.pc-project-container,.pc-component{width:100%!important}.pc-w620-padding-60-20-10-20{padding:60px 20px 10px 20px!important}.pc-w620-padding-35-35-35-35{padding:35px!important}.pc-w620-font-size-58px{font-size:48px!important}}
+  </style>
+</head>
+<body style="width:100%!important;min-height:100%!important;margin:0!important;padding:0!important;font-weight:normal;color:#2D3A41;-webkit-font-smoothing:antialiased;background-color:#ffffff">
+  <table class="pc-project-body" style="table-layout:fixed;width:100%;min-width:600px;background-color:#ffffff" border="0" cellspacing="0" cellpadding="0" role="presentation">
+    <tr>
+      <td align="center" valign="top">
+        <table class="pc-project-container" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation">
+          <tr>
+            <td style="padding:20px 0" align="left" valign="top">
+              <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                <tr>
+                  <td valign="top">
+                    <table class="pc-component" style="width:600px;max-width:600px" width="600" align="center" border="0" cellspacing="0" cellpadding="0" role="presentation">
+                      <tr>
+                        <td valign="top" class="pc-w620-padding-60-20-10-20" style="padding:20px 40px 0;background-color:#ffffff">
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td valign="top" style="padding:0 0 60px 0">
+                                <a href="https://aukcja.autaro.pl" target="_blank" style="text-decoration:none;display:inline-block">
+                                  <img src="https://s1.designmodo.com/postcards/Color_logo_-_no_background_3-62d212ce.png" width="250" height="60" alt="Autaro" style="display:block;outline:0;line-height:100%;width:250px;height:auto;max-width:100%;border:0" />
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td align="left" valign="top" style="padding:0 0 40px 0">
+                                <div style="font-size:55px;line-height:107%;color:#454545;font-family:'Heebo',Arial,Helvetica,sans-serif">
+                                  <span style="font-weight:400">Twoja oferta została zaakceptowana</span><span style="font-weight:500">!</span>
+                                </div>
+                              </td>
+                            </tr>
+                          </table>
+                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                            <tr>
+                              <td valign="top" align="left">
+                                <div style="font-size:16px;line-height:160%;color:#454545;font-family:'Heebo',Arial,Helvetica,sans-serif">
+                                  <p style="margin:0 0 16px 0">Gratulacje! Twoja oferta za <strong>${carTitle}</strong> została zaakceptowana przez sprzedawcę!</p>
+                                  <p style="margin:0 0 16px 0">Teraz przejdź do panelu wygranych aukcji, aby sprawdzić szczegóły i uzyskać dostęp do kontaktu z sprzedającym.</p>
+                                  <p style="margin:0 0 16px 0"><strong>Ważne: Aby otrzymać dostęp do danych kontaktowych sprzedawcy oraz adresu lokalizacji auta, musisz opłacić opłatę aukcyjną Autaro.</strong></p>
+                                </div>
+                              </td>
+                            </tr>
+                          </table>
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin:20px 0">
+                            <tr>
+                              <td align="left">
+                                <a style="display:inline-block;padding:14px 19px;border-radius:8px;background-color:#d81b24;font-family:'Heebo',Arial,Helvetica,sans-serif;font-weight:600;font-size:15px;line-height:24px;color:#ffffff;text-decoration:none" href="https://aukcja.autaro.pl/dealer/won-vehicles" target="_blank">Zobacz szczegóły wygranego auta</a>
+                              </td>
+                            </tr>
+                          </table>
+                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                            <tr>
+                              <td valign="top" align="left">
+                                <div style="font-size:16px;line-height:160%;color:#454545;font-family:'Heebo',Arial,Helvetica,sans-serif">
+                                  <p style="margin:16px 0;font-weight:600">Co dalej?</p>
+                                  <ul style="margin:0 0 16px 0;padding-left:20px">
+                                    <li style="margin:8px 0">Sprawdź szczegóły pojazdu i upewnij się, że odpowiada on Twoim oczekiwaniom.</li>
+                                    <li style="margin:8px 0">Skontaktuj się ze sprzedającym, aby ustalić termin oględzin.</li>
+                                    <li style="margin:8px 0">Podczas oględzin dokładnie sprawdź stan techniczny pojazdu.</li>
+                                    <li style="margin:8px 0">Jeśli pojazd spełnia Twoje oczekiwania, finalizuj transakcję zgodnie z ustaleniami.</li>
+                                  </ul>
+                                  <p style="margin:16px 0">W razie pytań lub problemów skontaktuj się z naszym zespołem wsparcia dla dealerów pod numerem <strong>+48 459 567 877</strong> – chętnie pomożemy.</p>
+                                  <p style="margin:16px 0">Powodzenia w finalizacji transakcji!</p>
+                                  <p style="margin:16px 0">Pozdrawiamy,</p>
+                                  <p style="margin:16px 0;font-weight:500">Zespół Autaro.pl<br>☎️ +48 459 567 877<br>💻 <a href="https://aukcja.autaro.pl" style="color:#2828da;text-decoration:underline">https://aukcja.autaro.pl</a></p>
+                                </div>
+                              </td>
+                            </tr>
+                          </table>
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td valign="top" style="padding:40px 0">
+                                <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                  <tr>
+                                    <td style="line-height:1px;font-size:1px;border-bottom:1px solid #454545">&nbsp;</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td valign="top">
+                    <table class="pc-component" style="width:600px;max-width:600px" width="600" align="center" border="0" cellspacing="0" cellpadding="0" role="presentation">
+                      <tr>
+                        <td valign="top" class="pc-w620-padding-35-35-35-35" style="padding:10px 40px;background-color:#ffffff">
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td align="center" valign="top" style="padding:0 0 10px 0">
+                                <div style="font-size:32px;line-height:42px;color:#454545;font-family:'Inter',Arial,Helvetica,sans-serif;font-weight:700;text-align:center">Nasi Partnerzy</div>
+                              </td>
+                            </tr>
+                          </table>
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td align="center" valign="middle" style="width:50%;padding:20px">
+                                <img src="https://s1.designmodo.com/postcards/CV_LOGO_BLUE-100de287.png" width="200" height="28" alt="CV Logo" style="display:block;width:200px;height:auto;max-width:100%" />
+                              </td>
+                              <td align="center" valign="middle" style="width:50%;padding:20px">
+                                <img src="https://s1.designmodo.com/postcards/autobaza_logo-2f75d44e.png" width="200" height="57" alt="Autobaza" style="display:block;width:200px;height:auto;max-width:100%" />
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td valign="top">
+                    <table width="600" border="0" cellspacing="0" cellpadding="0" role="presentation" align="center" class="pc-component" style="width:600px;max-width:600px">
+                      <tr>
+                        <td style="padding:64px 0 0;border-top:1px solid #515151;background-color:#ffffff">
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td style="padding:0 32px 40px 32px">
+                                <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                  <tr>
+                                    <td align="center" style="padding:0 10px">
+                                      <a href="https://www.instagram.com/autaro.pl?igsh=cWJsdmw3MjQzM2h6" target="_blank">
+                                        <img src="https://s1.designmodo.com/postcards/5824fa1145af8c65daf7d1711c7c1a11.png" width="20" height="20" alt="Instagram" style="display:block;width:20px;height:20px" />
+                                      </a>
+                                    </td>
+                                    <td align="center" style="padding:0 10px">
+                                      <a href="https://www.facebook.com/share/1FtEdJoydU/?mibextid=wwXIfr" target="_blank">
+                                        <img src="https://s1.designmodo.com/postcards/6b9792335937bf7bdc7f02a4cc5cfaf0.png" width="20" height="20" alt="Facebook" style="display:block;width:20px;height:20px" />
+                                      </a>
+                                    </td>
+                                    <td align="center" style="padding:0 10px">
+                                      <a href="https://www.tiktok.com/@autaro.pl_?_t=ZN-901Ze5hU79i&_r=1" target="_blank">
+                                        <img src="https://s1.designmodo.com/postcards/2af904415ed6d2a464ea4a319c5271f5.png" width="20" height="20" alt="TikTok" style="display:block;width:20px;height:20px" />
+                                      </a>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td align="center" valign="top" style="padding:0 30px 39px 30px">
+                                <div style="font-size:14px;line-height:20px;color:#454545;font-family:'Inter',Arial,Helvetica,sans-serif;text-align:center">
+                                  <a href="https://aukcja.autaro.pl/unsubscribe" style="text-decoration:underline;color:#454545">Tutaj</a> możesz zrezygnować z otrzymywania tych e-maili.
+                                </div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 // Generic email template for other notification types
 function buildGenericEmailHtml(opts: { title: string; body: string; ctaText: string; ctaHref: string }) {
   const { title, body, ctaText, ctaHref } = opts;
@@ -407,13 +592,8 @@ serve(async (req) => {
       console.log("[send-notifications] dealer_email_resolved", { dealerUserId, email });
       if (!email) throw new Error("Dealer email not found");
 
-      const subject = `Bid accepted for ${carLabel}`;
-      const html = buildGenericEmailHtml({
-        title: 'Congratulations! Bid accepted',
-        body: `Your bid for <strong>${carLabel}</strong> has been accepted by the seller. Please log in to complete the next steps.`,
-        ctaText: 'View your wins',
-        ctaHref: `${SITE_URL}/dealer/wins`
-      });
+      const subject = `Twoja oferta została zaakceptowana - ${carLabel}`;
+      const html = buildDealerBidAcceptedEmail(car || {});
       const { messageId } = await sendEmail(email, subject, html);
 
       // Log event
