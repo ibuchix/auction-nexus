@@ -19,7 +19,7 @@ interface ManualValuationStagingDialogProps {
   reservePrice: string;
   onReservePriceChange: (price: string) => void;
   isTransferring: boolean;
-  onConfirmTransfer: (carUpdates: any) => void;
+  onConfirmTransfer: () => void;
   onCancel: () => void;
 }
 
@@ -95,7 +95,7 @@ export const ManualValuationStagingDialog = ({
 
   const handleConfirmTransfer = () => {
     if (validateData()) {
-      onConfirmTransfer(stagingData);
+      onConfirmTransfer();
     }
   };
 

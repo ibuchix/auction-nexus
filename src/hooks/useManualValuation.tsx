@@ -130,15 +130,13 @@ export function useManualValuation() {
 
   // Enhanced transfer to cars table with staging
   const enhancedTransferToCarsOperationMutation = useMutation({
-    mutationFn: async ({ valuationId, reservePrice, adminNotes }: { 
+    mutationFn: async ({ valuationId, reservePrice }: { 
       valuationId: string; 
       reservePrice: number; 
-      adminNotes?: string;
     }) => {
       const { data: result, error } = await supabase.rpc('admin_transfer_manual_valuation_to_cars_enhanced', {
         p_manual_valuation_id: valuationId,
-        p_reserve_price: reservePrice,
-        p_admin_notes: adminNotes || null
+        p_reserve_price: reservePrice
       });
 
       if (error) throw error;
@@ -224,7 +222,7 @@ export function useManualValuation() {
     setIsStagingOpen(true);
   };
 
-  const handleConfirmTransfer = async (adminNotes?: string) => {
+  const handleConfirmTransfer = async () => {
     if (!selectedValuation || !reservePrice) {
       toast.error("Please enter a reserve price");
       return;
@@ -239,8 +237,7 @@ export function useManualValuation() {
     setIsTransferring(true);
     enhancedTransferToCarsOperationMutation.mutate({
       valuationId: selectedValuation.id,
-      reservePrice: priceNumber,
-      adminNotes: adminNotes
+      reservePrice: priceNumber
     });
   };
 

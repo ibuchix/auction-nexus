@@ -2083,18 +2083,7 @@ export type Database = {
         Returns: Json
       }
       admin_transfer_manual_valuation_to_cars_enhanced: {
-        Args:
-          | {
-              p_admin_notes?: string
-              p_manual_valuation_id: string
-              p_reserve_price?: number
-            }
-          | {
-              p_car_updates?: Json
-              p_reserve_price: number
-              p_valuation_id: string
-            }
-          | { p_manual_valuation_id: string; p_reserve_price?: number }
+        Args: { p_manual_valuation_id: string; p_reserve_price?: number }
         Returns: Json
       }
       admin_update_manual_valuation: {
