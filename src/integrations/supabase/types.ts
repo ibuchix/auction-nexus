@@ -278,7 +278,7 @@ export type Database = {
           {
             foreignKeyName: "auction_results_car_id_fkey"
             columns: ["car_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "cars"
             referencedColumns: ["id"]
           },
