@@ -2776,15 +2776,7 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      process_ended_auctions: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
       process_ended_auctions_securely: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      process_ended_auctions_workflow: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
@@ -2798,10 +2790,6 @@ export type Database = {
       }
       process_seller_auction_end: {
         Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      process_specific_ended_auction: {
-        Args: { p_car_id: string }
         Returns: Json
       }
       process_stuck_auction: {
