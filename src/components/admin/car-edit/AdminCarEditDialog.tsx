@@ -4,9 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useCarEdit } from "./hooks/useCarEdit";
-import { useImageManagement } from "./hooks/useImageManagement";
+import { useFileManagement } from "./hooks/useFileManagement";
 import { VehicleDetailsTab } from "./tabs/VehicleDetailsTab";
 import { ImagesTab } from "./tabs/ImagesTab";
+import { DocumentsTab } from "./tabs/DocumentsTab";
 import { SellerInfoTab } from "./tabs/SellerInfoTab";
 
 interface AdminCarEditDialogProps {
@@ -27,12 +28,14 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
 
   const {
     images,
-    isLoading: isLoadingImages,
+    documents,
+    isLoadingImages,
+    isLoadingDocuments,
     isUploading,
-    uploadImage,
-    deleteImage,
-    reorderImages
-  } = useImageManagement(auction.id, auction.seller_id || auction.sellerId);
+    uploadFile,
+    deleteFile,
+    reorderFiles
+  } = useFileManagement(auction.id, auction.seller_id || auction.sellerId);
 
   const isActiveAuction = auction.auctionStatus === 'active' || auction.auction_status === 'active';
 
@@ -64,9 +67,10 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
         )}
 
         <Tabs defaultValue="vehicle" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="vehicle">Vehicle Details</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="seller">Seller Info</TabsTrigger>
           </TabsList>
 
@@ -75,6 +79,8 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
               formData={formData}
               errors={errors}
               updateField={updateField}
+              financeDocCount={documents.filter(d => d.category === 'finance').length}
+              serviceHistoryDocCount={documents.filter(d => d.category === 'service_history').length}
             />
           </TabsContent>
 
@@ -83,9 +89,19 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
               images={images}
               isLoading={isLoadingImages}
               isUploading={isUploading}
-              uploadImage={uploadImage}
-              deleteImage={deleteImage}
-              reorderImages={reorderImages}
+              uploadFile={uploadFile}
+              deleteFile={deleteFile}
+              reorderFiles={reorderFiles}
+            />
+          </TabsContent>
+
+          <TabsContent value="documents" className="mt-4">
+            <DocumentsTab
+              documents={documents}
+              isLoading={isLoadingDocuments}
+              isUploading={isUploading}
+              uploadDocument={uploadFile}
+              deleteDocument={deleteFile}
             />
           </TabsContent>
 

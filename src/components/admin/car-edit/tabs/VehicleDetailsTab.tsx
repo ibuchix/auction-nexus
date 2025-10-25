@@ -9,9 +9,11 @@ interface VehicleDetailsTabProps {
   formData: CarEditFormData;
   errors: Record<string, string>;
   updateField: (field: keyof CarEditFormData, value: any) => void;
+  financeDocCount?: number;
+  serviceHistoryDocCount?: number;
 }
 
-export function VehicleDetailsTab({ formData, errors, updateField }: VehicleDetailsTabProps) {
+export function VehicleDetailsTab({ formData, errors, updateField, financeDocCount = 0, serviceHistoryDocCount = 0 }: VehicleDetailsTabProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
@@ -263,6 +265,40 @@ export function VehicleDetailsTab({ formData, errors, updateField }: VehicleDeta
             )}
           </>
         )}
+
+        <div className="col-span-2 mt-4">
+          <h3 className="text-sm font-semibold mb-3">Documentation Status</h3>
+        </div>
+
+        <div className="col-span-2 p-4 border rounded-lg bg-muted/50 space-y-3">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="has_service_history"
+                checked={formData.has_service_history}
+                disabled
+              />
+              <Label htmlFor="has_service_history" className="cursor-default">
+                Has Service History
+              </Label>
+            </div>
+          </div>
+
+          {(financeDocCount > 0 || serviceHistoryDocCount > 0) && (
+            <div className="text-sm space-y-1 pt-2 border-t">
+              <p className="font-medium text-muted-foreground">Uploaded Files:</p>
+              {financeDocCount > 0 && (
+                <p className="text-muted-foreground">📄 Finance Documents: {financeDocCount} {financeDocCount === 1 ? 'file' : 'files'}</p>
+              )}
+              {serviceHistoryDocCount > 0 && (
+                <p className="text-muted-foreground">📋 Service History: {serviceHistoryDocCount} {serviceHistoryDocCount === 1 ? 'file' : 'files'}</p>
+              )}
+              <p className="text-xs text-muted-foreground pt-2">
+                View all documents in the "Documents" tab above
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="col-span-2 mt-4">
           <h3 className="text-sm font-semibold mb-3">Other Details</h3>

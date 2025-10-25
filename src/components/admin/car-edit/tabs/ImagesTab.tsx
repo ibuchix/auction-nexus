@@ -10,12 +10,12 @@ interface ImagesTabProps {
   images: CarImage[];
   isLoading: boolean;
   isUploading: boolean;
-  uploadImage: (file: File, category: string) => Promise<boolean>;
-  deleteImage: (imageId: string, filePath: string) => Promise<boolean>;
-  reorderImages: (images: CarImage[]) => Promise<boolean>;
+  uploadFile: (file: File, category: string, fileType: 'image') => Promise<boolean>;
+  deleteFile: (fileId: string, filePath: string, source: 'car' | 'manual') => Promise<boolean>;
+  reorderFiles: (images: CarImage[]) => Promise<boolean>;
 }
 
-export function ImagesTab({ images, isLoading, isUploading, uploadImage, deleteImage, reorderImages }: ImagesTabProps) {
+export function ImagesTab({ images, isLoading, isUploading, uploadFile, deleteFile, reorderFiles }: ImagesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState('exterior_front');
   const [deleteImageId, setDeleteImageId] = useState<{ id: string; path: string } | null>(null);
 
@@ -24,7 +24,7 @@ export function ImagesTab({ images, isLoading, isUploading, uploadImage, deleteI
     if (!files) return;
 
     for (const file of Array.from(files)) {
-      await uploadImage(file, selectedCategory);
+      await uploadFile(file, selectedCategory, 'image');
     }
 
     e.target.value = '';
@@ -32,7 +32,7 @@ export function ImagesTab({ images, isLoading, isUploading, uploadImage, deleteI
 
   const handleDeleteConfirm = async () => {
     if (deleteImageId) {
-      await deleteImage(deleteImageId.id, deleteImageId.path);
+      await deleteFile(deleteImageId.id, deleteImageId.path, 'car');
       setDeleteImageId(null);
     }
   };
@@ -49,7 +49,7 @@ export function ImagesTab({ images, isLoading, isUploading, uploadImage, deleteI
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
     
-    reorderImages(newImages);
+    reorderFiles(newImages);
   };
 
   if (isLoading) {

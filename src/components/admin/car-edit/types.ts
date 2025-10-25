@@ -51,3 +51,15 @@ export interface CarImage {
   display_order: number;
   url: string;
 }
+
+export interface CarDocument {
+  id: string;
+  file_path: string;
+  file_type: string;
+  file_name: string;
+  category: string;
+  display_order: number;
+  url: string;
+  uploaded_at: string;
+  source: 'car_file_uploads' | 'manual_file_uploads';
+}
