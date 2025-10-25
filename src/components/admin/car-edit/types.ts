@@ -16,7 +16,18 @@ export const vehicleDetailsSchema = z.object({
   service_history_type: z.string().optional(),
   number_of_keys: z.number().int().min(0).max(5),
   seller_notes: z.string().optional(),
-  features: z.any().optional()
+  features: z.any().optional(),
+  registration_number: z.string().optional(),
+  has_outstanding_finance: z.boolean().default(false),
+  finance_amount: z.number().min(0).optional(),
+  is_selling_on_behalf: z.boolean().default(false),
+  is_registered_in_poland: z.boolean().default(true),
+  has_private_plate: z.boolean().default(false),
+  has_service_history: z.boolean().default(false),
+  valuation_data: z.any().optional(),
+  finance_document_name: z.string().optional(),
+  finance_document_url: z.string().optional(),
+  finance_document_uploaded_at: z.string().optional()
 });
 
 export const sellerInfoSchema = z.object({

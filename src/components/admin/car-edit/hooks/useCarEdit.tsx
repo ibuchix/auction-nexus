@@ -26,7 +26,18 @@ export function useCarEdit(auction: any) {
     street_address: auction.street_address || auction.streetAddress || '',
     town: auction.town || '',
     postcode: auction.postcode || '',
-    county: auction.county || ''
+    county: auction.county || '',
+    registration_number: auction.registration_number || auction.registrationNumber || '',
+    has_outstanding_finance: auction.has_outstanding_finance ?? auction.hasOutstandingFinance ?? false,
+    finance_amount: auction.finance_amount || auction.financeAmount || 0,
+    is_selling_on_behalf: auction.is_selling_on_behalf ?? auction.isSellingOnBehalf ?? false,
+    is_registered_in_poland: auction.is_registered_in_poland ?? auction.isRegisteredInPoland ?? true,
+    has_private_plate: auction.has_private_plate ?? auction.hasPrivatePlate ?? false,
+    has_service_history: auction.has_service_history ?? auction.hasServiceHistory ?? false,
+    valuation_data: auction.valuation_data || auction.valuationData || null,
+    finance_document_name: auction.finance_document_name || auction.financeDocumentName || '',
+    finance_document_url: auction.finance_document_url || auction.financeDocumentUrl || '',
+    finance_document_uploaded_at: auction.finance_document_uploaded_at || auction.financeDocumentUploadedAt || null
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -61,7 +72,18 @@ export function useCarEdit(auction: any) {
         service_history_type: formData.service_history_type,
         number_of_keys: formData.number_of_keys,
         seller_notes: formData.seller_notes,
-        features: formData.features
+        features: formData.features,
+        registration_number: formData.registration_number,
+        has_outstanding_finance: formData.has_outstanding_finance,
+        finance_amount: formData.finance_amount,
+        is_selling_on_behalf: formData.is_selling_on_behalf,
+        is_registered_in_poland: formData.is_registered_in_poland,
+        has_private_plate: formData.has_private_plate,
+        has_service_history: formData.has_service_history,
+        valuation_data: formData.valuation_data,
+        finance_document_name: formData.finance_document_name,
+        finance_document_url: formData.finance_document_url,
+        finance_document_uploaded_at: formData.finance_document_uploaded_at
       });
 
       sellerInfoSchema.parse({

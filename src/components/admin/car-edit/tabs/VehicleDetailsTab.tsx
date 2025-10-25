@@ -83,6 +83,55 @@ export function VehicleDetailsTab({ formData, errors, updateField }: VehicleDeta
           {errors.vin && <p className="text-sm text-destructive mt-1">{errors.vin}</p>}
         </div>
 
+        <div className="col-span-2 mt-4">
+          <h3 className="text-sm font-semibold mb-3">Registration & Documentation</h3>
+        </div>
+
+        <div>
+          <Label htmlFor="registration_number">Registration Number</Label>
+          <Input
+            id="registration_number"
+            value={formData.registration_number || ''}
+            onChange={(e) => updateField('registration_number', e.target.value)}
+            placeholder="e.g., ABC 1234"
+          />
+        </div>
+
+        <div className="col-span-2 grid grid-cols-3 gap-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="is_registered_in_poland"
+              checked={formData.is_registered_in_poland}
+              onCheckedChange={(checked) => updateField('is_registered_in_poland', checked)}
+            />
+            <Label htmlFor="is_registered_in_poland" className="cursor-pointer">
+              Registered in Poland
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="has_private_plate"
+              checked={formData.has_private_plate}
+              onCheckedChange={(checked) => updateField('has_private_plate', checked)}
+            />
+            <Label htmlFor="has_private_plate" className="cursor-pointer">
+              Has Private Plate
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="has_service_history"
+              checked={formData.has_service_history}
+              onCheckedChange={(checked) => updateField('has_service_history', checked)}
+            />
+            <Label htmlFor="has_service_history" className="cursor-pointer">
+              Has Service History
+            </Label>
+          </div>
+        </div>
+
         <div>
           <Label htmlFor="reserve_price">Reserve Price (PLN) *</Label>
           <Input
@@ -153,6 +202,81 @@ export function VehicleDetailsTab({ formData, errors, updateField }: VehicleDeta
             max={5}
           />
           {errors.number_of_keys && <p className="text-sm text-destructive mt-1">{errors.number_of_keys}</p>}
+        </div>
+
+        <div className="col-span-2 mt-4">
+          <h3 className="text-sm font-semibold mb-3">Finance Information</h3>
+        </div>
+
+        <div className="col-span-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="has_outstanding_finance"
+              checked={formData.has_outstanding_finance}
+              onCheckedChange={(checked) => updateField('has_outstanding_finance', checked)}
+            />
+            <Label htmlFor="has_outstanding_finance" className="cursor-pointer">
+              Has Outstanding Finance
+            </Label>
+          </div>
+        </div>
+
+        {formData.has_outstanding_finance && (
+          <>
+            <div>
+              <Label htmlFor="finance_amount">Finance Amount (PLN)</Label>
+              <Input
+                id="finance_amount"
+                type="number"
+                value={formData.finance_amount || 0}
+                onChange={(e) => updateField('finance_amount', parseFloat(e.target.value) || 0)}
+                placeholder="Outstanding finance amount"
+              />
+            </div>
+
+            {formData.finance_document_name && (
+              <div>
+                <Label>Finance Document</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    value={formData.finance_document_name}
+                    disabled
+                    className="flex-1"
+                  />
+                  {formData.finance_document_url && (
+                    <a
+                      href={formData.finance_document_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline"
+                    >
+                      View
+                    </a>
+                  )}
+                </div>
+                {formData.finance_document_uploaded_at && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Uploaded: {new Date(formData.finance_document_uploaded_at).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="col-span-2 mt-4">
+          <h3 className="text-sm font-semibold mb-3">Other Details</h3>
+        </div>
+
+        <div className="col-span-2 flex items-center space-x-2">
+          <Checkbox
+            id="is_selling_on_behalf"
+            checked={formData.is_selling_on_behalf}
+            onCheckedChange={(checked) => updateField('is_selling_on_behalf', checked)}
+          />
+          <Label htmlFor="is_selling_on_behalf" className="cursor-pointer">
+            Selling on behalf of someone else
+          </Label>
         </div>
 
         <div className="col-span-2">
