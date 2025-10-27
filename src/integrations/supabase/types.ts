@@ -523,8 +523,8 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_full_registration_document: boolean | null
           has_outstanding_finance: boolean | null
-          has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -532,6 +532,7 @@ export type Database = {
           is_damaged: boolean | null
           is_manually_controlled: boolean | null
           is_registered_in_poland: boolean | null
+          is_selling_on_behalf: boolean | null
           last_saved: string | null
           make: string | null
           mileage: number | null
@@ -576,8 +577,8 @@ export type Database = {
           finance_document_url?: string | null
           form_metadata?: Json | null
           fuel_type?: string | null
+          has_full_registration_document?: boolean | null
           has_outstanding_finance?: boolean | null
-          has_private_plate?: boolean | null
           has_service_history?: boolean | null
           id?: string
           images?: string[] | null
@@ -585,6 +586,7 @@ export type Database = {
           is_damaged?: boolean | null
           is_manually_controlled?: boolean | null
           is_registered_in_poland?: boolean | null
+          is_selling_on_behalf?: boolean | null
           last_saved?: string | null
           make?: string | null
           mileage?: number | null
@@ -629,8 +631,8 @@ export type Database = {
           finance_document_url?: string | null
           form_metadata?: Json | null
           fuel_type?: string | null
+          has_full_registration_document?: boolean | null
           has_outstanding_finance?: boolean | null
-          has_private_plate?: boolean | null
           has_service_history?: boolean | null
           id?: string
           images?: string[] | null
@@ -638,6 +640,7 @@ export type Database = {
           is_damaged?: boolean | null
           is_manually_controlled?: boolean | null
           is_registered_in_poland?: boolean | null
+          is_selling_on_behalf?: boolean | null
           last_saved?: string | null
           make?: string | null
           mileage?: number | null
@@ -1381,8 +1384,8 @@ export type Database = {
           finance_document_url: string | null
           fuel_type: string | null
           has_documentation: boolean | null
+          has_full_registration_document: boolean | null
           has_outstanding_finance: boolean | null
-          has_private_plate: boolean | null
           has_tool_pack: boolean | null
           id: string
           is_damaged: boolean | null
@@ -1427,8 +1430,8 @@ export type Database = {
           finance_document_url?: string | null
           fuel_type?: string | null
           has_documentation?: boolean | null
+          has_full_registration_document?: boolean | null
           has_outstanding_finance?: boolean | null
-          has_private_plate?: boolean | null
           has_tool_pack?: boolean | null
           id?: string
           is_damaged?: boolean | null
@@ -1473,8 +1476,8 @@ export type Database = {
           finance_document_url?: string | null
           fuel_type?: string | null
           has_documentation?: boolean | null
+          has_full_registration_document?: boolean | null
           has_outstanding_finance?: boolean | null
-          has_private_plate?: boolean | null
           has_tool_pack?: boolean | null
           id?: string
           is_damaged?: boolean | null
@@ -1547,6 +1550,39 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      password_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: string | null
+          token: string
+          used_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip_address?: string | null
+          token: string
+          used_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          token?: string
+          used_at?: string | null
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1966,8 +2002,8 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_full_registration_document: boolean | null
           has_outstanding_finance: boolean | null
-          has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -1975,6 +2011,7 @@ export type Database = {
           is_damaged: boolean | null
           is_manually_controlled: boolean | null
           is_registered_in_poland: boolean | null
+          is_selling_on_behalf: boolean | null
           last_saved: string | null
           make: string | null
           mileage: number | null
@@ -2045,8 +2082,8 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_full_registration_document: boolean | null
           has_outstanding_finance: boolean | null
-          has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -2054,6 +2091,7 @@ export type Database = {
           is_damaged: boolean | null
           is_manually_controlled: boolean | null
           is_registered_in_poland: boolean | null
+          is_selling_on_behalf: boolean | null
           last_saved: string | null
           make: string | null
           mileage: number | null
@@ -2160,6 +2198,7 @@ export type Database = {
         Args: { p_user_id: string; p_vin: string }
         Returns: Json
       }
+      cleanup_expired_reset_tokens: { Args: never; Returns: undefined }
       cleanup_expired_vin_reservations: { Args: never; Returns: number }
       cleanup_vin_valuation_cache: { Args: never; Returns: undefined }
       close_ended_auctions: { Args: never; Returns: Json }
@@ -2490,8 +2529,8 @@ export type Database = {
           finance_document_url: string | null
           fuel_type: string | null
           has_documentation: boolean | null
+          has_full_registration_document: boolean | null
           has_outstanding_finance: boolean | null
-          has_private_plate: boolean | null
           has_tool_pack: boolean | null
           id: string
           is_damaged: boolean | null
@@ -2567,8 +2606,8 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_full_registration_document: boolean | null
           has_outstanding_finance: boolean | null
-          has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -2576,6 +2615,7 @@ export type Database = {
           is_damaged: boolean | null
           is_manually_controlled: boolean | null
           is_registered_in_poland: boolean | null
+          is_selling_on_behalf: boolean | null
           last_saved: string | null
           make: string | null
           mileage: number | null
@@ -2629,8 +2669,8 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          has_full_registration_document: boolean | null
           has_outstanding_finance: boolean | null
-          has_private_plate: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -2638,6 +2678,7 @@ export type Database = {
           is_damaged: boolean | null
           is_manually_controlled: boolean | null
           is_registered_in_poland: boolean | null
+          is_selling_on_behalf: boolean | null
           last_saved: string | null
           make: string | null
           mileage: number | null
