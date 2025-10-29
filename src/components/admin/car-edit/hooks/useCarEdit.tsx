@@ -101,6 +101,12 @@ export function useCarEdit(auction: any) {
       if (error.errors) {
         const newErrors: Record<string, string> = {};
         error.errors.forEach((err: any) => {
+          console.error('Validation error:', {
+            field: err.path[0],
+            message: err.message,
+            value: err.value,
+            received: typeof err.value
+          });
           newErrors[err.path[0]] = err.message;
         });
         setErrors(newErrors);

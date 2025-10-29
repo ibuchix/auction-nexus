@@ -337,6 +337,7 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
             placeholder="Additional notes about the vehicle..."
             rows={4}
           />
+          {errors.seller_notes && <p className="text-sm text-destructive mt-1">{errors.seller_notes}</p>}
         </div>
       </div>
     </div>

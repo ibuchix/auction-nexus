@@ -15,7 +15,7 @@ export const vehicleDetailsSchema = z.object({
   is_damaged: z.boolean(),
   service_history_type: z.string().optional(),
   number_of_keys: z.number().int().min(0).max(5),
-  seller_notes: z.string().optional(),
+  seller_notes: z.string().nullable().optional(),
   features: z.any().optional(),
   registration_number: z.string().optional(),
   has_outstanding_finance: z.boolean().default(false),
