@@ -113,12 +113,12 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
 
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="has_private_plate"
-              checked={formData.has_private_plate}
-              onCheckedChange={(checked) => updateField('has_private_plate', checked)}
+              id="has_full_registration_document"
+              checked={formData.has_full_registration_document}
+              onCheckedChange={(checked) => updateField('has_full_registration_document', checked)}
             />
-            <Label htmlFor="has_private_plate" className="cursor-pointer">
-              Has Private Plate
+            <Label htmlFor="has_full_registration_document" className="cursor-pointer">
+              Has Full Registration Document
             </Label>
           </div>
 
