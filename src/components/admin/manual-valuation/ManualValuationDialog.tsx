@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Car, Upload, DollarSign, ArrowRight, Save } from "lucide-react";
+import { Car, ArrowRight, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ManualValuationData } from "@/hooks/useManualValuation";
 import { ManualValuationImages } from "./ManualValuationImages";
+import { ManualValuationFinancial } from "./ManualValuationFinancial";
+import { ManualValuationFeatures } from "./ManualValuationFeatures";
 
 interface ManualValuationDialogProps {
   selectedValuation: ManualValuationData | null;
@@ -90,8 +93,10 @@ export const ManualValuationDialog = ({
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="details">Vehicle Details</TabsTrigger>
+            <TabsTrigger value="financial">Financial & Docs</TabsTrigger>
+            <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="images">Images ({selectedValuation.images?.length || 0})</TabsTrigger>
           </TabsList>
 
@@ -176,6 +181,89 @@ export const ManualValuationDialog = ({
               </div>
             </div>
 
+            {/* Vehicle Condition & Documentation */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Vehicle Condition & Documentation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Label>Vehicle Condition</Label>
+                    {selectedValuation.is_damaged ? (
+                      <Badge variant="destructive" className="w-fit">
+                        ⚠️ Vehicle is Damaged
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="w-fit">
+                        ✓ No Damage Reported
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Label>Registration Document</Label>
+                    {selectedValuation.has_full_registration_document ? (
+                      <Badge className="bg-green-100 text-green-800 w-fit">
+                        ✓ Full Registration Document
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="w-fit">
+                        ⚠️ No Full Registration
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Label>Registration Status</Label>
+                    {selectedValuation.is_registered_in_poland ? (
+                      <Badge className="w-fit">Registered in Poland</Badge>
+                    ) : (
+                      <Badge variant="outline" className="w-fit">Not Registered in Poland</Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Label>Number of Keys</Label>
+                    <div className="text-sm font-medium">
+                      {selectedValuation.number_of_keys || 'Not specified'} key(s)
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Label>Service History</Label>
+                    <Badge variant={
+                      selectedValuation.service_history_type === 'full' ? 'default' :
+                      selectedValuation.service_history_type === 'partial' ? 'secondary' :
+                      'outline'
+                    } className="w-fit">
+                      {selectedValuation.service_history_type || 'None'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Label>Documentation Available</Label>
+                    {selectedValuation.has_documentation ? (
+                      <Badge className="w-fit">✓ Yes</Badge>
+                    ) : (
+                      <Badge variant="outline" className="w-fit">No</Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Label>Selling on Behalf</Label>
+                    {selectedValuation.is_selling_on_behalf ? (
+                      <Badge variant="secondary" className="w-fit">Yes</Badge>
+                    ) : (
+                      <Badge variant="outline" className="w-fit">No</Badge>
+                    )}
+                  </div>
+                  
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Seller Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -253,16 +341,38 @@ export const ManualValuationDialog = ({
               />
             </div>
 
-            {/* Notes */}
+            {/* Seller Notes (editable by admin) */}
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="seller_notes">
+                Seller Notes
+                <span className="text-xs text-muted-foreground ml-2">
+                  (Editable by admin)
+                </span>
+              </Label>
               <Textarea
-                id="notes"
-                value={editData.notes !== undefined ? editData.notes : (selectedValuation.notes || "")}
-                onChange={(e) => handleUpdateField("notes", e.target.value)}
-                rows={3}
+                id="seller_notes"
+                value={editData.seller_notes !== undefined ? editData.seller_notes : (selectedValuation.seller_notes || "")}
+                onChange={(e) => handleUpdateField("seller_notes", e.target.value)}
+                rows={4}
+                placeholder="Seller's notes about the vehicle..."
               />
             </div>
+
+            {/* Automated Valuation Result */}
+            {selectedValuation.valuation_result && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Automated Valuation Result</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <pre className="text-sm whitespace-pre-wrap">
+                      {JSON.stringify(selectedValuation.valuation_result, null, 2)}
+                    </pre>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Prepare Transfer Section */}
             <div className="border-t pt-4">
@@ -295,6 +405,14 @@ export const ManualValuationDialog = ({
                 </p>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="financial">
+            <ManualValuationFinancial valuation={selectedValuation} />
+          </TabsContent>
+
+          <TabsContent value="features">
+            <ManualValuationFeatures valuation={selectedValuation} />
           </TabsContent>
 
           <TabsContent value="images">

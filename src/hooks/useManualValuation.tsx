@@ -33,8 +33,12 @@ export interface ManualValuationData {
   has_tool_pack: boolean | null;
   has_documentation: boolean | null;
   is_selling_on_behalf: boolean | null;
-  has_private_plate: boolean | null;
+  has_full_registration_document: boolean | null;
+  has_outstanding_finance: boolean | null;
   finance_amount: number | null;
+  finance_document_url: string | null;
+  finance_document_name: string | null;
+  finance_document_uploaded_at: string | null;
   service_history_type: string | null;
   seller_notes: string | null;
   name: string | null;
