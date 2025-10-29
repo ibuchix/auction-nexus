@@ -10,14 +10,14 @@ export const vehicleDetailsSchema = z.object({
   vin: z.string().min(5, "VIN must be at least 5 characters").max(17),
   reserve_price: z.number().min(1, "Reserve price must be positive"),
   transmission: z.enum(['manual', 'automatic']),
-  fuel_type: z.string().optional(),
-  seat_material: z.string().optional(),
+  fuel_type: z.string().nullable().optional(),
+  seat_material: z.string().nullable().optional(),
   is_damaged: z.boolean(),
-  service_history_type: z.string().optional(),
+  service_history_type: z.string().nullable().optional(),
   number_of_keys: z.number().int().min(0).max(5),
   seller_notes: z.string().nullable().optional(),
   features: z.any().optional(),
-  registration_number: z.string().optional(),
+  registration_number: z.string().nullable().optional(),
   has_outstanding_finance: z.boolean().default(false),
   finance_amount: z.number().min(0).optional(),
   is_selling_on_behalf: z.boolean().default(false),
@@ -25,18 +25,18 @@ export const vehicleDetailsSchema = z.object({
   has_full_registration_document: z.boolean().default(false),
   has_service_history: z.boolean().default(false),
   valuation_data: z.any().optional(),
-  finance_document_name: z.string().optional(),
-  finance_document_url: z.string().optional(),
-  finance_document_uploaded_at: z.string().optional()
+  finance_document_name: z.string().nullable().optional(),
+  finance_document_url: z.string().nullable().optional(),
+  finance_document_uploaded_at: z.string().nullable().optional()
 });
 
 export const sellerInfoSchema = z.object({
   seller_name: z.string().min(1, "Name required"),
   mobile_number: z.string().regex(/^\+?[0-9\s-()]+$/, "Invalid phone format"),
-  street_address: z.string().optional(),
-  town: z.string().optional(),
-  postcode: z.string().optional(),
-  county: z.string().optional()
+  street_address: z.string().nullable().optional(),
+  town: z.string().nullable().optional(),
+  postcode: z.string().nullable().optional(),
+  county: z.string().nullable().optional()
 });
 
 export type VehicleDetailsFormData = z.infer<typeof vehicleDetailsSchema>;
