@@ -1386,7 +1386,6 @@ export type Database = {
           has_documentation: boolean | null
           has_full_registration_document: boolean | null
           has_outstanding_finance: boolean | null
-          has_tool_pack: boolean | null
           id: string
           is_damaged: boolean | null
           is_registered_in_poland: boolean | null
@@ -1396,10 +1395,8 @@ export type Database = {
           mobile_number: string | null
           model: string | null
           name: string | null
-          notes: string | null
           number_of_keys: number | null
           postcode: string | null
-          registration_number: string | null
           reserve_price: number | null
           seat_material: string | null
           seller_notes: string | null
@@ -1432,7 +1429,6 @@ export type Database = {
           has_documentation?: boolean | null
           has_full_registration_document?: boolean | null
           has_outstanding_finance?: boolean | null
-          has_tool_pack?: boolean | null
           id?: string
           is_damaged?: boolean | null
           is_registered_in_poland?: boolean | null
@@ -1442,10 +1438,8 @@ export type Database = {
           mobile_number?: string | null
           model?: string | null
           name?: string | null
-          notes?: string | null
           number_of_keys?: number | null
           postcode?: string | null
-          registration_number?: string | null
           reserve_price?: number | null
           seat_material?: string | null
           seller_notes?: string | null
@@ -1478,7 +1472,6 @@ export type Database = {
           has_documentation?: boolean | null
           has_full_registration_document?: boolean | null
           has_outstanding_finance?: boolean | null
-          has_tool_pack?: boolean | null
           id?: string
           is_damaged?: boolean | null
           is_registered_in_poland?: boolean | null
@@ -1488,10 +1481,8 @@ export type Database = {
           mobile_number?: string | null
           model?: string | null
           name?: string | null
-          notes?: string | null
           number_of_keys?: number | null
           postcode?: string | null
-          registration_number?: string | null
           reserve_price?: number | null
           seat_material?: string | null
           seller_notes?: string | null
@@ -2243,7 +2234,7 @@ export type Database = {
         Returns: Json
       }
       create_simple_manual_valuation: {
-        Args: { p_user_id?: string; p_valuation_data: Json }
+        Args: { user_id_param: string; valuation_data: Json }
         Returns: Json
       }
       create_vin_reservation: {
@@ -2531,7 +2522,6 @@ export type Database = {
           has_documentation: boolean | null
           has_full_registration_document: boolean | null
           has_outstanding_finance: boolean | null
-          has_tool_pack: boolean | null
           id: string
           is_damaged: boolean | null
           is_registered_in_poland: boolean | null
@@ -2541,10 +2531,8 @@ export type Database = {
           mobile_number: string | null
           model: string | null
           name: string | null
-          notes: string | null
           number_of_keys: number | null
           postcode: string | null
-          registration_number: string | null
           reserve_price: number | null
           seat_material: string | null
           seller_notes: string | null
