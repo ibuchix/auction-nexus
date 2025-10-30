@@ -12,16 +12,27 @@ export function useAuctionManagement() {
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const errorCountRef = useRef(0);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(50); // Fixed at 50 items per page
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+  
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
   const { data: listings = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['adminVehicleListings', showAllCars],
+    queryKey: ['adminVehicleListings', showAllCars, currentPage, pageSize],
     queryFn: async () => {
       try {
         const response = await adminOperations.getAuctionListings(
           showAllCars, 
-          statusFilter === "all" ? undefined : statusFilter
+          statusFilter === "all" ? undefined : statusFilter,
+          currentPage,
+          pageSize
         );
         
         if (!response) {
@@ -41,6 +52,25 @@ export function useAuctionManagement() {
         // Reset error count on success
         errorCountRef.current = 0;
         
+        // Extract pagination metadata if available with proper type checking
+        if (response && typeof response === 'object' && 'pagination' in response) {
+          const paginationData = (response as any).pagination;
+          if (paginationData) {
+            setTotalCount(paginationData.totalCount || 0);
+            setTotalPages(paginationData.totalPages || 1);
+            setHasNextPage(paginationData.hasNextPage || false);
+            setHasPreviousPage(paginationData.hasPreviousPage || false);
+          }
+        }
+        
+        // Return just the data array with proper type checking
+        if (response && typeof response === 'object' && 'data' in response) {
+          const responseData = (response as any).data;
+          const auctionData = Array.isArray(responseData) ? responseData : [responseData];
+          return auctionData;
+        }
+        
+        // Fallback for legacy response format
         const auctionData = Array.isArray(response) ? response : [response];
         return auctionData;
       } catch (err) {
@@ -157,6 +187,30 @@ export function useAuctionManagement() {
     refetch();
   };
 
+  // Pagination control functions
+  const goToNextPage = () => {
+    if (hasNextPage && currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (hasPreviousPage && currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, showAllCars]);
+
   return {
     searchTerm,
     setSearchTerm,
@@ -181,5 +235,15 @@ export function useAuctionManagement() {
     handleScheduleClick,
     handleScheduleClose,
     handleScheduleSuccess,
+    // Pagination exports
+    currentPage,
+    totalPages,
+    totalCount,
+    pageSize,
+    hasNextPage,
+    hasPreviousPage,
+    goToNextPage,
+    goToPreviousPage,
+    goToPage,
   };
 }

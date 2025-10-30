@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionScheduleDialog } from "@/components/admin/auction-scheduling/AuctionScheduleDialog";
 import { AuctionFilters } from "@/components/admin/auction-management/AuctionFilters";
 import { AuctionTabContent } from "@/components/admin/auction-management/AuctionTabContent";
+import { AuctionPagination } from "@/components/admin/auction-management/AuctionPagination";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -31,6 +32,16 @@ const AuctionManagement = () => {
     handleScheduleClick,
     handleScheduleClose,
     handleScheduleSuccess,
+    // Pagination props
+    currentPage,
+    totalPages,
+    totalCount,
+    pageSize,
+    hasNextPage,
+    hasPreviousPage,
+    goToNextPage,
+    goToPreviousPage,
+    goToPage,
   } = useAuctionManagement();
 
   if (isLoading) {
@@ -124,6 +135,17 @@ const AuctionManagement = () => {
             onScheduleClick={handleScheduleClick}
             showScheduleButton={true}
           />
+          <AuctionPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+            onNextPage={goToNextPage}
+            onPreviousPage={goToPreviousPage}
+            onGoToPage={goToPage}
+          />
         </TabsContent>
 
         <TabsContent value="active" className="space-y-4">
@@ -136,6 +158,17 @@ const AuctionManagement = () => {
             onCancel={cancelAuction}
             onStart={startAuction}
           />
+          <AuctionPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+            onNextPage={goToNextPage}
+            onPreviousPage={goToPreviousPage}
+            onGoToPage={goToPage}
+          />
         </TabsContent>
 
         <TabsContent value="ended" className="space-y-4">
@@ -147,6 +180,17 @@ const AuctionManagement = () => {
             onPause={pauseAuction}
             onCancel={cancelAuction}
             onStart={startAuction}
+          />
+          <AuctionPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+            onNextPage={goToNextPage}
+            onPreviousPage={goToPreviousPage}
+            onGoToPage={goToPage}
           />
         </TabsContent>
 
@@ -161,6 +205,17 @@ const AuctionManagement = () => {
             onStart={startAuction}
             onScheduleClick={handleScheduleClick}
             showScheduleButton={true}
+          />
+          <AuctionPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+            onNextPage={goToNextPage}
+            onPreviousPage={goToPreviousPage}
+            onGoToPage={goToPage}
           />
         </TabsContent>
       </Tabs>

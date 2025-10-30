@@ -333,14 +333,24 @@ export const adminOperations = {
     });
   },
   
-  // Get auction listings with admin access using authenticated client
-  getAuctionListings: async (showAllCars: boolean = true, status?: string) => {
+  // Get auction listings with admin access using authenticated client (with pagination)
+  getAuctionListings: async (
+    showAllCars: boolean = true, 
+    status?: string,
+    page: number = 1,
+    pageSize: number = 50
+  ) => {
     return performAdminOperation('getAuctionListings', async () => {
-      // Step 1: Get all cars using the original working direct query
-      const { data: cars, error: carsError } = await supabase
+      // Calculate pagination range
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      // Step 1: Get paginated cars with total count
+      const { data: cars, error: carsError, count } = await supabase
         .from('cars')
-        .select('*')
-        .order('created_at', { ascending: false }); // Newest first
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false }) // Newest first
+        .range(from, to); // Apply pagination
 
       if (carsError) {
         console.error('[Admin Operations] Error fetching cars:', carsError);
@@ -377,7 +387,22 @@ export const adminOperations = {
         filteredData = filteredData.filter(car => car.auction_status === status);
       }
 
-      return { data: filteredData, error: null };
+      // Return data with pagination metadata
+      const totalCount = count || 0;
+      const totalPages = Math.ceil(totalCount / pageSize);
+      
+      return { 
+        data: filteredData, 
+        error: null,
+        pagination: {
+          page,
+          pageSize,
+          totalCount,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1
+        }
+      };
     });
   },
   
