@@ -2507,56 +2507,36 @@ export type Database = {
         }[]
       }
       get_manual_valuations_for_seller: {
-        Args: { p_user_id?: string }
+        Args: { p_user_id: string }
         Returns: {
-          contact_email: string | null
-          contact_phone: string | null
-          county: string | null
-          created_at: string | null
-          features: Json | null
-          finance_amount: number | null
-          finance_document_name: string | null
-          finance_document_uploaded_at: string | null
-          finance_document_url: string | null
-          fuel_type: string | null
-          has_documentation: boolean | null
-          has_full_registration_document: boolean | null
-          has_outstanding_finance: boolean | null
-          id: string
-          is_damaged: boolean | null
-          is_registered_in_poland: boolean | null
-          is_selling_on_behalf: boolean | null
-          make: string | null
-          mileage: number | null
-          mobile_number: string | null
-          model: string | null
-          name: string | null
-          number_of_keys: number | null
-          postcode: string | null
-          reserve_price: number | null
-          seat_material: string | null
-          seller_notes: string | null
-          service_history_files: string[] | null
-          service_history_type: string | null
-          status: string | null
-          street_address: string | null
-          town: string | null
-          transmission:
-            | Database["public"]["Enums"]["car_transmission_type"]
-            | null
-          updated_at: string | null
-          uploaded_photos: Json | null
-          user_id: string | null
-          valuation_result: Json | null
-          vin: string | null
-          year: number | null
+          county: string
+          created_at: string
+          features: Json
+          finance_amount: number
+          fuel_type: string
+          is_damaged: boolean
+          is_registered_in_poland: boolean
+          make: string
+          manual_valuation_id: string
+          mileage: number
+          mobile_number: string
+          model: string
+          name: string
+          number_of_keys: number
+          postcode: string
+          seat_material: string
+          seller_notes: string
+          service_history_type: string
+          status: string
+          street_address: string
+          town: string
+          transmission: string
+          updated_at: string
+          user_id: string
+          valuation_result: Json
+          vin: string
+          year: number
         }[]
-        SetofOptions: {
-          from: "*"
-          to: "manual_valuations"
-          isOneToOne: false
-          isSetofReturn: true
-        }
       }
       get_profile: {
         Args: { p_user_id: string }
