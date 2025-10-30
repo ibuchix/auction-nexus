@@ -209,19 +209,24 @@ serve(async (req) => {
       case 'getAllSellers':
         console.log('Fetching all sellers...')
         
-        // Fetch sellers with their profiles and cars data
+        // Fetch sellers and their cars separately
         const { data: sellersData, error: sellersError } = await supabase
           .from('sellers')
-          .select(`
-            *,
-            profiles!sellers_user_id_fkey(role),
-            cars(id, status)
-          `)
+          .select('*')
           .order('created_at', { ascending: false })
 
         if (sellersError) {
           console.error('Sellers query error:', sellersError)
           throw new Error(`Sellers query failed: ${sellersError.message}`)
+        }
+
+        // Fetch all cars for sellers
+        const { data: carsData, error: carsError } = await supabase
+          .from('cars')
+          .select('id, status, seller_id')
+
+        if (carsError) {
+          console.error('Cars query error:', carsError)
         }
 
         // Fetch emails from auth.users using admin client
@@ -236,15 +241,15 @@ serve(async (req) => {
               console.error(`Error fetching user ${seller.user_id}:`, authError)
             }
             
-            // Calculate listing counts
-            const cars = seller.cars || []
-            const total_listings = cars.length
-            const active_listings = cars.filter((car: any) => car.status === 'available').length
+            // Calculate listing counts from cars data
+            const sellerCars = (carsData || []).filter((car: any) => car.seller_id === seller.user_id)
+            const total_listings = sellerCars.length
+            const active_listings = sellerCars.filter((car: any) => car.status === 'available').length
             
             return {
               id: seller.id,
               user_id: seller.user_id,
-              role: seller.profiles?.role || 'seller',
+              role: 'seller',
               created_at: seller.created_at,
               name: seller.full_name,
               email: authUser?.user?.email || null,
