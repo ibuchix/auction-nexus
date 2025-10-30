@@ -191,7 +191,11 @@ export const ManualValuationDialog = ({
                   
                   <div className="flex flex-col space-y-2">
                     <Label>Vehicle Condition</Label>
-                    {selectedValuation.is_damaged ? (
+                    {selectedValuation.is_damaged === null ? (
+                      <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                        ⚠️ Not Specified by Seller
+                      </Badge>
+                    ) : selectedValuation.is_damaged ? (
                       <Badge variant="destructive" className="w-fit">
                         ⚠️ Vehicle is Damaged
                       </Badge>
@@ -204,8 +208,12 @@ export const ManualValuationDialog = ({
                   
                   <div className="flex flex-col space-y-2">
                     <Label>Registration Document</Label>
-                    {selectedValuation.has_full_registration_document ? (
-                      <Badge className="bg-green-100 text-green-800 w-fit">
+                    {selectedValuation.has_full_registration_document === null ? (
+                      <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                        ⚠️ Not Specified by Seller
+                      </Badge>
+                    ) : selectedValuation.has_full_registration_document ? (
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200 w-fit">
                         ✓ Full Registration Document
                       </Badge>
                     ) : (
@@ -217,7 +225,11 @@ export const ManualValuationDialog = ({
                   
                   <div className="flex flex-col space-y-2">
                     <Label>Registration Status</Label>
-                    {selectedValuation.is_registered_in_poland ? (
+                    {selectedValuation.is_registered_in_poland === null ? (
+                      <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                        ⚠️ Not Specified by Seller
+                      </Badge>
+                    ) : selectedValuation.is_registered_in_poland ? (
                       <Badge className="w-fit">Registered in Poland</Badge>
                     ) : (
                       <Badge variant="outline" className="w-fit">Not Registered in Poland</Badge>
@@ -253,7 +265,11 @@ export const ManualValuationDialog = ({
                   
                   <div className="flex flex-col space-y-2">
                     <Label>Selling on Behalf</Label>
-                    {selectedValuation.is_selling_on_behalf ? (
+                    {selectedValuation.is_selling_on_behalf === null ? (
+                      <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                        ⚠️ Not Specified by Seller
+                      </Badge>
+                    ) : selectedValuation.is_selling_on_behalf ? (
                       <Badge variant="secondary" className="w-fit">Yes</Badge>
                     ) : (
                       <Badge variant="outline" className="w-fit">No</Badge>

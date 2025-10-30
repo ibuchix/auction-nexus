@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import type { CarEditFormData } from "../types";
 
 interface VehicleDetailsTabProps {
@@ -100,37 +101,64 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
         </div>
 
         <div className="col-span-2 grid grid-cols-3 gap-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="is_registered_in_poland"
-              checked={formData.is_registered_in_poland}
-              onCheckedChange={(checked) => updateField('is_registered_in_poland', checked)}
-            />
-            <Label htmlFor="is_registered_in_poland" className="cursor-pointer">
-              Registered in Poland
-            </Label>
+          <div className="flex flex-col space-y-2">
+            <Label>Registration Status</Label>
+            {formData.is_registered_in_poland === null ? (
+              <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                ⚠️ Not Specified by Seller
+              </Badge>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_registered_in_poland"
+                  checked={formData.is_registered_in_poland === true}
+                  onCheckedChange={(checked) => updateField('is_registered_in_poland', checked)}
+                />
+                <Label htmlFor="is_registered_in_poland" className="cursor-pointer">
+                  Registered in Poland
+                </Label>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="has_full_registration_document"
-              checked={formData.has_full_registration_document}
-              onCheckedChange={(checked) => updateField('has_full_registration_document', checked)}
-            />
-            <Label htmlFor="has_full_registration_document" className="cursor-pointer">
-              Has Full Registration Document
-            </Label>
+          <div className="flex flex-col space-y-2">
+            <Label>Full Registration Document</Label>
+            {formData.has_full_registration_document === null ? (
+              <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                ⚠️ Not Specified by Seller
+              </Badge>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_full_registration_document"
+                  checked={formData.has_full_registration_document === true}
+                  onCheckedChange={(checked) => updateField('has_full_registration_document', checked)}
+                />
+                <Label htmlFor="has_full_registration_document" className="cursor-pointer">
+                  Has Full Registration Document
+                </Label>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="has_service_history"
-              checked={formData.has_service_history}
-              onCheckedChange={(checked) => updateField('has_service_history', checked)}
-            />
-            <Label htmlFor="has_service_history" className="cursor-pointer">
-              Has Service History
-            </Label>
+          <div className="flex flex-col space-y-2">
+            <Label>Service History</Label>
+            {formData.has_service_history === null ? (
+              <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                ⚠️ Not Specified by Seller
+              </Badge>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_service_history"
+                  checked={formData.has_service_history === true}
+                  onCheckedChange={(checked) => updateField('has_service_history', checked)}
+                />
+                <Label htmlFor="has_service_history" className="cursor-pointer">
+                  Has Service History
+                </Label>
+              </div>
+            )}
           </div>
         </div>
 
@@ -211,16 +239,23 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
         </div>
 
         <div className="col-span-2">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="has_outstanding_finance"
-              checked={formData.has_outstanding_finance}
-              onCheckedChange={(checked) => updateField('has_outstanding_finance', checked)}
-            />
-            <Label htmlFor="has_outstanding_finance" className="cursor-pointer">
-              Has Outstanding Finance
-            </Label>
-          </div>
+          <Label>Outstanding Finance Status</Label>
+          {formData.has_outstanding_finance === null ? (
+            <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 mt-2">
+              ⚠️ Not Specified by Seller
+            </Badge>
+          ) : (
+            <div className="flex items-center space-x-2 mt-2">
+              <Checkbox
+                id="has_outstanding_finance"
+                checked={formData.has_outstanding_finance === true}
+                onCheckedChange={(checked) => updateField('has_outstanding_finance', checked)}
+              />
+              <Label htmlFor="has_outstanding_finance" className="cursor-pointer">
+                Has Outstanding Finance
+              </Label>
+            </div>
+          )}
         </div>
 
         {formData.has_outstanding_finance && (
@@ -304,28 +339,44 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
           <h3 className="text-sm font-semibold mb-3">Other Details</h3>
         </div>
 
-        <div className="col-span-2 flex items-center space-x-2">
-          <Checkbox
-            id="is_selling_on_behalf"
-            checked={formData.is_selling_on_behalf}
-            onCheckedChange={(checked) => updateField('is_selling_on_behalf', checked)}
-          />
-          <Label htmlFor="is_selling_on_behalf" className="cursor-pointer">
-            Selling on behalf of someone else
-          </Label>
+        <div className="col-span-2">
+          <Label>Selling on Behalf Status</Label>
+          {formData.is_selling_on_behalf === null ? (
+            <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 mt-2">
+              ⚠️ Not Specified by Seller
+            </Badge>
+          ) : (
+            <div className="flex items-center space-x-2 mt-2">
+              <Checkbox
+                id="is_selling_on_behalf"
+                checked={formData.is_selling_on_behalf === true}
+                onCheckedChange={(checked) => updateField('is_selling_on_behalf', checked)}
+              />
+              <Label htmlFor="is_selling_on_behalf" className="cursor-pointer">
+                Selling on behalf of someone else
+              </Label>
+            </div>
+          )}
         </div>
 
         <div className="col-span-2">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="is_damaged"
-              checked={formData.is_damaged}
-              onCheckedChange={(checked) => updateField('is_damaged', checked)}
-            />
-            <Label htmlFor="is_damaged" className="cursor-pointer">
-              Vehicle has damage
-            </Label>
-          </div>
+          <Label>Vehicle Condition Status</Label>
+          {formData.is_damaged === null ? (
+            <Badge variant="outline" className="w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 mt-2">
+              ⚠️ Not Specified by Seller
+            </Badge>
+          ) : (
+            <div className="flex items-center space-x-2 mt-2">
+              <Checkbox
+                id="is_damaged"
+                checked={formData.is_damaged === true}
+                onCheckedChange={(checked) => updateField('is_damaged', checked)}
+              />
+              <Label htmlFor="is_damaged" className="cursor-pointer">
+                Vehicle has damage
+              </Label>
+            </div>
+          )}
         </div>
 
         <div className="col-span-2">
