@@ -61,10 +61,8 @@ export function AuctionPagination({
   
   const pageNumbers = getPageNumbers();
   
-  if (totalPages <= 1) {
-    // Don't show pagination if only 1 page
-    return null;
-  }
+  // Always show pagination to provide context about total items
+  // Controls will be disabled on single page scenarios
   
   return (
     <div className="flex items-center justify-between px-4 py-3 border-t bg-card rounded-b-lg">
