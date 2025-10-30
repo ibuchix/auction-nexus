@@ -208,9 +208,15 @@ serve(async (req) => {
 
       case 'getAllSellers':
         console.log('Fetching all sellers...')
+        
+        // Fetch sellers with their profiles and cars data
         const { data: sellersData, error: sellersError } = await supabase
           .from('sellers')
-          .select('*')
+          .select(`
+            *,
+            profiles!sellers_user_id_fkey(role),
+            cars(id, status)
+          `)
           .order('created_at', { ascending: false })
 
         if (sellersError) {
@@ -218,8 +224,42 @@ serve(async (req) => {
           throw new Error(`Sellers query failed: ${sellersError.message}`)
         }
 
-        console.log(`Successfully fetched ${sellersData?.length || 0} sellers`)
-        result = sellersData
+        // Fetch emails from auth.users using admin client
+        const sellersWithEmails = await Promise.all(
+          (sellersData || []).map(async (seller: any) => {
+            // Get user data from auth.users
+            const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(
+              seller.user_id
+            )
+            
+            if (authError) {
+              console.error(`Error fetching user ${seller.user_id}:`, authError)
+            }
+            
+            // Calculate listing counts
+            const cars = seller.cars || []
+            const total_listings = cars.length
+            const active_listings = cars.filter((car: any) => car.status === 'available').length
+            
+            return {
+              id: seller.id,
+              user_id: seller.user_id,
+              role: seller.profiles?.role || 'seller',
+              created_at: seller.created_at,
+              name: seller.full_name,
+              email: authUser?.user?.email || null,
+              mobile_number: null,
+              address: seller.address,
+              verification_status: seller.verification_status,
+              is_verified: seller.is_verified,
+              total_listings,
+              active_listings
+            }
+          })
+        )
+
+        console.log(`Successfully fetched ${sellersWithEmails.length} sellers with emails`)
+        result = sellersWithEmails
         break
 
       case 'getAllDealers':
