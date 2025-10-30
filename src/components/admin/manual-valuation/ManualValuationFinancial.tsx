@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ManualValuationData } from "@/hooks/useManualValuation";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PLNCurrency } from "@/components/ui/PLNCurrency";
 
@@ -14,19 +13,23 @@ interface ManualValuationFinancialProps {
 }
 
 export function ManualValuationFinancial({ valuation }: ManualValuationFinancialProps) {
+  // Extract finance document with fallback to valuation_result JSON
+  const financeDocUrl = valuation.finance_document_url || 
+                        valuation.valuation_result?.finance_document_url;
+  const financeDocName = valuation.finance_document_name || 
+                         valuation.valuation_result?.finance_document_name;
+  const financeDocUploadedAt = valuation.finance_document_uploaded_at || 
+                               valuation.valuation_result?.finance_document_uploaded_at;
+  const serviceHistoryType = valuation.service_history_type || 
+                             valuation.valuation_result?.service_history_type;
   
-  const handleDownloadDocument = async (filePath: string) => {
+  const handleDownloadDocument = async (fileUrl: string) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('manual-valuation-photos')
-        .createSignedUrl(filePath, 3600);
-
-      if (error) throw error;
-      
-      window.open(data.signedUrl, '_blank');
+      // Finance documents are stored in car-files bucket with public URLs
+      window.open(fileUrl, '_blank');
     } catch (error) {
-      console.error('Error downloading document:', error);
-      toast.error('Failed to download document');
+      console.error('Error opening document:', error);
+      toast.error('Failed to open document');
     }
   };
 
@@ -72,26 +75,26 @@ export function ManualValuationFinancial({ valuation }: ManualValuationFinancial
             )}
           </div>
 
-          {valuation.finance_document_name && (
+          {financeDocName && (
             <div className="border-t pt-4 mt-4">
               <Label className="text-sm font-medium mb-2 block">Finance Document</Label>
               <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center space-x-3">
                   <FileText className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="font-medium text-sm">{valuation.finance_document_name}</p>
-                    {valuation.finance_document_uploaded_at && (
+                    <p className="font-medium text-sm">{financeDocName}</p>
+                    {financeDocUploadedAt && (
                       <p className="text-xs text-muted-foreground">
-                        Uploaded: {new Date(valuation.finance_document_uploaded_at).toLocaleDateString()}
+                        Uploaded: {new Date(financeDocUploadedAt).toLocaleDateString()}
                       </p>
                     )}
                   </div>
                 </div>
-                {valuation.finance_document_url && (
+                {financeDocUrl && (
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => handleDownloadDocument(valuation.finance_document_url!)}
+                    onClick={() => handleDownloadDocument(financeDocUrl)}
                   >
                     <Download className="mr-2 h-3 w-3" />
                     View
@@ -112,11 +115,11 @@ export function ManualValuationFinancial({ valuation }: ManualValuationFinancial
           <div className="flex items-center space-x-2">
             <Label>Service History Type:</Label>
             <Badge variant={
-              valuation.service_history_type === 'full' ? 'default' :
-              valuation.service_history_type === 'partial' ? 'secondary' :
+              serviceHistoryType === 'full' ? 'default' :
+              serviceHistoryType === 'partial' ? 'secondary' :
               'outline'
             }>
-              {valuation.service_history_type || 'None'}
+              {serviceHistoryType || 'None'}
             </Badge>
           </div>
         </CardContent>

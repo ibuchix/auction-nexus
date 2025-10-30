@@ -2851,10 +2851,12 @@ export type Database = {
         Args: { p_mileage: number; p_valuation_data: Json; p_vin: string }
         Returns: undefined
       }
-      submit_manual_valuation_form: {
-        Args: { p_form_data: Json; p_manual_valuation_id: string }
-        Returns: Json
-      }
+      submit_manual_valuation_form:
+        | {
+            Args: { p_form_data: Json; p_manual_valuation_id: string }
+            Returns: Json
+          }
+        | { Args: { p_form_data: Json }; Returns: string }
       sync_auction_results_with_seller_decisions: {
         Args: never
         Returns: undefined

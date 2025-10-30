@@ -147,6 +147,15 @@ export const ManualValuationDialog = ({
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="registration_number">Registration Number</Label>
+                <Input
+                  id="registration_number"
+                  value={editData.registration_number !== undefined ? editData.registration_number : (selectedValuation.registration_number || "")}
+                  onChange={(e) => handleUpdateField("registration_number", e.target.value)}
+                  className="font-mono uppercase"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="transmission">Transmission</Label>
                 <Select
                   value={editData.transmission !== undefined ? editData.transmission : (selectedValuation.transmission || "")}
@@ -176,6 +185,23 @@ export const ManualValuationDialog = ({
                     <SelectItem value="diesel">Diesel</SelectItem>
                     <SelectItem value="hybrid">Hybrid</SelectItem>
                     <SelectItem value="electric">Electric</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="seat_material">Seat Material</Label>
+                <Select
+                  value={editData.seat_material !== undefined ? editData.seat_material : (selectedValuation.seat_material || selectedValuation.valuation_result?.seat_material || "")}
+                  onValueChange={(value) => handleUpdateField("seat_material", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select seat material" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fabric">Fabric</SelectItem>
+                    <SelectItem value="leather">Leather</SelectItem>
+                    <SelectItem value="synthetic">Synthetic</SelectItem>
+                    <SelectItem value="alcantara">Alcantara</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -373,22 +399,6 @@ export const ManualValuationDialog = ({
                 placeholder="Seller's notes about the vehicle..."
               />
             </div>
-
-            {/* Automated Valuation Result */}
-            {selectedValuation.valuation_result && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Automated Valuation Result</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm whitespace-pre-wrap">
-                      {JSON.stringify(selectedValuation.valuation_result, null, 2)}
-                    </pre>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Prepare Transfer Section */}
             <div className="border-t pt-4">
