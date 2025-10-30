@@ -221,12 +221,12 @@ serve(async (req) => {
         }
 
         // Fetch all cars for sellers
-        const { data: carsData, error: carsError } = await supabase
+        const { data: sellerCarsData, error: sellerCarsError } = await supabase
           .from('cars')
           .select('id, status, seller_id')
 
-        if (carsError) {
-          console.error('Cars query error:', carsError)
+        if (sellerCarsError) {
+          console.error('Cars query error:', sellerCarsError)
         }
 
         // Fetch emails from auth.users using admin client
@@ -242,7 +242,7 @@ serve(async (req) => {
             }
             
             // Calculate listing counts from cars data
-            const sellerCars = (carsData || []).filter((car: any) => car.seller_id === seller.user_id)
+            const sellerCars = (sellerCarsData || []).filter((car: any) => car.seller_id === seller.user_id)
             const total_listings = sellerCars.length
             const active_listings = sellerCars.filter((car: any) => car.status === 'available').length
             
