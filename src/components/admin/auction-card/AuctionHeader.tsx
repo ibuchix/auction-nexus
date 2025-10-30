@@ -42,6 +42,7 @@ interface AuctionHeaderProps {
   startTime?: string;
   endTime?: string;
   isManuallyControlled?: boolean;
+  listedDate?: string;
 }
 
 export function AuctionHeader({
@@ -59,7 +60,8 @@ export function AuctionHeader({
   status,
   startTime,
   endTime,
-  isManuallyControlled
+  isManuallyControlled,
+  listedDate
 }: AuctionHeaderProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -139,8 +141,14 @@ export function AuctionHeader({
         </div>
       </div>
 
-      {(startTime || endTime) && (
+      {(listedDate || startTime || endTime) && (
         <div className="flex gap-4 text-sm text-muted-foreground">
+          {listedDate && (
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              <span>Listed: {new Date(listedDate).toLocaleString()}</span>
+            </div>
+          )}
           {startTime && (
             <div className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />

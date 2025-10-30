@@ -111,6 +111,7 @@ export function AdminAuctionCard({
           startTime={auction.auctionStartTime}
           endTime={auction.auctionEndTime}
           isManuallyControlled={auction.isManuallyControlled}
+          listedDate={auction.createdAt}
         />
       </CardHeader>
       <CardContent>
