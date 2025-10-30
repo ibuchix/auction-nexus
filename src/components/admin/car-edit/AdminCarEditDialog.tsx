@@ -9,6 +9,7 @@ import { VehicleDetailsTab } from "./tabs/VehicleDetailsTab";
 import { ImagesTab } from "./tabs/ImagesTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
 import { SellerInfoTab } from "./tabs/SellerInfoTab";
+import { FeaturesTab } from "./tabs/FeaturesTab";
 
 interface AdminCarEditDialogProps {
   auction: any;
@@ -67,8 +68,9 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
         )}
 
         <Tabs defaultValue="vehicle" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="vehicle">Vehicle Details</TabsTrigger>
+            <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="seller">Seller Info</TabsTrigger>
@@ -82,6 +84,10 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
               financeDocCount={documents.filter(d => d.category === 'finance').length}
               serviceHistoryDocCount={documents.filter(d => d.category === 'service_history').length}
             />
+          </TabsContent>
+
+          <TabsContent value="features" className="mt-4">
+            <FeaturesTab features={formData.features || {}} />
           </TabsContent>
 
           <TabsContent value="images" className="mt-4">
