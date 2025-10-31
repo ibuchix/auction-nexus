@@ -115,6 +115,13 @@ export type Database = {
             referencedRelation: "cars"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "auction_closure_details_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       auction_daily_summaries: {
@@ -184,6 +191,13 @@ export type Database = {
             columns: ["car_id"]
             isOneToOne: false
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_metrics_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
             referencedColumns: ["id"]
           },
         ]
@@ -276,10 +290,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "auction_results_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "auction_results_car_id_fkey"
             columns: ["car_id"]
             isOneToOne: true
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_results_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: true
+            referencedRelation: "cars_public_view"
             referencedColumns: ["id"]
           },
           {
@@ -337,6 +365,13 @@ export type Database = {
             columns: ["car_id"]
             isOneToOne: false
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_schedules_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
             referencedColumns: ["id"]
           },
         ]
@@ -450,6 +485,13 @@ export type Database = {
             referencedRelation: "cars"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bids_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       car_file_uploads: {
@@ -501,6 +543,13 @@ export type Database = {
             columns: ["car_id"]
             isOneToOne: false
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_file_uploads_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
             referencedColumns: ["id"]
           },
         ]
@@ -720,6 +769,13 @@ export type Database = {
             referencedRelation: "cars"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cars_history_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       damage_reports: {
@@ -762,6 +818,13 @@ export type Database = {
             columns: ["car_id"]
             isOneToOne: false
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "damage_reports_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
             referencedColumns: ["id"]
           },
         ]
@@ -901,6 +964,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dealer_purchases_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dealer_purchases_dealer_id_fkey"
             columns: ["dealer_id"]
             isOneToOne: false
@@ -1030,6 +1100,13 @@ export type Database = {
             columns: ["car_id"]
             isOneToOne: true
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_won_vehicles_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: true
+            referencedRelation: "cars_public_view"
             referencedColumns: ["id"]
           },
           {
@@ -1193,6 +1270,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "disputes_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "disputes_submitted_by_fkey"
             columns: ["submitted_by"]
             isOneToOne: false
@@ -1314,6 +1398,13 @@ export type Database = {
             columns: ["car_id"]
             isOneToOne: false
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_verifications_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1753,6 +1844,13 @@ export type Database = {
             referencedRelation: "cars"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "seller_bid_decisions_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sellers: {
@@ -1822,6 +1920,13 @@ export type Database = {
             columns: ["car_id"]
             isOneToOne: false
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_history_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1956,6 +2061,186 @@ export type Database = {
             columns: ["car_id"]
             isOneToOne: false
             referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cars_public_view: {
+        Row: {
+          additional_photos: Json | null
+          auction_end_time: string | null
+          auction_scheduled: boolean | null
+          auction_status: string | null
+          awaiting_seller_decision: boolean | null
+          county: string | null
+          created_at: string | null
+          current_bid: number | null
+          email_notification_sent: boolean | null
+          features: Json | null
+          finance_amount: number | null
+          finance_document_name: string | null
+          finance_document_uploaded_at: string | null
+          finance_document_url: string | null
+          form_metadata: Json | null
+          fuel_type: string | null
+          has_full_registration_document: boolean | null
+          has_outstanding_finance: boolean | null
+          has_service_history: boolean | null
+          id: string | null
+          images: string[] | null
+          is_auction: boolean | null
+          is_damaged: boolean | null
+          is_manually_controlled: boolean | null
+          is_registered_in_poland: boolean | null
+          is_selling_on_behalf: boolean | null
+          last_saved: string | null
+          make: string | null
+          mileage: number | null
+          minimum_bid_increment: number | null
+          mobile_number: string | null
+          model: string | null
+          number_of_keys: number | null
+          postcode: string | null
+          registration_number: string | null
+          required_photos: Json | null
+          reserve_price: number | null
+          rim_photos: Json | null
+          seat_material: string | null
+          seller_id: string | null
+          seller_name: string | null
+          seller_notes: string | null
+          service_history_type: string | null
+          status: string | null
+          street_address: string | null
+          title: string | null
+          town: string | null
+          transmission: string | null
+          updated_at: string | null
+          valuation_data: Json | null
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          additional_photos?: Json | null
+          auction_end_time?: string | null
+          auction_scheduled?: boolean | null
+          auction_status?: string | null
+          awaiting_seller_decision?: boolean | null
+          county?: never
+          created_at?: string | null
+          current_bid?: number | null
+          email_notification_sent?: boolean | null
+          features?: Json | null
+          finance_amount?: number | null
+          finance_document_name?: string | null
+          finance_document_uploaded_at?: string | null
+          finance_document_url?: string | null
+          form_metadata?: Json | null
+          fuel_type?: string | null
+          has_full_registration_document?: boolean | null
+          has_outstanding_finance?: boolean | null
+          has_service_history?: boolean | null
+          id?: string | null
+          images?: string[] | null
+          is_auction?: boolean | null
+          is_damaged?: boolean | null
+          is_manually_controlled?: boolean | null
+          is_registered_in_poland?: boolean | null
+          is_selling_on_behalf?: boolean | null
+          last_saved?: string | null
+          make?: string | null
+          mileage?: number | null
+          minimum_bid_increment?: number | null
+          mobile_number?: never
+          model?: string | null
+          number_of_keys?: number | null
+          postcode?: never
+          registration_number?: string | null
+          required_photos?: Json | null
+          reserve_price?: number | null
+          rim_photos?: Json | null
+          seat_material?: string | null
+          seller_id?: string | null
+          seller_name?: never
+          seller_notes?: string | null
+          service_history_type?: string | null
+          status?: string | null
+          street_address?: never
+          title?: string | null
+          town?: never
+          transmission?: string | null
+          updated_at?: string | null
+          valuation_data?: Json | null
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          additional_photos?: Json | null
+          auction_end_time?: string | null
+          auction_scheduled?: boolean | null
+          auction_status?: string | null
+          awaiting_seller_decision?: boolean | null
+          county?: never
+          created_at?: string | null
+          current_bid?: number | null
+          email_notification_sent?: boolean | null
+          features?: Json | null
+          finance_amount?: number | null
+          finance_document_name?: string | null
+          finance_document_uploaded_at?: string | null
+          finance_document_url?: string | null
+          form_metadata?: Json | null
+          fuel_type?: string | null
+          has_full_registration_document?: boolean | null
+          has_outstanding_finance?: boolean | null
+          has_service_history?: boolean | null
+          id?: string | null
+          images?: string[] | null
+          is_auction?: boolean | null
+          is_damaged?: boolean | null
+          is_manually_controlled?: boolean | null
+          is_registered_in_poland?: boolean | null
+          is_selling_on_behalf?: boolean | null
+          last_saved?: string | null
+          make?: string | null
+          mileage?: number | null
+          minimum_bid_increment?: number | null
+          mobile_number?: never
+          model?: string | null
+          number_of_keys?: number | null
+          postcode?: never
+          registration_number?: string | null
+          required_photos?: Json | null
+          reserve_price?: number | null
+          rim_photos?: Json | null
+          seat_material?: string | null
+          seller_id?: string | null
+          seller_name?: never
+          seller_notes?: string | null
+          service_history_type?: string | null
+          status?: string | null
+          street_address?: never
+          title?: string | null
+          town?: never
+          transmission?: string | null
+          updated_at?: string | null
+          valuation_data?: Json | null
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_cars_seller"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2740,6 +3025,10 @@ export type Database = {
         Args: { p_log_id?: string; p_mileage: number; p_vin: string }
         Returns: Json
       }
+      has_paid_for_vehicle: {
+        Args: { _car_id: string; _dealer_user_id: string }
+        Returns: boolean
+      }
       is_admin_user: { Args: { user_id?: string }; Returns: boolean }
       is_dealer: { Args: never; Returns: boolean }
       is_seller: { Args: never; Returns: boolean }
@@ -2785,7 +3074,9 @@ export type Database = {
         Args: { p_amount: number; p_car_id: string; p_dealer_id: string }
         Returns: Json
       }
-      process_auction_end: { Args: { p_car_id: string }; Returns: Json }
+      process_auction_end:
+        | { Args: never; Returns: Json }
+        | { Args: { p_car_id: string }; Returns: Json }
       process_auctions_for_seller_decisions: { Args: never; Returns: number }
       process_ended_auctions_securely: { Args: never; Returns: Json }
       process_missed_auctions: { Args: never; Returns: Json }
