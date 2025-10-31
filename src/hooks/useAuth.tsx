@@ -82,6 +82,7 @@ export function useAuth() {
           title: "Signed out",
           description: "You have been successfully signed out.",
         });
+        window.location.href = '/auth';
         return;
       }
 
@@ -96,6 +97,7 @@ export function useAuth() {
           title: "Signed out",
           description: "You have been successfully signed out.",
         });
+        window.location.href = '/auth';
         return;
       }
       
@@ -105,6 +107,7 @@ export function useAuth() {
         title: "Signed out",
         description: "You have been successfully signed out.",
       });
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Sign out error:', error);
       // Still clear local state even on error
@@ -127,6 +130,8 @@ export function useAuth() {
           description: "You have been successfully signed out.",
         });
       }
+      // Always navigate to login even on error
+      window.location.href = '/auth';
     }
   };
 
