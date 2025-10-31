@@ -29,10 +29,20 @@ export function useAuctionManagement() {
     queryKey: ['adminVehicleListings', showAllCars, currentPage, pageSize],
     queryFn: async () => {
       try {
-        // Direct database access with service role bypassing RLS
+        // Fetch cars with their auction schedules
         const { data, error, count } = await adminSupabase
           .from('cars')
-          .select('*', { count: 'exact' })
+          .select(`
+            *,
+            auction_schedules (
+              id,
+              status,
+              start_time,
+              end_time,
+              created_at,
+              notes
+            )
+          `, { count: 'exact' })
           .order('created_at', { ascending: false })
           .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
         
@@ -89,21 +99,22 @@ export function useAuctionManagement() {
 
   const readyAuctions = filteredListings
     .filter(listing => {
-      // Cars ready for auction include:
-      // 1. New cars with no auction_status
-      // 2. Cars with 'ready' status
-      // Note: Ended auctions should NOT appear here, only in ended tab
-      if (!listing.auction_status || listing.auction_status === 'ready') {
-        return true;
-      }
+      // Check if car has any active or scheduled auction schedule
+      const hasActiveSchedule = listing.auction_schedules?.some((schedule: any) => 
+        schedule.status === 'active' || schedule.status === 'scheduled'
+      );
       
-      // Include cancelled or paused auctions that can be restarted
-      if ((listing.auction_status === 'cancelled' || listing.auction_status === 'paused') && 
-          listing.status === 'available') {
-        return true;
-      }
+      // If car has an active/scheduled auction, it's not "ready" anymore
+      if (hasActiveSchedule) return false;
       
-      return false;
+      // Cars ready for auction:
+      // 1. Must have reserve price configured (greater than 0)
+      // 2. Don't have an active schedule
+      // 3. Haven't been sold
+      const hasReservePrice = listing.reserve_price && listing.reserve_price > 0;
+      const notSold = listing.auction_status !== 'sold';
+      
+      return hasReservePrice && notSold;
     })
     .sort((a, b) => {
       // Sort by created_at descending (newest first)
@@ -114,48 +125,74 @@ export function useAuctionManagement() {
   
   const activeAuctions = filteredListings
     .filter(listing => {
-      // Only show auctions that are marked as active AND haven't ended yet
-      if (listing.auction_status !== 'active') return false;
-      if (!listing.auction_end_time) return true; // No end time set, show it
+      // Check if car has an active or scheduled auction in auction_schedules
+      const activeSchedule = listing.auction_schedules?.find((schedule: any) => 
+        schedule.status === 'active' || schedule.status === 'scheduled'
+      );
       
-      const endTime = new Date(listing.auction_end_time);
-      const now = new Date();
-      return endTime > now; // Only include if end time is in the future
-    })
-    .sort((a, b) => {
-      // Sort by auction end time ascending (ending soonest first)
-      const endA = new Date(a.auction_end_time || 0).getTime();
-      const endB = new Date(b.auction_end_time || 0).getTime();
-      return endA - endB;
-    });
-  
-  const endedAuctions = filteredListings
-    .filter(listing => {
-      // Show auctions that are explicitly ended OR active but past their end time
-      if (listing.auction_status === 'ended') return true;
-      if (listing.auction_status === 'cancelled') return true;
-      if (listing.auction_status === 'paused') return true;
-      if (listing.auction_status === 'sold') return true;
+      if (!activeSchedule) return false;
       
-      // Also include active auctions that have passed their end time
-      if (listing.auction_status === 'active' && listing.auction_end_time) {
-        const endTime = new Date(listing.auction_end_time);
+      // If scheduled but not started yet, still show it
+      if (activeSchedule.status === 'scheduled') return true;
+      
+      // If active, check if it hasn't ended yet
+      if (activeSchedule.status === 'active') {
+        if (!activeSchedule.end_time) return true;
+        const endTime = new Date(activeSchedule.end_time);
         const now = new Date();
-        return endTime <= now;
+        return endTime > now;
       }
       
       return false;
     })
     .sort((a, b) => {
+      // Sort by auction end time ascending (ending soonest first)
+      const endA = a.auction_schedules?.[0]?.end_time ? new Date(a.auction_schedules[0].end_time).getTime() : 0;
+      const endB = b.auction_schedules?.[0]?.end_time ? new Date(b.auction_schedules[0].end_time).getTime() : 0;
+      return endA - endB;
+    });
+  
+  const endedAuctions = filteredListings
+    .filter(listing => {
+      // Check if car has an ended, cancelled, or paused schedule
+      const endedSchedule = listing.auction_schedules?.find((schedule: any) => 
+        schedule.status === 'ended' || schedule.status === 'cancelled' || schedule.status === 'paused'
+      );
+      
+      if (endedSchedule) return true;
+      
+      // Also check for active schedules that have passed their end time
+      const activeSchedule = listing.auction_schedules?.find((schedule: any) => 
+        schedule.status === 'active'
+      );
+      
+      if (activeSchedule?.end_time) {
+        const endTime = new Date(activeSchedule.end_time);
+        const now = new Date();
+        if (endTime <= now) return true;
+      }
+      
+      // Include cars marked as sold
+      if (listing.auction_status === 'sold') return true;
+      
+      return false;
+    })
+    .sort((a, b) => {
       // Sort by end time descending (most recently ended first)
-      const endA = new Date(a.auction_end_time || 0).getTime();
-      const endB = new Date(b.auction_end_time || 0).getTime();
+      const endA = a.auction_schedules?.[0]?.end_time ? new Date(a.auction_schedules[0].end_time).getTime() : 0;
+      const endB = b.auction_schedules?.[0]?.end_time ? new Date(b.auction_schedules[0].end_time).getTime() : 0;
       return endB - endA;
     });
 
-  const notConfiguredListings = filteredListings.filter(listing =>
-    !listing.auction_status && !listing.is_auction
-  );
+  const notConfiguredListings = filteredListings.filter(listing => {
+    // Cars that don't have reserve price configured or are missing key auction data
+    const hasReservePrice = listing.reserve_price && listing.reserve_price > 0;
+    const hasSchedule = listing.auction_schedules && listing.auction_schedules.length > 0;
+    const isSold = listing.auction_status === 'sold';
+    
+    // Not configured if: no reserve price AND not sold AND no active schedule
+    return !hasReservePrice && !isSold && !hasSchedule;
+  });
 
   const handleScheduleClick = (auction: Auction) => {
     setSelectedAuction(auction);

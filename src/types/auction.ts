@@ -20,6 +20,14 @@ export type Auction = Car & {
   auction_start_time?: string;
   auction_end_time?: string;
   sellerEmail?: string;
+  auction_schedules?: Array<{
+    id: string;
+    status: string;
+    start_time: string;
+    end_time: string;
+    created_at: string;
+    notes: string | null;
+  }>;
 };
 
 export type AuctionStatus = "active" | "ended" | "paused" | "cancelled" | "sold" | "ready";
