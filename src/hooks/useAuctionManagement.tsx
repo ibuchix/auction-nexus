@@ -102,11 +102,11 @@ export function useAuctionManagement() {
       // Cars are "ready for auction" if they don't have any active/scheduled or ended auctions
       
       const hasActiveOrScheduled = listing.auction_schedules?.some((schedule: any) => 
-        schedule.status === 'active' || schedule.status === 'scheduled'
+        schedule.status === 'running' || schedule.status === 'scheduled'
       );
       
       const hasEnded = listing.auction_schedules?.some((schedule: any) => 
-        schedule.status === 'ended' || schedule.status === 'cancelled' || schedule.status === 'paused'
+        schedule.status === 'completed' || schedule.status === 'cancelled'
       );
       
       // Ready if: no active/scheduled AND no ended auctions
@@ -124,7 +124,7 @@ export function useAuctionManagement() {
     .filter(listing => {
       // Check if car has an active or scheduled auction in auction_schedules
       const activeSchedule = listing.auction_schedules?.find((schedule: any) => 
-        schedule.status === 'active' || schedule.status === 'scheduled'
+        schedule.status === 'running' || schedule.status === 'scheduled'
       );
       
       if (!activeSchedule) return false;
@@ -132,8 +132,8 @@ export function useAuctionManagement() {
       // If scheduled but not started yet, still show it
       if (activeSchedule.status === 'scheduled') return true;
       
-      // If active, check if it hasn't ended yet
-      if (activeSchedule.status === 'active') {
+      // If running, check if it hasn't ended yet
+      if (activeSchedule.status === 'running') {
         if (!activeSchedule.end_time) return true;
         const endTime = new Date(activeSchedule.end_time);
         const now = new Date();
@@ -151,20 +151,20 @@ export function useAuctionManagement() {
   
   const endedAuctions = filteredListings
     .filter(listing => {
-      // Check if car has an ended, cancelled, or paused schedule
+      // Check if car has a completed or cancelled schedule
       const endedSchedule = listing.auction_schedules?.find((schedule: any) => 
-        schedule.status === 'ended' || schedule.status === 'cancelled' || schedule.status === 'paused'
+        schedule.status === 'completed' || schedule.status === 'cancelled'
       );
       
       if (endedSchedule) return true;
       
-      // Also check for active schedules that have passed their end time
-      const activeSchedule = listing.auction_schedules?.find((schedule: any) => 
-        schedule.status === 'active'
+      // Also check for running schedules that have passed their end time
+      const runningSchedule = listing.auction_schedules?.find((schedule: any) => 
+        schedule.status === 'running'
       );
       
-      if (activeSchedule?.end_time) {
-        const endTime = new Date(activeSchedule.end_time);
+      if (runningSchedule?.end_time) {
+        const endTime = new Date(runningSchedule.end_time);
         const now = new Date();
         if (endTime <= now) return true;
       }
