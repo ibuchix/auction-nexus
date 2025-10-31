@@ -99,22 +99,19 @@ export function useAuctionManagement() {
 
   const readyAuctions = filteredListings
     .filter(listing => {
-      // Check if car has any active or scheduled auction schedule
-      const hasActiveSchedule = listing.auction_schedules?.some((schedule: any) => 
+      // Cars are "ready for auction" if they don't have any active/scheduled or ended auctions
+      
+      const hasActiveOrScheduled = listing.auction_schedules?.some((schedule: any) => 
         schedule.status === 'active' || schedule.status === 'scheduled'
       );
       
-      // If car has an active/scheduled auction, it's not "ready" anymore
-      if (hasActiveSchedule) return false;
+      const hasEnded = listing.auction_schedules?.some((schedule: any) => 
+        schedule.status === 'ended' || schedule.status === 'cancelled' || schedule.status === 'paused'
+      );
       
-      // Cars ready for auction:
-      // 1. Must have reserve price configured (greater than 0)
-      // 2. Don't have an active schedule
-      // 3. Haven't been sold
-      const hasReservePrice = listing.reserve_price && listing.reserve_price > 0;
-      const notSold = listing.auction_status !== 'sold';
-      
-      return hasReservePrice && notSold;
+      // Ready if: no active/scheduled AND no ended auctions
+      // This means either no auction_schedules at all, or only old completed ones
+      return !hasActiveOrScheduled && !hasEnded;
     })
     .sort((a, b) => {
       // Sort by created_at descending (newest first)
