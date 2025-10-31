@@ -4,7 +4,6 @@ import { Auction, AuctionStatus } from "@/types/auction";
 import { useToast } from "@/hooks/use-toast";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { adminSupabase } from "@/integrations/supabase/adminClient";
-import { objectToCamelCase } from "@/utils/caseConverter";
 
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,8 +62,8 @@ export function useAuctionManagement() {
         setHasNextPage(currentPage < calculatedTotalPages);
         setHasPreviousPage(currentPage > 1);
         
-        // Transform snake_case database fields to camelCase for components
-        const transformedData = (data || []).map(item => objectToCamelCase(item) as Auction);
+        // Return data directly from database in snake_case format
+        const transformedData = (data || []) as Auction[];
         
         return transformedData;
       } catch (err) {
