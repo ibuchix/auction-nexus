@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { CarImage, CarDocument } from "../types";
 import { isImageFile, isDocumentFile, getStorageBucket, extractFileName } from "@/utils/fileManagement";
+import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 
 export function useFileManagement(carId: string, sellerId: string) {
   const [images, setImages] = useState<CarImage[]>([]);
@@ -20,7 +21,7 @@ export function useFileManagement(carId: string, sellerId: string) {
     
     try {
       // Step 1: Get car's manual_valuation_id if it exists
-      const { data: carData } = await adminSupabase
+      const { data: carData } = await supabase
         .from('cars')
         .select('valuation_data')
         .eq('id', carId)
@@ -31,7 +32,7 @@ export function useFileManagement(carId: string, sellerId: string) {
         : null;
       
       // Step 2: Fetch from car_file_uploads
-      const { data: carFiles, error: carFilesError } = await adminSupabase
+      const { data: carFiles, error: carFilesError } = await supabase
         .from('car_file_uploads')
         .select('*')
         .eq('car_id', carId)
@@ -43,7 +44,7 @@ export function useFileManagement(carId: string, sellerId: string) {
       // Step 3: Fetch from manual_file_uploads if applicable
       let manualFiles: any[] = [];
       if (manualValuationId) {
-        const { data, error: manualFilesError } = await adminSupabase
+        const { data, error: manualFilesError } = await supabase
           .from('manual_file_uploads')
           .select('*')
           .eq('manual_valuation_id', manualValuationId)
@@ -68,9 +69,7 @@ export function useFileManagement(carId: string, sellerId: string) {
         const isDoc = isDocumentFile(file.file_type, file.file_path);
         const bucket = getStorageBucket(file.file_path, isDoc);
         
-        const { data: urlData } = await adminSupabase.storage
-          .from(bucket)
-          .createSignedUrl(file.file_path, 3600);
+        const urlData = await edgeFunctionAdminOperations.getSignedStorageUrl(bucket, file.file_path, 3600) as { signedUrl?: string } | null;
         
         if (urlData?.signedUrl) {
           if (isImage) {
@@ -119,7 +118,7 @@ export function useFileManagement(carId: string, sellerId: string) {
       const bucket = fileType === 'document' ? 'car-files' : 'car-images';
       const filePath = `${carId}/${category}/${timestamp}-${file.name}`;
 
-      const { error: uploadError } = await adminSupabase.storage
+      const { error: uploadError } = await supabase.storage
         .from(bucket)
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -131,7 +130,7 @@ export function useFileManagement(carId: string, sellerId: string) {
       const currentFiles = fileType === 'image' ? images : documents;
       const nextOrder = Math.max(0, ...currentFiles.map(f => f.display_order)) + 1;
       
-      const { error: dbError } = await adminSupabase
+      const { error: dbError } = await supabase
         .from('car_file_uploads')
         .insert({
           car_id: carId,
@@ -169,7 +168,7 @@ export function useFileManagement(carId: string, sellerId: string) {
     try {
       const tableName = source === 'car' ? 'car_file_uploads' : 'manual_file_uploads';
       
-      const { error: dbError } = await adminSupabase
+      const { error: dbError } = await supabase
         .from(tableName)
         .update({ 
           upload_status: 'deleted',
@@ -183,7 +182,7 @@ export function useFileManagement(carId: string, sellerId: string) {
       const isDoc = isDocumentFile('', filePath);
       const bucket = getStorageBucket(filePath, isDoc);
 
-      adminSupabase.storage
+      supabase.storage
         .from(bucket)
         .remove([filePath])
         .catch(console.error);
@@ -209,7 +208,7 @@ export function useFileManagement(carId: string, sellerId: string) {
   const reorderFiles = async (reorderedFiles: (CarImage | CarDocument)[]) => {
     try {
       const updates = reorderedFiles.map((file, index) => 
-        adminSupabase
+        supabase
           .from('car_file_uploads')
           .update({ display_order: index })
           .eq('id', file.id)

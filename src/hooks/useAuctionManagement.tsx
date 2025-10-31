@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Auction, AuctionStatus } from "@/types/auction";
 import { useToast } from "@/hooks/use-toast";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
-import { adminOperations } from "@/utils/adminOperations";
+import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,12 +28,10 @@ export function useAuctionManagement() {
     queryKey: ['adminVehicleListings', showAllCars, currentPage, pageSize],
     queryFn: async () => {
       try {
-        const response = await adminOperations.getAuctionListings(
+        const response = await edgeFunctionAdminOperations.getAuctionListings({
           showAllCars, 
-          statusFilter === "all" ? undefined : statusFilter,
-          currentPage,
-          pageSize
-        );
+          status: statusFilter === "all" ? null : statusFilter
+        });
         
         if (!response) {
           console.error('❌ [AuctionMgmt] No response from admin operations');

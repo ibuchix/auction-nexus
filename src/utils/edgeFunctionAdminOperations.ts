@@ -217,6 +217,10 @@ export const edgeFunctionAdminOperations = {
     console.log('Update data:', updateData);
     return performAdminOperation('updateCar', { carId, updateData });
   },
+
+  getSignedStorageUrl: async (bucket: string, filePath: string, expiresIn: number = 3600) => {
+    return performAdminOperation('getSignedStorageUrl', { bucket, filePath, expiresIn });
+  },
   
   // System health
   checkSystemHealth: async () => {

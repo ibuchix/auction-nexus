@@ -452,6 +452,20 @@ serve(async (req) => {
         result = updateCarData
         break
 
+      case 'getSignedStorageUrl':
+        console.log('Creating signed storage URL...')
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from(params.bucket)
+          .createSignedUrl(params.filePath, params.expiresIn || 3600)
+
+        if (signedUrlError) {
+          console.error('Signed URL error:', signedUrlError)
+          throw new Error(`Failed to create signed URL: ${signedUrlError.message}`)
+        }
+
+        result = signedUrlData
+        break
+
       case 'checkSystemHealth':
         console.log('Checking system health...')
         // Test database connection

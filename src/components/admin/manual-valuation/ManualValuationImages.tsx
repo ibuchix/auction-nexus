@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ManualValuationImage } from "@/hooks/useManualValuation";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
 import { toast } from "sonner";
+import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 
 interface ManualValuationImagesProps {
   images: ManualValuationImage[];
@@ -64,11 +64,9 @@ export function ManualValuationImages({ images }: ManualValuationImagesProps) {
           
           for (const path of paths) {
             try {
-              const { data, error } = await adminSupabase.storage
-                .from('manual-valuation-photos')
-                .createSignedUrl(path, 3600); // 1 hour expiry
+              const data = await edgeFunctionAdminOperations.getSignedStorageUrl('manual-valuation-photos', path, 3600) as { signedUrl?: string } | null;
 
-              if (!error && data) {
+              if (data?.signedUrl) {
                 signedUrl = data.signedUrl;
                 break;
               }
