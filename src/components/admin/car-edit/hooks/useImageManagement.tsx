@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { adminSupabase } from "@/integrations/supabase/adminClient";
 import { useToast } from "@/hooks/use-toast";
 import type { CarImage } from "../types";
-import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 
 export function useImageManagement(carId: string, sellerId: string) {
   const [images, setImages] = useState<CarImage[]>([]);
@@ -15,7 +14,7 @@ export function useImageManagement(carId: string, sellerId: string) {
     
     setIsLoading(true);
     try {
-      const { data: fileUploads, error } = await supabase
+      const { data: fileUploads, error } = await adminSupabase
         .from('car_file_uploads')
         .select('*')
         .eq('car_id', carId)
@@ -33,7 +32,9 @@ export function useImageManagement(carId: string, sellerId: string) {
             ? 'manual-valuation-photos'
             : 'car-images';
           
-          const urlData = await edgeFunctionAdminOperations.getSignedStorageUrl(bucket, upload.file_path, 3600) as { signedUrl?: string } | null;
+          const { data: urlData } = await adminSupabase.storage
+            .from(bucket)
+            .createSignedUrl(upload.file_path, 3600);
 
           if (urlData?.signedUrl) {
             imagesWithUrls.push({
@@ -66,7 +67,7 @@ export function useImageManagement(carId: string, sellerId: string) {
       const timestamp = Date.now();
       const filePath = `${carId}/${category}/${timestamp}-${file.name}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await adminSupabase.storage
         .from('car-images')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -77,7 +78,7 @@ export function useImageManagement(carId: string, sellerId: string) {
 
       const nextOrder = Math.max(0, ...images.map(img => img.display_order)) + 1;
       
-      const { error: dbError } = await supabase
+      const { error: dbError } = await adminSupabase
         .from('car_file_uploads')
         .insert({
           car_id: carId,
@@ -113,7 +114,7 @@ export function useImageManagement(carId: string, sellerId: string) {
 
   const deleteImage = async (imageId: string, filePath: string) => {
     try {
-      const { error: dbError } = await supabase
+      const { error: dbError } = await adminSupabase
         .from('car_file_uploads')
         .update({ 
           upload_status: 'deleted',
@@ -128,7 +129,7 @@ export function useImageManagement(carId: string, sellerId: string) {
         ? 'manual-valuation-photos'
         : 'car-images';
 
-      supabase.storage
+      adminSupabase.storage
         .from(bucket)
         .remove([filePath])
         .catch(console.error);
@@ -154,7 +155,7 @@ export function useImageManagement(carId: string, sellerId: string) {
   const reorderImages = async (reorderedImages: CarImage[]) => {
     try {
       const updates = reorderedImages.map((img, index) => 
-        supabase
+        adminSupabase
           .from('car_file_uploads')
           .update({ display_order: index })
           .eq('id', img.id)
