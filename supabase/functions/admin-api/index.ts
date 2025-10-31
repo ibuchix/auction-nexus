@@ -432,6 +432,26 @@ serve(async (req) => {
         result = cancelData
         break
 
+      case 'updateCar':
+        console.log('Updating car...')
+        const { data: updateCarData, error: updateCarError } = await supabase
+          .from('cars')
+          .update({
+            ...params.updateData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', params.carId)
+          .select()
+          .single()
+
+        if (updateCarError) {
+          console.error('Car update error:', updateCarError)
+          throw new Error(`Car update failed: ${updateCarError.message}`)
+        }
+
+        result = updateCarData
+        break
+
       case 'checkSystemHealth':
         console.log('Checking system health...')
         // Test database connection

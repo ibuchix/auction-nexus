@@ -210,6 +210,13 @@ export const edgeFunctionAdminOperations = {
   cancelAuction: async (auctionId: string) => {
     return performAdminOperation('cancelAuction', { auctionId });
   },
+
+  updateCar: async (carId: string, updateData: Record<string, any>) => {
+    console.log('=== Calling updateCar ===');
+    console.log('Car ID:', carId);
+    console.log('Update data:', updateData);
+    return performAdminOperation('updateCar', { carId, updateData });
+  },
   
   // System health
   checkSystemHealth: async () => {
