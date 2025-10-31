@@ -73,7 +73,32 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
+      // If no session exists, just clear state and return success
+      if (!session) {
+        setUser(null);
+        setSession(null);
+        setIsAdmin(false);
+        toast({
+          title: "Signed out",
+          description: "You have been successfully signed out.",
+        });
+        return;
+      }
+
       const { error } = await supabase.auth.signOut();
+      
+      // Ignore "session missing" errors - this means we're already logged out
+      if (error && error.message.includes('session')) {
+        setUser(null);
+        setSession(null);
+        setIsAdmin(false);
+        toast({
+          title: "Signed out",
+          description: "You have been successfully signed out.",
+        });
+        return;
+      }
+      
       if (error) throw error;
       
       toast({
@@ -82,11 +107,26 @@ export function useAuth() {
       });
     } catch (error) {
       console.error('Sign out error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out.",
-        variant: "destructive",
-      });
+      // Still clear local state even on error
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
+      
+      // Only show error for non-session-related issues
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (!errorMessage.includes('session')) {
+        toast({
+          title: "Error",
+          description: "Failed to sign out.",
+          variant: "destructive",
+        });
+      } else {
+        // Session already gone, treat as success
+        toast({
+          title: "Signed out",
+          description: "You have been successfully signed out.",
+        });
+      }
     }
   };
 
