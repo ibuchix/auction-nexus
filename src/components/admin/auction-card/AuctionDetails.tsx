@@ -8,9 +8,10 @@ interface AuctionDetailsProps {
   notes?: string;
   reservePrice?: number;
   valuation_data?: any;
+  createdAt?: string;
 }
 
-export function AuctionDetails({ price, endTime, notes, reservePrice, valuation_data }: AuctionDetailsProps) {
+export function AuctionDetails({ price, endTime, notes, reservePrice, valuation_data, createdAt }: AuctionDetailsProps) {
   // Use the reserve price from valuation_data if it exists, otherwise fall back to other prices
   const displayPrice = valuation_data?.reservePrice || reservePrice || price;
   
@@ -23,7 +24,11 @@ export function AuctionDetails({ price, endTime, notes, reservePrice, valuation_
         <div className="flex items-center gap-1">
           <Clock className="h-4 w-4" />
           <span>
-            Ends: {new Date(endTime || '').toLocaleString()}
+            {endTime ? (
+              <>Ends: {new Date(endTime).toLocaleString()}</>
+            ) : (
+              <>Listed: {new Date(createdAt || Date.now()).toLocaleString()}</>
+            )}
           </span>
         </div>
       </div>

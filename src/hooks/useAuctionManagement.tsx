@@ -4,6 +4,7 @@ import { Auction, AuctionStatus } from "@/types/auction";
 import { useToast } from "@/hooks/use-toast";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { objectToCamelCase } from "@/utils/caseConverter";
 
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,7 +53,10 @@ export function useAuctionManagement() {
         setHasNextPage(currentPage < calculatedTotalPages);
         setHasPreviousPage(currentPage > 1);
         
-        return data || [];
+        // Transform snake_case database fields to camelCase for components
+        const transformedData = (data || []).map(item => objectToCamelCase(item) as Auction);
+        
+        return transformedData;
       } catch (err) {
         console.error('💥 [AuctionMgmt] Exception in queryFn:', err);
         errorCountRef.current = errorCountRef.current + 1;

@@ -131,6 +131,7 @@ export function AdminAuctionCard({
               notes={auction.sellerNotes}
               reservePrice={reservePrice}
               valuation_data={auction.valuationData}
+              createdAt={auction.createdAt}
             />
           )}
 
