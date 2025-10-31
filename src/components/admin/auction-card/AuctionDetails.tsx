@@ -21,16 +21,12 @@ export function AuctionDetails({ price, endTime, notes, reservePrice, valuation_
         <div className="flex items-center gap-1">
           <PLNCurrency value={displayPrice} className="font-semibold" />
         </div>
-        <div className="flex items-center gap-1">
-          <Clock className="h-4 w-4" />
-          <span>
-            {endTime ? (
-              <>Ends: {new Date(endTime).toLocaleString()}</>
-            ) : (
-              <>Listed: {new Date(createdAt || Date.now()).toLocaleString()}</>
-            )}
-          </span>
-        </div>
+        {endTime && (
+          <div className="flex items-center gap-1">
+            <Clock className="h-4 w-4" />
+            <span>Ends: {new Date(endTime).toLocaleString()}</span>
+          </div>
+        )}
       </div>
       {notes && (
         <div className="mt-2">
