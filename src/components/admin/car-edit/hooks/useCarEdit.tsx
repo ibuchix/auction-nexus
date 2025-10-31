@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { objectToSnakeCase } from "@/utils/caseConverter";
 import { vehicleDetailsSchema, sellerInfoSchema, type CarEditFormData } from "../types";
-import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
+import { adminSupabase } from "@/integrations/supabase/adminClient";
 
 export function useCarEdit(auction: any) {
   const [formData, setFormData] = useState<CarEditFormData>({
@@ -129,13 +129,15 @@ export function useCarEdit(auction: any) {
     try {
       const updateData = objectToSnakeCase(formData);
       
-      const result = await edgeFunctionAdminOperations.updateCar(
-        auction.id,
-        updateData
-      );
+      const { data: result, error } = await adminSupabase
+        .from('cars')
+        .update(updateData)
+        .eq('id', auction.id)
+        .select()
+        .single();
 
-      if (!result) {
-        throw new Error('Failed to update car');
+      if (error) {
+        throw new Error(error.message);
       }
 
       toast({

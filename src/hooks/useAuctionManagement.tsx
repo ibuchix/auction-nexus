@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Auction, AuctionStatus } from "@/types/auction";
 import { useToast } from "@/hooks/use-toast";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
-import { adminOperations } from "@/utils/adminOperations";
+import { adminSupabase } from "@/integrations/supabase/adminClient";
 
 export function useAuctionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,51 +28,31 @@ export function useAuctionManagement() {
     queryKey: ['adminVehicleListings', showAllCars, currentPage, pageSize],
     queryFn: async () => {
       try {
-        const response = await adminOperations.getAuctionListings(
-          showAllCars, 
-          statusFilter === "all" ? undefined : statusFilter,
-          currentPage,
-          pageSize
-        );
+        // Direct database access with service role bypassing RLS
+        const { data, error, count } = await adminSupabase
+          .from('cars')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
         
-        if (!response) {
-          console.error('❌ [AuctionMgmt] No response from admin operations');
-          errorCountRef.current = errorCountRef.current + 1;
-          if (errorCountRef.current < 3) {
-            return [];
-          }
-          toast({
-            title: "Error",
-            description: "Failed to load auction listings",
-            variant: "destructive",
-          });
-          return [];
+        if (error) {
+          console.error('❌ [AuctionMgmt] Database error:', error);
+          throw error;
         }
         
         // Reset error count on success
         errorCountRef.current = 0;
         
-        // Extract pagination metadata if available with proper type checking
-        if (response && typeof response === 'object' && 'pagination' in response) {
-          const paginationData = (response as any).pagination;
-          if (paginationData) {
-            setTotalCount(paginationData.totalCount || 0);
-            setTotalPages(paginationData.totalPages || 1);
-            setHasNextPage(paginationData.hasNextPage || false);
-            setHasPreviousPage(paginationData.hasPreviousPage || false);
-          }
-        }
+        // Calculate pagination metadata
+        const totalRecords = count || 0;
+        const calculatedTotalPages = Math.ceil(totalRecords / pageSize);
         
-        // Return just the data array with proper type checking
-        if (response && typeof response === 'object' && 'data' in response) {
-          const responseData = (response as any).data;
-          const auctionData = Array.isArray(responseData) ? responseData : [responseData];
-          return auctionData;
-        }
+        setTotalCount(totalRecords);
+        setTotalPages(calculatedTotalPages);
+        setHasNextPage(currentPage < calculatedTotalPages);
+        setHasPreviousPage(currentPage > 1);
         
-        // Fallback for legacy response format
-        const auctionData = Array.isArray(response) ? response : [response];
-        return auctionData;
+        return data || [];
       } catch (err) {
         console.error('💥 [AuctionMgmt] Exception in queryFn:', err);
         errorCountRef.current = errorCountRef.current + 1;
@@ -88,7 +68,7 @@ export function useAuctionManagement() {
     },
     retry: 1,
     refetchOnWindowFocus: false,
-    staleTime: 30000, // Data stays fresh for 30 seconds
+    staleTime: 30000,
   });
 
   const filteredListings = (Array.isArray(listings) ? listings : []).filter(listing => {
@@ -98,7 +78,7 @@ export function useAuctionManagement() {
       (listing.model?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (listing.vin?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     
-    const matchesStatus = statusFilter === "all" || listing.auctionStatus === statusFilter;
+    const matchesStatus = statusFilter === "all" || listing.auction_status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -109,12 +89,12 @@ export function useAuctionManagement() {
       // 1. New cars with no auction_status
       // 2. Cars with 'ready' status
       // Note: Ended auctions should NOT appear here, only in ended tab
-      if (!listing.auctionStatus || listing.auctionStatus === 'ready') {
+      if (!listing.auction_status || listing.auction_status === 'ready') {
         return true;
       }
       
       // Include cancelled or paused auctions that can be restarted
-      if ((listing.auctionStatus === 'cancelled' || listing.auctionStatus === 'paused') && 
+      if ((listing.auction_status === 'cancelled' || listing.auction_status === 'paused') && 
           listing.status === 'available') {
         return true;
       }
@@ -123,39 +103,39 @@ export function useAuctionManagement() {
     })
     .sort((a, b) => {
       // Sort by created_at descending (newest first)
-      const dateA = new Date(a.createdAt || a.created_at || 0).getTime();
-      const dateB = new Date(b.createdAt || b.created_at || 0).getTime();
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
       return dateB - dateA;
     });
   
   const activeAuctions = filteredListings
     .filter(listing => {
       // Only show auctions that are marked as active AND haven't ended yet
-      if (listing.auctionStatus !== 'active') return false;
-      if (!listing.auctionEndTime) return true; // No end time set, show it
+      if (listing.auction_status !== 'active') return false;
+      if (!listing.auction_end_time) return true; // No end time set, show it
       
-      const endTime = new Date(listing.auctionEndTime);
+      const endTime = new Date(listing.auction_end_time);
       const now = new Date();
       return endTime > now; // Only include if end time is in the future
     })
     .sort((a, b) => {
       // Sort by auction end time ascending (ending soonest first)
-      const endA = new Date(a.auctionEndTime || 0).getTime();
-      const endB = new Date(b.auctionEndTime || 0).getTime();
+      const endA = new Date(a.auction_end_time || 0).getTime();
+      const endB = new Date(b.auction_end_time || 0).getTime();
       return endA - endB;
     });
   
   const endedAuctions = filteredListings
     .filter(listing => {
       // Show auctions that are explicitly ended OR active but past their end time
-      if (listing.auctionStatus === 'ended') return true;
-      if (listing.auctionStatus === 'cancelled') return true;
-      if (listing.auctionStatus === 'paused') return true;
-      if (listing.auctionStatus === 'sold') return true;
+      if (listing.auction_status === 'ended') return true;
+      if (listing.auction_status === 'cancelled') return true;
+      if (listing.auction_status === 'paused') return true;
+      if (listing.auction_status === 'sold') return true;
       
       // Also include active auctions that have passed their end time
-      if (listing.auctionStatus === 'active' && listing.auctionEndTime) {
-        const endTime = new Date(listing.auctionEndTime);
+      if (listing.auction_status === 'active' && listing.auction_end_time) {
+        const endTime = new Date(listing.auction_end_time);
         const now = new Date();
         return endTime <= now;
       }
@@ -164,13 +144,13 @@ export function useAuctionManagement() {
     })
     .sort((a, b) => {
       // Sort by end time descending (most recently ended first)
-      const endA = new Date(a.auctionEndTime || 0).getTime();
-      const endB = new Date(b.auctionEndTime || 0).getTime();
+      const endA = new Date(a.auction_end_time || 0).getTime();
+      const endB = new Date(b.auction_end_time || 0).getTime();
       return endB - endA;
     });
 
   const notConfiguredListings = filteredListings.filter(listing =>
-    !listing.auctionStatus && !listing.isAuction
+    !listing.auction_status && !listing.is_auction
   );
 
   const handleScheduleClick = (auction: Auction) => {
