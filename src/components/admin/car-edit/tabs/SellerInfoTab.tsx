@@ -35,6 +35,18 @@ export function SellerInfoTab({ formData, errors, updateField }: SellerInfoTabPr
         </div>
 
         <div className="col-span-2">
+          <Label htmlFor="seller_email">Email Address</Label>
+          <Input
+            id="seller_email"
+            type="email"
+            value={formData.seller_email || ''}
+            onChange={(e) => updateField('seller_email', e.target.value)}
+            placeholder="email@example.com"
+          />
+          {errors.seller_email && <p className="text-sm text-destructive mt-1">{errors.seller_email}</p>}
+        </div>
+
+        <div className="col-span-2">
           <Label htmlFor="street_address">Street Address</Label>
           <Input
             id="street_address"

@@ -33,6 +33,7 @@ export const vehicleDetailsSchema = z.object({
 export const sellerInfoSchema = z.object({
   seller_name: z.string().min(1, "Name required"),
   mobile_number: z.string().regex(/^\+?[0-9\s-()]+$/, "Invalid phone format"),
+  seller_email: z.string().email("Invalid email format").nullable().optional(),
   street_address: z.string().nullable().optional(),
   town: z.string().nullable().optional(),
   postcode: z.string().nullable().optional(),

@@ -23,6 +23,7 @@ export function useCarEdit(auction: any) {
     features: auction.features || {},
     seller_name: auction.seller_name || auction.sellerName || '',
     mobile_number: auction.mobile_number || auction.mobileNumber || '',
+    seller_email: auction.seller_email || auction.sellerEmail || '',
     street_address: auction.street_address || auction.streetAddress || '',
     town: auction.town || '',
     postcode: auction.postcode || '',
@@ -89,6 +90,7 @@ export function useCarEdit(auction: any) {
       sellerInfoSchema.parse({
         seller_name: formData.seller_name,
         mobile_number: formData.mobile_number,
+        seller_email: formData.seller_email,
         street_address: formData.street_address,
         town: formData.town,
         postcode: formData.postcode,
