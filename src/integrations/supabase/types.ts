@@ -561,6 +561,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          contact_email: string | null
           county: string | null
           created_at: string
           current_bid: number | null
@@ -615,6 +616,7 @@ export type Database = {
           auction_scheduled?: boolean
           auction_status?: string | null
           awaiting_seller_decision?: boolean
+          contact_email?: string | null
           county?: string | null
           created_at?: string
           current_bid?: number | null
@@ -669,6 +671,7 @@ export type Database = {
           auction_scheduled?: boolean
           auction_status?: string | null
           awaiting_seller_decision?: boolean
+          contact_email?: string | null
           county?: string | null
           created_at?: string
           current_bid?: number | null
@@ -1991,6 +1994,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vin_reservations: {
         Row: {
           created_at: string | null
@@ -2267,6 +2294,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          contact_email: string | null
           county: string | null
           created_at: string
           current_bid: number | null
@@ -2347,6 +2375,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          contact_email: string | null
           county: string | null
           created_at: string
           current_bid: number | null
@@ -2857,6 +2886,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          contact_email: string | null
           county: string | null
           created_at: string
           current_bid: number | null
@@ -2920,6 +2950,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          contact_email: string | null
           county: string | null
           created_at: string
           current_bid: number | null
@@ -3016,6 +3047,19 @@ export type Database = {
           is_nullable: string
         }[]
       }
+      get_user_and_dealer_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          address: string
+          business_registry_number: string
+          dealer_id: string
+          dealership_name: string
+          supervisor_name: string
+          tax_id: string
+          user_email: string
+          user_id: string
+        }[]
+      }
       get_user_id_by_email: { Args: { p_email: string }; Returns: Json }
       get_user_profile_for_listing: {
         Args: { p_user_id: string }
@@ -3027,6 +3071,13 @@ export type Database = {
       }
       has_paid_for_vehicle: {
         Args: { _car_id: string; _dealer_user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
         Returns: boolean
       }
       is_admin_user: { Args: { user_id?: string }; Returns: boolean }
@@ -3231,6 +3282,7 @@ export type Database = {
         | "feature"
         | "promotion"
         | "policy"
+      app_role: "admin" | "dealer" | "seller"
       auction_schedule_status:
         | "scheduled"
         | "running"
@@ -3415,6 +3467,7 @@ export const Constants = {
         "promotion",
         "policy",
       ],
+      app_role: ["admin", "dealer", "seller"],
       auction_schedule_status: [
         "scheduled",
         "running",
