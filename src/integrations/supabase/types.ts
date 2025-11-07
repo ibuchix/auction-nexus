@@ -561,7 +561,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
-          contact_email: string | null
+          contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
@@ -616,7 +616,7 @@ export type Database = {
           auction_scheduled?: boolean
           auction_status?: string | null
           awaiting_seller_decision?: boolean
-          contact_email?: string | null
+          contact_email: string
           county?: string | null
           created_at?: string
           current_bid?: number | null
@@ -671,7 +671,7 @@ export type Database = {
           auction_scheduled?: boolean
           auction_status?: string | null
           awaiting_seller_decision?: boolean
-          contact_email?: string | null
+          contact_email?: string
           county?: string | null
           created_at?: string
           current_bid?: number | null
@@ -1999,21 +1999,21 @@ export type Database = {
           assigned_at: string | null
           assigned_by: string | null
           id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: Database["public"]["Enums"]["user_role"]
           user_id: string
         }
         Insert: {
           assigned_at?: string | null
           assigned_by?: string | null
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: Database["public"]["Enums"]["user_role"]
           user_id: string
         }
         Update: {
           assigned_at?: string | null
           assigned_by?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: Database["public"]["Enums"]["user_role"]
           user_id?: string
         }
         Relationships: []
@@ -2294,7 +2294,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
-          contact_email: string | null
+          contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
@@ -2375,7 +2375,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
-          contact_email: string | null
+          contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
@@ -2886,7 +2886,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
-          contact_email: string | null
+          contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
@@ -2950,7 +2950,7 @@ export type Database = {
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
-          contact_email: string | null
+          contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
@@ -3075,7 +3075,7 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
+          _role: Database["public"]["Enums"]["user_role"]
           _user_id: string
         }
         Returns: boolean
