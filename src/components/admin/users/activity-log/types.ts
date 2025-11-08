@@ -33,6 +33,7 @@ export interface LogEntry {
   created_at: string;
   details?: any;
   user_id?: string;
+  user_full_name?: string;
   user?: {
     full_name?: string;
   };

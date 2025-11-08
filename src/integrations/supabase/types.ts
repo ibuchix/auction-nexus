@@ -2632,6 +2632,23 @@ export type Database = {
         Args: { p_seller_id?: string }
         Returns: Json
       }
+      get_activity_logs: {
+        Args: {
+          p_action_filter?: string
+          p_date_from?: string
+          p_date_to?: string
+        }
+        Returns: {
+          action: Database["public"]["Enums"]["audit_log_type"]
+          created_at: string
+          details: Json
+          entity_id: string
+          entity_type: string
+          id: string
+          user_full_name: string
+          user_id: string
+        }[]
+      }
       get_admin_notifications: {
         Args: never
         Returns: {
