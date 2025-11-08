@@ -21,7 +21,7 @@ const SellerManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredSellers = useMemo(() => {
-    if (!sellers) return [];
+    if (!sellers || !Array.isArray(sellers)) return [];
     if (!searchTerm.trim()) return sellers;
 
     const searchLower = searchTerm.toLowerCase();
@@ -34,6 +34,7 @@ const SellerManagement = () => {
   const totalPages = Math.ceil(totalSellers / pageSize);
 
   const paginatedSellers = useMemo(() => {
+    if (!Array.isArray(filteredSellers)) return [];
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     return filteredSellers.slice(startIndex, endIndex);

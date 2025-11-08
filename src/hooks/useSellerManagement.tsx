@@ -30,8 +30,8 @@ export const useSellerManagement = () => {
         console.log('Fetching sellers with admin operations...');
         // Use the admin operations to fetch all sellers
         const sellersData = await operations.getAllSellers();
-        if (!sellersData) {
-          console.error('Failed to fetch sellers data');
+        if (!sellersData || !Array.isArray(sellersData)) {
+          console.error('Invalid sellers data format:', sellersData);
           return [];
         }
         console.log('Fetched sellers data:', sellersData);
@@ -39,7 +39,7 @@ export const useSellerManagement = () => {
       } catch (error) {
         console.error('Error fetching sellers:', error);
         toast.error('Failed to load sellers data');
-        throw error;
+        return [];
       }
     }
   });
