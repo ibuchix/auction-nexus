@@ -2822,7 +2822,7 @@ export type Database = {
       get_form_tracking_logs: {
         Args: never
         Returns: {
-          action: string
+          action: Database["public"]["Enums"]["audit_log_type"]
           created_at: string
           details: Json
           entity_id: string
