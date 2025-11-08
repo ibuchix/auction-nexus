@@ -3031,6 +3031,21 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_sellers_with_emails: {
+        Args: never
+        Returns: {
+          active_listings: number
+          address: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_verified: boolean
+          total_listings: number
+          user_id: string
+          verification_status: string
+        }[]
+      }
       get_session_photos: {
         Args: { p_session_id: string; p_user_id: string }
         Returns: {
