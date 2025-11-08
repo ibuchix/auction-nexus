@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { SellerList } from "@/components/admin/seller-management/SellerList";
 import { DeleteSellerDialog } from "@/components/admin/seller-management/DeleteSellerDialog";
 import { SellerPagination } from "@/components/admin/seller-management/SellerPagination";
+import { SellerSearch } from "@/components/admin/seller-management/SellerSearch";
 import { useSellerManagement } from "@/hooks/useSellerManagement";
 
 const SellerManagement = () => {
@@ -17,16 +18,26 @@ const SellerManagement = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const totalSellers = sellers?.length || 0;
+  const filteredSellers = useMemo(() => {
+    if (!sellers) return [];
+    if (!searchTerm.trim()) return sellers;
+
+    const searchLower = searchTerm.toLowerCase();
+    return sellers.filter((seller) => 
+      seller.email?.toLowerCase().includes(searchLower)
+    );
+  }, [sellers, searchTerm]);
+
+  const totalSellers = filteredSellers.length;
   const totalPages = Math.ceil(totalSellers / pageSize);
 
   const paginatedSellers = useMemo(() => {
-    if (!sellers) return [];
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    return sellers.slice(startIndex, endIndex);
-  }, [sellers, currentPage, pageSize]);
+    return filteredSellers.slice(startIndex, endIndex);
+  }, [filteredSellers, currentPage, pageSize]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -35,6 +46,11 @@ const SellerManagement = () => {
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize);
     setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   if (isLoading) {
@@ -56,6 +72,11 @@ const SellerManagement = () => {
           Total Sellers: {sellers?.length || 0}
         </div>
       </div>
+
+      <SellerSearch 
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+      />
 
       <div className="bg-white rounded-lg shadow">
         <SellerList 
