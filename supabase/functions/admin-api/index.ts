@@ -207,64 +207,35 @@ serve(async (req) => {
         break
 
       case 'getAllSellers':
-        console.log('Fetching all sellers...')
+        console.log('Fetching all sellers with emails using RPC...')
         
-        // Fetch sellers and their cars separately
-        const { data: sellersData, error: sellersError } = await supabase
-          .from('sellers')
-          .select('*')
-          .order('created_at', { ascending: false })
+        // Use RPC function for efficient single-query retrieval
+        const { data: sellersWithEmails, error: sellersError } = await supabase
+          .rpc('get_sellers_with_emails')
 
         if (sellersError) {
-          console.error('Sellers query error:', sellersError)
-          throw new Error(`Sellers query failed: ${sellersError.message}`)
+          console.error('Sellers RPC error:', sellersError)
+          throw new Error(`Failed to fetch sellers: ${sellersError.message}`)
         }
 
-        // Fetch all cars for sellers
-        const { data: sellerCarsData, error: sellerCarsError } = await supabase
-          .from('cars')
-          .select('id, status, seller_id')
+        // Transform to match expected format
+        const formattedSellers = (sellersWithEmails || []).map((seller: any) => ({
+          id: seller.id,
+          user_id: seller.user_id,
+          role: 'seller',
+          created_at: seller.created_at,
+          name: seller.full_name,
+          email: seller.email,
+          mobile_number: null,
+          address: seller.address,
+          verification_status: seller.verification_status,
+          is_verified: seller.is_verified,
+          total_listings: seller.total_listings,
+          active_listings: seller.active_listings
+        }))
 
-        if (sellerCarsError) {
-          console.error('Cars query error:', sellerCarsError)
-        }
-
-        // Fetch emails from auth.users using admin client
-        const sellersWithEmails = await Promise.all(
-          (sellersData || []).map(async (seller: any) => {
-            // Get user data from auth.users
-            const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(
-              seller.user_id
-            )
-            
-            if (authError) {
-              console.error(`Error fetching user ${seller.user_id}:`, authError)
-            }
-            
-            // Calculate listing counts from cars data
-            const sellerCars = (sellerCarsData || []).filter((car: any) => car.seller_id === seller.user_id)
-            const total_listings = sellerCars.length
-            const active_listings = sellerCars.filter((car: any) => car.status === 'available').length
-            
-            return {
-              id: seller.id,
-              user_id: seller.user_id,
-              role: 'seller',
-              created_at: seller.created_at,
-              name: seller.full_name,
-              email: authUser?.user?.email || null,
-              mobile_number: null,
-              address: seller.address,
-              verification_status: seller.verification_status,
-              is_verified: seller.is_verified,
-              total_listings,
-              active_listings
-            }
-          })
-        )
-
-        console.log(`Successfully fetched ${sellersWithEmails.length} sellers with emails`)
-        result = sellersWithEmails
+        console.log(`Successfully fetched ${formattedSellers.length} sellers with emails (1 query instead of 155)`)
+        result = formattedSellers
         break
 
       case 'getAllDealers':
