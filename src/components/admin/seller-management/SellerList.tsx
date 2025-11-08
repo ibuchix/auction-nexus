@@ -41,7 +41,7 @@ export const SellerList = ({ sellers, onDeleteClick, isLoading }: SellerListProp
   };
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div>
       <Table>
         <TableHeader>
           <TableRow>
