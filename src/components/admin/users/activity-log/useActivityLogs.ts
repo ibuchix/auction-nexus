@@ -13,51 +13,31 @@ export function useActivityLogs() {
     to: new Date(),
   });
 
-  const { data: logs, isLoading } = useQuery({
+  const { data: logs, isLoading } = useQuery<LogEntry[]>({
     queryKey: ['userActivityLogs', actionFilter, dateRange],
     queryFn: async () => {
-      let query = supabase
-        .from('audit_logs')
-        .select(`
-          id,
-          action,
-          entity_type,
-          entity_id,
-          created_at,
-          details,
-          user_id,
-          user:profiles(full_name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (actionFilter !== "all") {
-        query = query.eq('action', actionFilter);
-      }
-
-      if (dateRange?.from) {
-        query = query.gte('created_at', dateRange.from.toISOString());
-      }
-
-      if (dateRange?.to) {
-        // Add one day to include the end date fully
-        const nextDay = new Date(dateRange.to);
+      const nextDay = dateRange?.to ? new Date(dateRange.to) : null;
+      if (nextDay) {
         nextDay.setDate(nextDay.getDate() + 1);
-        query = query.lt('created_at', nextDay.toISOString());
       }
 
-      const { data, error } = await query.limit(100);
+      const { data, error } = await supabase.rpc('get_activity_logs', {
+        p_action_filter: actionFilter === "all" ? null : actionFilter,
+        p_date_from: dateRange?.from?.toISOString() || null,
+        p_date_to: nextDay?.toISOString() || null
+      });
 
       if (error) {
         console.error('Error fetching activity logs:', error);
         throw error;
       }
 
-      return data || [];
+      return (data as any[]) || [];
     }
   });
 
   const filteredLogs = logs?.filter(log => {
-    const userName = log.user?.full_name?.toLowerCase() || '';
+    const userName = log.user_full_name?.toLowerCase() || '';
     const entityType = log.entity_type?.toLowerCase() || '';
     const entityId = log.entity_id?.toLowerCase() || '';
     

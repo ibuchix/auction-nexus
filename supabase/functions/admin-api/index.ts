@@ -72,11 +72,28 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id)
 
-    // Simplified admin check - direct user ID comparison
-    const isAdmin = user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e'
+    // Check admin status using user_roles table
+    const { data: isAdminData, error: adminError } = await supabase
+      .rpc('has_role', { 
+        _user_id: user.id, 
+        _role: 'admin' 
+      })
+
+    if (adminError) {
+      console.error('Admin check error:', adminError)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Failed to verify admin status'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const isAdmin = isAdminData === true
     
     if (!isAdmin) {
-      console.error('Admin check failed - not admin user')
+      console.error('Admin check failed - user does not have admin role')
       return new Response(
         JSON.stringify({ 
           success: false,
