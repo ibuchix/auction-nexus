@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Mail, Phone, MapPin } from "lucide-react";
+import { format } from "date-fns";
 
 interface Seller {
   id: string;
@@ -94,7 +95,7 @@ export const SellerList = ({ sellers, onDeleteClick, isLoading }: SellerListProp
                   </div>
                 </TableCell>
                 <TableCell>
-                  {new Date(seller.created_at).toLocaleDateString()}
+                  {format(new Date(seller.created_at), "MMM d, yyyy 'at' h:mm a")}
                 </TableCell>
                 <TableCell>
                   <Button
