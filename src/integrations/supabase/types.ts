@@ -2819,6 +2819,20 @@ export type Database = {
           type: string
         }[]
       }
+      get_form_tracking_logs: {
+        Args: never
+        Returns: {
+          action: string
+          created_at: string
+          details: Json
+          entity_id: string
+          entity_type: string
+          id: string
+          user_email: string
+          user_full_name: string
+          user_id: string
+        }[]
+      }
       get_live_auction_schedules: {
         Args: never
         Returns: {
@@ -3116,6 +3130,15 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: string
+      }
+      log_form_tracking_event: {
+        Args: {
+          p_event_type: string
+          p_form_type: string
+          p_metadata?: Json
+          p_source?: string
+        }
+        Returns: undefined
       }
       manual_auction_status_update: { Args: never; Returns: Json }
       mark_all_notifications_read: { Args: never; Returns: undefined }
