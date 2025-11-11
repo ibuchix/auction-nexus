@@ -1,4 +1,4 @@
-import { Car, Eye, RefreshCw, Calculator, Search } from "lucide-react";
+import { Car, Eye, RefreshCw, Calculator, Search, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { useManualValuation } from "@/hooks/useManualValuation";
 import { ManualValuationTable } from "@/components/admin/manual-valuation/ManualValuationTable";
 import { ManualValuationDialog } from "@/components/admin/manual-valuation/ManualValuationDialog";
 import { ManualValuationStagingDialog } from "@/components/admin/manual-valuation/ManualValuationStagingDialog";
+import { exportManualValuationsToCSV } from "@/utils/exportManualValuations";
+import { toast } from "sonner";
 
 const ManualValuation = () => {
   const {
@@ -33,14 +35,39 @@ const ManualValuation = () => {
     isUpdating
   } = useManualValuation();
 
+  const handleExport = () => {
+    try {
+      if (!valuations || valuations.length === 0) {
+        toast.error("No data to export");
+        return;
+      }
+      
+      exportManualValuationsToCSV(valuations);
+      toast.success(`Exported ${valuations.length} valuation${valuations.length === 1 ? '' : 's'}`);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export data");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Manual Valuation</h1>
-        <Button onClick={() => refetch()} disabled={isLoading}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleExport} 
+            disabled={isLoading || !valuations || valuations.length === 0}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
