@@ -14,48 +14,62 @@ export function useAdminAuth() {
   
   useEffect(() => {
     const checkAdminAccess = async () => {
+      console.log('[useAdminAuth] Starting admin check:', { 
+        hasUser: !!user, 
+        authIsAdmin, 
+        authLoading,
+        currentIsAdmin: isAdmin,
+        currentIsLoading: isLoading
+      });
+      
       setIsLoading(true);
       setError(null);
       
       try {
         // Wait for auth to complete
         if (authLoading) {
+          console.log('[useAdminAuth] Auth still loading, waiting...');
           return;
         }
 
         // If not authenticated or not admin according to auth hook, fail fast
         if (!user || !authIsAdmin) {
-          console.log('User not authenticated or not admin:', { user: !!user, authIsAdmin });
+          console.log('[useAdminAuth] User not authenticated or not admin from useAuth:', { 
+            user: !!user, 
+            authIsAdmin 
+          });
           setIsAdmin(false);
           setUserId(null);
           return;
         }
 
-        console.log('Verifying admin access using secure RPC for user:', user.id);
+        console.log('[useAdminAuth] Verifying admin access using secure RPC for user:', user.id);
         
         // Use secure server-side RPC to verify admin status
         const { data: isAdminCheck, error: rpcError } = await supabase.rpc('check_is_admin');
         
+        console.log('[useAdminAuth] RPC check_is_admin result:', { isAdminCheck, rpcError });
+        
         if (rpcError) {
-          console.error('Admin RPC check failed:', rpcError);
+          console.error('[useAdminAuth] Admin RPC check failed:', rpcError);
           throw new Error(`Admin verification failed: ${rpcError.message}`);
         }
         
         if (!isAdminCheck) {
-          console.log('User is not an admin');
+          console.log('[useAdminAuth] RPC confirmed user is not an admin');
           setIsAdmin(false);
           setUserId(null);
           return;
         }
         
-        console.log('Admin access verified successfully via RPC');
+        console.log('[useAdminAuth] ✅ Admin access verified successfully via RPC');
         
         setUserId(user.id);
         setIsAdmin(true);
         
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        console.error('Error testing admin access:', err);
+        console.error('[useAdminAuth] Error during admin access check:', err);
         
         setError(err);
         toast({
@@ -66,6 +80,7 @@ export function useAdminAuth() {
         setIsAdmin(false);
         setUserId(null);
       } finally {
+        console.log('[useAdminAuth] Admin check complete, setting isLoading to false');
         setIsLoading(false);
       }
     };

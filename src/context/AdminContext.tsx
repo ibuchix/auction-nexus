@@ -24,8 +24,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   
   useEffect(() => {
+    // Only show error toast if admin check definitively failed after loading is complete
+    // Add a delay to prevent false alarms during initial authentication
     if (isAdmin === false && !isLoading) {
-      toast.error('Admin access error. Check your JWT and service role key configuration.');
+      const timer = setTimeout(() => {
+        console.log('[AdminContext] Admin check failed after loading complete');
+        toast.error('Admin access error. Check your JWT and service role key configuration.');
+      }, 1000);
+      
+      return () => clearTimeout(timer);
     }
   }, [isAdmin, isLoading]);
   

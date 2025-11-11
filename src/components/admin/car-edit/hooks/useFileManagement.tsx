@@ -13,22 +13,41 @@ export function useFileManagement(carId: string, sellerId: string) {
   const { toast } = useToast();
 
   const fetchFiles = async () => {
-    if (!carId) return;
+    if (!carId) {
+      console.log('[useFileManagement] No carId provided, skipping fetch');
+      return;
+    }
+    
+    console.log('[useFileManagement] Starting to fetch files for carId:', carId);
     
     setIsLoadingImages(true);
     setIsLoadingDocuments(true);
     
     try {
       // Use SECURITY DEFINER function to fetch car files (bypasses RLS for admins)
+      console.log('[useFileManagement] Calling admin_get_car_files RPC...');
       const { data: carFilesResult, error: carFilesError } = await supabase
         .rpc('admin_get_car_files', { p_car_id: carId });
       
-      if (carFilesError) throw carFilesError;
+      if (carFilesError) {
+        console.error('[useFileManagement] RPC error:', carFilesError);
+        throw carFilesError;
+      }
       
       const result = carFilesResult as { success: boolean; files?: any[]; error?: string };
+      
+      console.log('[useFileManagement] RPC admin_get_car_files response:', { 
+        success: result?.success, 
+        fileCount: result?.files?.length,
+        error: carFilesError 
+      });
+      
       if (!result?.success) {
+        console.error('[useFileManagement] RPC returned unsuccessful result:', result?.error);
         throw new Error(result?.error || 'Failed to fetch car files');
       }
+      
+      console.log('[useFileManagement] Successfully fetched car files:', result.files?.length || 0);
       
       // Step 2: Get car's manual_valuation_id if it exists
       const { data: carData } = await supabase
