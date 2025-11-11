@@ -2282,6 +2282,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_delete_car_file: {
+        Args: { p_file_id: string; p_table_name: string }
+        Returns: undefined
+      }
       admin_end_auction: {
         Args: { p_admin_id: string; p_car_id: string; p_sold?: boolean }
         Returns: Json
@@ -2452,6 +2456,7 @@ export type Database = {
         Args: { p_valuation_id: string }
         Returns: Json
       }
+      admin_reorder_car_files: { Args: { p_files: Json }; Returns: undefined }
       admin_transfer_manual_valuation_to_cars: {
         Args: { p_reserve_price: number; p_valuation_id: string }
         Returns: Json
@@ -2472,6 +2477,17 @@ export type Database = {
       admin_update_manual_valuation: {
         Args: { p_valuation_data: Json; p_valuation_id: string }
         Returns: Json
+      }
+      admin_upload_car_file: {
+        Args: {
+          p_car_id: string
+          p_category: string
+          p_display_order: number
+          p_file_path: string
+          p_file_type: string
+          p_seller_id: string
+        }
+        Returns: string
       }
       approve_listing: {
         Args: { p_admin_id: string; p_listing_id: string; p_notes?: string }
