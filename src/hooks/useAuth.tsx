@@ -11,6 +11,35 @@ export function useAuth() {
   const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
+  // Helper function to check admin status with retry logic
+  const checkAdminWithRetry = async (retryCount = 0): Promise<boolean> => {
+    const maxRetries = 2;
+    const retryDelay = 500;
+
+    try {
+      const { data, error } = await supabase.rpc('check_is_admin');
+      
+      if (error) {
+        console.error(`Error checking admin status (attempt ${retryCount + 1}):`, error);
+        
+        // Retry if we haven't exceeded max retries
+        if (retryCount < maxRetries) {
+          console.log(`Retrying admin check in ${retryDelay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          return checkAdminWithRetry(retryCount + 1);
+        }
+        
+        return false;
+      }
+      
+      console.log('Admin check successful:', data);
+      return Boolean(data);
+    } catch (error) {
+      console.error('Exception during admin check:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -19,46 +48,35 @@ export function useAuth() {
         setSession(session);
         setUser(session?.user ?? null);
         
-      if (session?.user) {
-        // Secure admin check using server-side RPC
-        supabase.rpc('check_is_admin').then(({ data, error }) => {
-          if (error) {
-            console.error('Error checking admin status:', error);
-            setIsAdmin(false);
-          } else {
-            setIsAdmin(Boolean(data));
-            console.log('Admin status:', data);
-          }
-          setIsLoading(false); // Only set loading false after admin check completes
-        });
-      } else {
-        setIsAdmin(false);
-        setIsLoading(false); // Set loading false immediately if no user
-      }
+        if (session?.user) {
+          // Add small delay to ensure session is fully established
+          setTimeout(async () => {
+            const isAdminUser = await checkAdminWithRetry();
+            setIsAdmin(isAdminUser);
+            setIsLoading(false);
+          }, 100);
+        } else {
+          setIsAdmin(false);
+          setIsLoading(false);
+        }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Secure admin check using server-side RPC
-        supabase.rpc('check_is_admin').then(({ data, error }) => {
-          if (error) {
-            console.error('Error checking initial admin status:', error);
-            setIsAdmin(false);
-          } else {
-            setIsAdmin(Boolean(data));
-            console.log('Initial admin status:', data);
-          }
-          setIsLoading(false); // Only set loading false after admin check completes
-        });
+        // Add small delay to ensure session is fully established
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const isAdminUser = await checkAdminWithRetry();
+        setIsAdmin(isAdminUser);
+        setIsLoading(false);
       } else {
         setIsAdmin(false);
-        setIsLoading(false); // Set loading false immediately if no user
+        setIsLoading(false);
       }
     });
 
