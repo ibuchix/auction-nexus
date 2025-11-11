@@ -1,5 +1,5 @@
 
-import { adminSupabase } from '@/integrations/supabase/adminClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export async function diagnoseAdminAccess() {
   try {
@@ -31,7 +31,7 @@ export async function diagnoseAdminAccess() {
     }
 
     // Attempt to make a simple query with explicit headers
-    const { data, error } = await adminSupabase
+    const { data, error } = await supabase
       .from('cars')
       .select('id')
       .limit(1);

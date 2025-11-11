@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Auction, AuctionStatus } from "@/types/auction";
 import { useToast } from "@/hooks/use-toast";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 import { objectToCamelCase } from "@/utils/caseConverter";
 
 export function useAuctionManagement() {
@@ -30,7 +30,7 @@ export function useAuctionManagement() {
     queryFn: async () => {
       try {
         // Fetch cars with their auction schedules
-        const { data, error, count } = await adminSupabase
+        const { data, error, count } = await supabase
           .from('cars')
           .select(`
             *,

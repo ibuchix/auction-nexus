@@ -1,11 +1,10 @@
 
-import { adminSupabase } from '@/integrations/supabase/adminClient';
 import { supabase } from '@/integrations/supabase/client';
 import { objectToCamelCase, objectToSnakeCase } from './caseConverter';
 import { toast } from 'sonner';
 import { AuctionScheduleStatus, Auction } from '@/types/auction';
 
-// Check if current user is the admin
+// Check if current user is the admin using secure server-side RPC
 export const verifyCurrentUserIsAdmin = async () => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -15,10 +14,16 @@ export const verifyCurrentUserIsAdmin = async () => {
       return false;
     }
 
-    // Simple admin check - direct user ID comparison
-    const isAdmin = user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e';
-    console.log('Admin check result:', isAdmin);
-    return isAdmin;
+    // Secure admin check using server-side RPC
+    const { data, error } = await supabase.rpc('check_is_admin');
+    
+    if (error) {
+      console.error('Admin check failed:', error);
+      return false;
+    }
+    
+    console.log('Admin check result:', data);
+    return data || false;
   } catch (error) {
     console.error('Admin access check failed:', error);
     return false;
@@ -107,20 +112,26 @@ export async function performAdminOperation<T>(
   }
 }
 
-// Simplified admin access check using direct user ID
+// Simplified admin access check using secure server-side RPC
 export const checkAdminAccess = async () => {
   try {
-    const { data: { user } } = await adminSupabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       console.log('No authenticated user found');
       return false;
     }
 
-    // Simple admin check - direct user ID comparison
-    const isAdmin = user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e';
-    console.log('Admin check result:', isAdmin);
-    return isAdmin;
+    // Secure admin check using server-side RPC
+    const { data, error } = await supabase.rpc('check_is_admin');
+    
+    if (error) {
+      console.error('Admin check failed:', error);
+      return false;
+    }
+    
+    console.log('Admin check result:', data);
+    return data || false;
   } catch (error) {
     console.error('Admin access check failed:', error);
     return false;
@@ -132,78 +143,14 @@ export const adminOperations = {
   // Test admin access
   testAccess: checkAdminAccess,
   
-  // Fetch all dealers using direct admin access with email information
+  // Fetch all dealers - now uses edge function for secure access with email information
   getAllDealers: async (status?: string) => {
-    try {
-      console.log('Starting getAllDealers operation with status:', status);
-      
-      // Use admin client with service role to bypass RLS
-      let query = adminSupabase
+    return performAdminOperation('getAllDealers', async () => {
+      return await supabase
         .from('dealers')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (status && status !== 'all') {
-        console.log('Applying status filter:', status);
-        query = query.eq('verification_status', status);
-      }
-
-      const { data: dealersData, error } = await query;
-      
-      if (error) {
-        console.error('Error fetching dealers:', error);
-        toast.error(`Failed to load dealers: ${error.message}`);
-        return null;
-      }
-
-      console.log(`Fetched ${dealersData?.length || 0} dealers from database`);
-
-      // Fetch emails using admin client's auth admin methods
-      if (dealersData && dealersData.length > 0) {
-        const userIds = dealersData.map(dealer => dealer.user_id);
-        
-        const userDataPromises = userIds.map(async (userId) => {
-          try {
-            const { data: user, error: userError } = await adminSupabase.auth.admin.getUserById(userId);
-            const phoneNumber = user?.user?.user_metadata?.phone_number || 
-                               user?.user?.phone || 
-                               null;
-            return { 
-              userId, 
-              email: user?.user?.email || null,
-              phoneNumber 
-            };
-          } catch (error) {
-            console.warn(`Failed to fetch user data for user ${userId}:`, error);
-            return { userId, email: null, phoneNumber: null };
-          }
-        });
-
-        const userDataResults = await Promise.all(userDataPromises);
-        const userDataMap = userDataResults.reduce((acc, result) => {
-          acc[result.userId] = { 
-            email: result.email, 
-            phoneNumber: result.phoneNumber 
-          };
-          return acc;
-        }, {} as Record<string, { email: string | null; phoneNumber: string | null }>);
-
-        const dealersWithUserData = dealersData.map(dealer => ({
-          ...dealer,
-          email: userDataMap[dealer.user_id]?.email,
-          phoneNumber: userDataMap[dealer.user_id]?.phoneNumber
-        }));
-
-        console.log(`Successfully added emails to ${dealersWithUserData.length} dealers`);
-        return dealersWithUserData;
-      }
-
-      return dealersData || [];
-    } catch (error) {
-      console.error('Fatal error in getAllDealers:', error);
-      toast.error(`Failed to load dealers: ${(error as Error).message || 'Unknown error'}`);
-      return null;
-    }
+    });
   },
   
   // Verify dealer using authenticated admin client

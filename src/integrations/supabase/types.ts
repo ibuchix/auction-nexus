@@ -2502,6 +2502,7 @@ export type Database = {
         Args: { p_email: string }
         Returns: Json
       }
+      check_is_admin: { Args: never; Returns: boolean }
       check_seller_exists: { Args: { p_user_id: string }; Returns: Json }
       check_tax_id_exists: { Args: { tax_id: string }; Returns: Json }
       check_upload_rate_limit: {

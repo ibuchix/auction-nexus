@@ -1,7 +1,7 @@
 
 import { toast } from "sonner";
 import { DealerData } from "./types";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 import { adminOperations } from "@/utils/adminOperations";
 
 // Helper to validate UUID format
@@ -35,7 +35,7 @@ export const approveDealer = async (
     console.log('Approving dealer with params:', { dealerId, adminId, notes });
     
     // Update dealer verification status directly
-    const { data, error } = await adminSupabase
+    const { data, error } = await supabase
       .from('dealers')
       .update({ 
         verification_status: 'approved',
@@ -91,7 +91,7 @@ export const rejectDealer = async (
     console.log('Rejecting dealer with params:', { dealerId, adminId, rejectionReason, notes });
     
     // Update dealer verification status directly
-    const { data, error } = await adminSupabase
+    const { data, error } = await supabase
       .from('dealers')
       .update({ 
         verification_status: 'rejected',

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { objectToSnakeCase } from "@/utils/caseConverter";
 import { vehicleDetailsSchema, sellerInfoSchema, type CarEditFormData } from "../types";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useCarEdit(auction: any) {
   const [formData, setFormData] = useState<CarEditFormData>({
@@ -131,7 +131,7 @@ export function useCarEdit(auction: any) {
     try {
       const updateData = objectToSnakeCase(formData);
       
-      const { data: result, error } = await adminSupabase
+      const { data: result, error } = await supabase
         .from('cars')
         .update(updateData)
         .eq('id', auction.id)

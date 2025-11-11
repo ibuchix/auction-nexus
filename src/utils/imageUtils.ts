@@ -1,5 +1,5 @@
 
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CategorizedImage {
   url: string;
@@ -59,7 +59,7 @@ export async function fetchCarImagesFromDatabase(carId: string): Promise<Categor
   try {
     console.log('Fetching car images from database for car ID:', carId);
     
-    const { data: fileUploads, error } = await adminSupabase
+    const { data: fileUploads, error } = await supabase
       .from('car_file_uploads')
       .select('*')
       .eq('car_id', carId)
@@ -91,7 +91,7 @@ export async function fetchCarImagesFromDatabase(carId: string): Promise<Categor
           : 'car-images';
         
         // Generate signed URL from appropriate storage bucket
-        const { data: urlData, error: urlError } = await adminSupabase.storage
+        const { data: urlData, error: urlError } = await supabase.storage
           .from(bucket)
           .createSignedUrl(upload.file_path, 3600); // 1 hour expiry
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ManualValuationImage } from "@/hooks/useManualValuation";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface ManualValuationImagesProps {
@@ -64,7 +64,7 @@ export function ManualValuationImages({ images }: ManualValuationImagesProps) {
           
           for (const path of paths) {
             try {
-              const { data, error } = await adminSupabase.storage
+              const { data, error } = await supabase.storage
                 .from('manual-valuation-photos')
                 .createSignedUrl(path, 3600); // 1 hour expiry
 

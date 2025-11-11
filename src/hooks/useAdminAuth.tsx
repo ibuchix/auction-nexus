@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { verifyAdminAccess } from '@/utils/edgeFunctionAdminOperations';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,17 +31,24 @@ export function useAdminAuth() {
           return;
         }
 
-        console.log('Testing admin access via Edge Function for user:', user.id);
+        console.log('Verifying admin access using secure RPC for user:', user.id);
         
-        // Use Edge Function to verify access with proper JWT
-        const verificationResult = await verifyAdminAccess();
+        // Use secure server-side RPC to verify admin status
+        const { data: isAdminCheck, error: rpcError } = await supabase.rpc('check_is_admin');
         
-        if (!verificationResult || verificationResult.success === false) {
-          console.error('Admin access verification failed:', verificationResult);
-          throw new Error(`Admin verification failed: ${verificationResult?.error || 'Unknown error'}`);
+        if (rpcError) {
+          console.error('Admin RPC check failed:', rpcError);
+          throw new Error(`Admin verification failed: ${rpcError.message}`);
         }
         
-        console.log('Admin access via Edge Function verified successfully:', verificationResult);
+        if (!isAdminCheck) {
+          console.log('User is not an admin');
+          setIsAdmin(false);
+          setUserId(null);
+          return;
+        }
+        
+        console.log('Admin access verified successfully via RPC');
         
         setUserId(user.id);
         setIsAdmin(true);

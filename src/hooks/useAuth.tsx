@@ -19,14 +19,20 @@ export function useAuth() {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // Simple admin check - direct user ID comparison
-          const isAdminUser = session.user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e';
-          setIsAdmin(isAdminUser);
-          console.log('Admin status:', isAdminUser);
-        } else {
-          setIsAdmin(false);
-        }
+      if (session?.user) {
+        // Secure admin check using server-side RPC
+        supabase.rpc('check_is_admin').then(({ data, error }) => {
+          if (error) {
+            console.error('Error checking admin status:', error);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(Boolean(data));
+            console.log('Admin status:', data);
+          }
+        });
+      } else {
+        setIsAdmin(false);
+      }
         
         setIsLoading(false);
       }
@@ -39,10 +45,16 @@ export function useAuth() {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Simple admin check - direct user ID comparison
-        const isAdminUser = session.user.id === '3f07ea49-328e-4e21-878d-bef9f58af02e';
-        setIsAdmin(isAdminUser);
-        console.log('Initial admin status:', isAdminUser);
+        // Secure admin check using server-side RPC
+        supabase.rpc('check_is_admin').then(({ data, error }) => {
+          if (error) {
+            console.error('Error checking initial admin status:', error);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(Boolean(data));
+            console.log('Initial admin status:', data);
+          }
+        });
       } else {
         setIsAdmin(false);
       }

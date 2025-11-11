@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
 import { useEffect, useState, useCallback } from "react";
 import { SystemHealth, OperationStatus } from "./types";
 import { toast } from "sonner";
@@ -141,7 +140,7 @@ export function useSystemStatus() {
       toast.loading("Running system health check...");
       
       // Call the health check function 
-      const { data, error } = await adminSupabase.rpc('check_auction_system_health');
+      const { data, error } = await supabase.rpc('check_auction_system_health');
       
       if (error) throw error;
       

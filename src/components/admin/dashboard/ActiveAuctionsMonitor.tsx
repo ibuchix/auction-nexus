@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { adminSupabase } from "@/integrations/supabase/adminClient";
+import { supabase } from "@/integrations/supabase/client";
 import { Clock, Gavel, Users, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
@@ -25,10 +25,10 @@ export function ActiveAuctionsMonitor() {
       try {
         setLoading(true);
         // First update auction status, then fetch active ones
-        await adminSupabase.rpc('update_auction_status');
+        await supabase.rpc('update_auction_status');
         
         // Fetch active auctions that haven't ended yet
-        const { data: auctionData, error: auctionError } = await adminSupabase
+        const { data: auctionData, error: auctionError } = await supabase
           .from('cars')
           .select(`
             id,
@@ -64,7 +64,7 @@ export function ActiveAuctionsMonitor() {
     fetchActiveAuctions();
     
     // Set up realtime subscription
-    const channel = adminSupabase
+    const channel = supabase
       .channel('active-auctions')
       .on(
         'postgres_changes',
@@ -81,7 +81,7 @@ export function ActiveAuctionsMonitor() {
       .subscribe();
 
     return () => {
-      adminSupabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, []);
 
