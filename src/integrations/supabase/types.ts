@@ -2461,19 +2461,10 @@ export type Database = {
         Args: { p_reserve_price: number; p_valuation_id: string }
         Returns: Json
       }
-      admin_transfer_manual_valuation_to_cars_enhanced:
-        | {
-            Args: { p_manual_valuation_id: string; p_reserve_price?: number }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_admin_id: string
-              p_reserve_price: number
-              p_valuation_id: string
-            }
-            Returns: Json
-          }
+      admin_transfer_manual_valuation_to_cars_enhanced: {
+        Args: { p_manual_valuation_id: string; p_reserve_price?: number }
+        Returns: Json
+      }
       admin_update_manual_valuation: {
         Args: { p_valuation_data: Json; p_valuation_id: string }
         Returns: Json
