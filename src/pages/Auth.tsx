@@ -16,31 +16,45 @@ const Auth = () => {
   const [loginPassword, setLoginPassword] = useState("");
   // Removed signup state - admin only system
   
-  const { signIn, signOut, user, isAdmin, isLoading: authLoading } = useAuth();
+  const { signIn, signOut, user, isAdmin, isLoading: authLoading, adminCheckError, retryAdminCheck } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [showAccessError, setShowAccessError] = useState(false);
 
   // Handle redirect when user is authenticated AND admin check is complete
   useEffect(() => {
     if (user && !authLoading) {
       if (isAdmin) {
         navigate("/", { replace: true });
+      } else if (adminCheckError) {
+        // Admin check failed - show error instead of auto-signout
+        setShowAccessError(true);
+        toast({
+          title: "Admin Verification Failed",
+          description: adminCheckError,
+          variant: "destructive",
+          duration: 7000,
+        });
       } else {
-        // Non-admin user - sign them out
-        handleNonAdminAccess();
+        // User is authenticated but not admin (and no error)
+        setShowAccessError(true);
+        toast({
+          title: "Access Denied",
+          description: "This is an admin-only interface. Only authorized administrators can access this system.",
+          variant: "destructive",
+          duration: 5000,
+        });
       }
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, adminCheckError, navigate]);
 
-  const handleNonAdminAccess = async () => {
-    toast({
-      title: "Access Denied",
-      description: "This is an admin-only interface. Only authorized administrators can access this system.",
-      variant: "destructive",
-      duration: 5000,
-    });
-    
-    // Sign out the non-admin user immediately
+  const handleRetryAdminCheck = async () => {
+    setShowAccessError(false);
+    await retryAdminCheck();
+  };
+
+  const handleSignOut = async () => {
+    setShowAccessError(false);
     await signOut();
   };
 
@@ -56,7 +70,43 @@ const Auth = () => {
     );
   }
 
-  // Don't render the form if user is already authenticated
+  // Show access error with retry option if user is authenticated but not verified as admin
+  if (user && showAccessError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-destructive">Access Verification Issue</CardTitle>
+            <CardDescription>
+              {adminCheckError 
+                ? "Failed to verify admin privileges. This could be a temporary network issue."
+                : "You are not authorized to access this admin interface."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {adminCheckError && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p className="text-sm text-destructive font-medium">Error Details:</p>
+                <p className="text-sm text-muted-foreground mt-1">{adminCheckError}</p>
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              {adminCheckError && (
+                <Button onClick={handleRetryAdminCheck} className="w-full">
+                  Retry Admin Verification
+                </Button>
+              )}
+              <Button onClick={handleSignOut} variant="outline" className="w-full">
+                Sign Out
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Don't render the form if user is already authenticated (and admin check is still loading)
   if (user) {
     return null;
   }

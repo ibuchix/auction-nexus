@@ -9,34 +9,56 @@ export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminCheckError, setAdminCheckError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Helper function to check admin status with retry logic
-  const checkAdminWithRetry = async (retryCount = 0): Promise<boolean> => {
+  const checkAdminWithRetry = async (session: Session | null, retryCount = 0): Promise<{ isAdmin: boolean; error: string | null }> => {
     const maxRetries = 2;
     const retryDelay = 500;
+
+    // Verify session has valid access token
+    if (!session?.access_token) {
+      console.error('No valid session or access token available');
+      return { isAdmin: false, error: 'No valid session token' };
+    }
+
+    console.log('Admin check attempt', retryCount + 1, {
+      hasSession: !!session,
+      hasToken: !!session.access_token,
+      userId: session.user?.id,
+    });
 
     try {
       const { data, error } = await supabase.rpc('check_is_admin');
       
       if (error) {
-        console.error(`Error checking admin status (attempt ${retryCount + 1}):`, error);
+        console.error(`Error checking admin status (attempt ${retryCount + 1}):`, {
+          error,
+          errorMessage: error.message,
+          sessionValid: !!session?.access_token,
+        });
         
         // Retry if we haven't exceeded max retries
         if (retryCount < maxRetries) {
           console.log(`Retrying admin check in ${retryDelay}ms...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
-          return checkAdminWithRetry(retryCount + 1);
+          return checkAdminWithRetry(session, retryCount + 1);
         }
         
-        return false;
+        return { isAdmin: false, error: error.message || 'Failed to verify admin status' };
       }
       
       console.log('Admin check successful:', data);
-      return Boolean(data);
+      return { isAdmin: Boolean(data), error: null };
     } catch (error) {
-      console.error('Exception during admin check:', error);
-      return false;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Exception during admin check:', {
+        error,
+        errorMessage,
+        sessionValid: !!session?.access_token,
+      });
+      return { isAdmin: false, error: errorMessage };
     }
   };
 
@@ -49,14 +71,16 @@ export function useAuth() {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Add small delay to ensure session is fully established
+          // Add delay to ensure session is fully established and JWT propagated
           setTimeout(async () => {
-            const isAdminUser = await checkAdminWithRetry();
-            setIsAdmin(isAdminUser);
+            const result = await checkAdminWithRetry(session);
+            setIsAdmin(result.isAdmin);
+            setAdminCheckError(result.error);
             setIsLoading(false);
-          }, 100);
+          }, 500);
         } else {
           setIsAdmin(false);
+          setAdminCheckError(null);
           setIsLoading(false);
         }
       }
@@ -69,13 +93,15 @@ export function useAuth() {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Add small delay to ensure session is fully established
-        await new Promise(resolve => setTimeout(resolve, 100));
-        const isAdminUser = await checkAdminWithRetry();
-        setIsAdmin(isAdminUser);
+        // Add delay to ensure session is fully established and JWT propagated
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const result = await checkAdminWithRetry(session);
+        setIsAdmin(result.isAdmin);
+        setAdminCheckError(result.error);
         setIsLoading(false);
       } else {
         setIsAdmin(false);
+        setAdminCheckError(null);
         setIsLoading(false);
       }
     });
@@ -165,12 +191,37 @@ export function useAuth() {
     }
   };
 
+  const retryAdminCheck = async () => {
+    if (!session) return;
+    
+    setIsLoading(true);
+    const result = await checkAdminWithRetry(session, 0);
+    setIsAdmin(result.isAdmin);
+    setAdminCheckError(result.error);
+    setIsLoading(false);
+    
+    if (result.isAdmin) {
+      toast({
+        title: "Success",
+        description: "Admin access verified successfully.",
+      });
+    } else if (result.error) {
+      toast({
+        title: "Verification Failed",
+        description: result.error,
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     user,
     session,
     isLoading,
     isAdmin,
+    adminCheckError,
     signIn,
     signOut,
+    retryAdminCheck,
   };
 }
