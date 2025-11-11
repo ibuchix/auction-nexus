@@ -14,19 +14,16 @@ export function useAuctionManagement() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const errorCountRef = useRef(0);
   
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(50); // Fixed at 50 items per page
-  const [totalPages, setTotalPages] = useState(1);
+  // Infinite scroll state
+  const [loadedItems, setLoadedItems] = useState(50); // Start with 50 items
   const [totalCount, setTotalCount] = useState(0);
-  const [hasNextPage, setHasNextPage] = useState(false);
-  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
 
   const { data: listings = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['adminVehicleListings', showAllCars, currentPage, pageSize],
+    queryKey: ['adminVehicleListings', showAllCars, loadedItems],
     queryFn: async () => {
       try {
         // Fetch cars with their auction schedules
@@ -44,7 +41,7 @@ export function useAuctionManagement() {
             )
           `, { count: 'exact' })
           .order('created_at', { ascending: false })
-          .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
+          .range(0, loadedItems - 1);
         
         if (error) {
           console.error('❌ [AuctionMgmt] Database error:', error);
@@ -54,14 +51,10 @@ export function useAuctionManagement() {
         // Reset error count on success
         errorCountRef.current = 0;
         
-        // Calculate pagination metadata
+        // Update infinite scroll metadata
         const totalRecords = count || 0;
-        const calculatedTotalPages = Math.ceil(totalRecords / pageSize);
-        
         setTotalCount(totalRecords);
-        setTotalPages(calculatedTotalPages);
-        setHasNextPage(currentPage < calculatedTotalPages);
-        setHasPreviousPage(currentPage > 1);
+        setHasMore(loadedItems < totalRecords);
         
         // Transform snake_case database fields to camelCase for components
         const transformedData = (data || []).map(item => objectToCamelCase(item) as Auction);
@@ -209,28 +202,16 @@ export function useAuctionManagement() {
     refetch();
   };
 
-  // Pagination control functions
-  const goToNextPage = () => {
-    if (hasNextPage && currentPage < totalPages) {
-      setCurrentPage(prev => prev + 1);
+  // Infinite scroll control function
+  const loadMore = () => {
+    if (hasMore && !isLoading) {
+      setLoadedItems(prev => prev + 50); // Load 50 more items
     }
   };
 
-  const goToPreviousPage = () => {
-    if (hasPreviousPage && currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
-    }
-  };
-
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
-  // Reset to page 1 when filters change
+  // Reset loaded items when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setLoadedItems(50);
   }, [searchTerm, statusFilter, showAllCars]);
 
   return {
@@ -257,15 +238,10 @@ export function useAuctionManagement() {
     handleScheduleClick,
     handleScheduleClose,
     handleScheduleSuccess,
-    // Pagination exports
-    currentPage,
-    totalPages,
+    // Infinite scroll exports
     totalCount,
-    pageSize,
-    hasNextPage,
-    hasPreviousPage,
-    goToNextPage,
-    goToPreviousPage,
-    goToPage,
+    hasMore,
+    loadMore,
+    loadedItems,
   };
 }
