@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -63,6 +63,7 @@ export function useManualValuation() {
   const [reservePrice, setReservePrice] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState(false);
   const [activeStatus, setActiveStatus] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const queryClient = useQueryClient();
 
@@ -110,6 +111,34 @@ export function useManualValuation() {
       }
     },
   });
+
+  // Filter valuations based on search term
+  const filteredValuations = useMemo(() => {
+    if (!valuations) return [];
+    
+    if (!searchTerm.trim()) {
+      return valuations;
+    }
+    
+    const searchLower = searchTerm.toLowerCase();
+    
+    return valuations.filter((valuation) => {
+      // Search by vehicle title (make + model)
+      const vehicleTitle = `${valuation.make || ''} ${valuation.model || ''}`.toLowerCase();
+      if (vehicleTitle.includes(searchLower)) return true;
+      
+      // Search by seller name
+      if (valuation.name?.toLowerCase().includes(searchLower)) return true;
+      
+      // Search by VIN
+      if (valuation.vin?.toLowerCase().includes(searchLower)) return true;
+      
+      // Search by seller email
+      if (valuation.contact_email?.toLowerCase().includes(searchLower)) return true;
+      
+      return false;
+    });
+  }, [valuations, searchTerm]);
 
   // Update manual valuation
   const updateValuationMutation = useMutation({
@@ -251,7 +280,7 @@ export function useManualValuation() {
   };
 
   return {
-    valuations: valuations || [],
+    valuations: filteredValuations,
     isLoading,
     refetch,
     selectedValuation,
@@ -264,6 +293,8 @@ export function useManualValuation() {
     isTransferring,
     activeStatus,
     setActiveStatus,
+    searchTerm,
+    setSearchTerm,
     openDetailsDialog,
     handleUpdateValuation,
     handleTransferToCars,

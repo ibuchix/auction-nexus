@@ -1,6 +1,7 @@
-import { Car, Eye, RefreshCw, Calculator } from "lucide-react";
+import { Car, Eye, RefreshCw, Calculator, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useManualValuation } from "@/hooks/useManualValuation";
 import { ManualValuationTable } from "@/components/admin/manual-valuation/ManualValuationTable";
@@ -22,6 +23,8 @@ const ManualValuation = () => {
     isTransferring,
     activeStatus,
     setActiveStatus,
+    searchTerm,
+    setSearchTerm,
     openDetailsDialog,
     handleUpdateValuation,
     handleTransferToCars,
@@ -38,6 +41,28 @@ const ManualValuation = () => {
           <RefreshCw className="mr-2 h-4 w-4" />
           Refresh
         </Button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by vehicle, seller name, VIN, or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {searchTerm && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setSearchTerm("")}
+          >
+            Clear
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="all" value={activeStatus} onValueChange={setActiveStatus}>
