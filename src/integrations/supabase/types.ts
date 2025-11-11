@@ -3120,15 +3120,13 @@ export type Database = {
         Args: { _car_id: string; _dealer_user_id: string }
         Returns: boolean
       }
-      has_role:
-        | { Args: { role_name: string; user_id: string }; Returns: boolean }
-        | {
-            Args: {
-              _role: Database["public"]["Enums"]["user_role"]
-              _user_id: string
-            }
-            Returns: boolean
-          }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["user_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin_user: { Args: { user_id?: string }; Returns: boolean }
       is_dealer: { Args: never; Returns: boolean }
       is_seller: { Args: never; Returns: boolean }
