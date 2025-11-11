@@ -57,7 +57,7 @@ export function useFileManagement(carId: string, sellerId: string) {
     try {
       // Use SECURITY DEFINER function to fetch car files (bypasses RLS for admins)
       console.log('[useFileManagement] Calling admin_get_car_files RPC with session...');
-      const { data: carFilesResult, error: carFilesError } = await supabase
+      const { data: carFiles, error: carFilesError } = await supabase
         .rpc('admin_get_car_files', { p_car_id: carId });
       
       if (carFilesError) {
@@ -65,20 +65,8 @@ export function useFileManagement(carId: string, sellerId: string) {
         throw carFilesError;
       }
       
-      const result = carFilesResult as { success: boolean; files?: any[]; error?: string };
-      
-      console.log('[useFileManagement] RPC admin_get_car_files response:', { 
-        success: result?.success, 
-        fileCount: result?.files?.length,
-        error: carFilesError 
-      });
-      
-      if (!result?.success) {
-        console.error('[useFileManagement] RPC returned unsuccessful result:', result?.error);
-        throw new Error(result?.error || 'Failed to fetch car files');
-      }
-      
-      console.log('[useFileManagement] Successfully fetched car files:', result.files?.length || 0);
+      const carFilesArray = (carFiles || []) as any[];
+      console.log('[useFileManagement] Successfully fetched car files:', carFilesArray.length);
       
       // Step 2: Get car's manual_valuation_id if it exists
       const { data: carData } = await supabase
@@ -106,9 +94,8 @@ export function useFileManagement(carId: string, sellerId: string) {
       }
       
       // Step 4: Combine car files from RPC with manual files
-      const carFiles = result.files || [];
       const allFiles = [
-        ...carFiles,
+        ...carFilesArray,
         ...manualFiles.map(f => ({ ...f, source: 'manual_file_uploads' as const }))
       ];
       
