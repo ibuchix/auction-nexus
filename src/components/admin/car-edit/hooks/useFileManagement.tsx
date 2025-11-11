@@ -106,9 +106,9 @@ export function useFileManagement(carId: string, sellerId: string) {
         const isImage = isImageFile(file.file_type, file.file_path);
         const isDoc = isDocumentFile(file.file_type, file.file_path);
         
-        // Use signed URL from RPC for car files, or generate for manual files
+        // Generate signed URL if not already present
         let signedUrl = file.signed_url;
-        if (!signedUrl && file.source === 'manual_file_uploads') {
+        if (!signedUrl) {
           const bucket = getStorageBucket(file.file_path, isDoc);
           const { data: urlData } = await supabase.storage
             .from(bucket)
