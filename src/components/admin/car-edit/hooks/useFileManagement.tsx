@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import type { CarImage, CarDocument } from "../types";
 import { isImageFile, isDocumentFile, getStorageBucket, extractFileName } from "@/utils/fileManagement";
 
 export function useFileManagement(carId: string, sellerId: string) {
+  const { user, session, isAdmin, isLoading: authLoading } = useAuth();
   const [images, setImages] = useState<CarImage[]>([]);
   const [documents, setDocuments] = useState<CarDocument[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
@@ -17,15 +19,44 @@ export function useFileManagement(carId: string, sellerId: string) {
       console.log('[useFileManagement] No carId provided, skipping fetch');
       return;
     }
-    
-    console.log('[useFileManagement] Starting to fetch files for carId:', carId);
+
+    // Wait for authentication to be ready
+    if (authLoading) {
+      console.log('[useFileManagement] Auth still loading, will retry when ready');
+      return;
+    }
+
+    // Verify we have a valid session and admin status
+    if (!session || !user || !isAdmin) {
+      console.error('[useFileManagement] Missing auth requirements:', {
+        hasSession: !!session,
+        hasUser: !!user,
+        isAdmin,
+        userId: user?.id
+      });
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in as an admin to fetch files",
+        variant: "destructive"
+      });
+      setIsLoadingImages(false);
+      setIsLoadingDocuments(false);
+      return;
+    }
+
+    console.log('[useFileManagement] Auth verified, starting to fetch files for carId:', carId, {
+      userId: user.id,
+      hasSession: !!session,
+      isAdmin,
+      sessionAccessToken: session.access_token?.substring(0, 20) + '...'
+    });
     
     setIsLoadingImages(true);
     setIsLoadingDocuments(true);
     
     try {
       // Use SECURITY DEFINER function to fetch car files (bypasses RLS for admins)
-      console.log('[useFileManagement] Calling admin_get_car_files RPC...');
+      console.log('[useFileManagement] Calling admin_get_car_files RPC with session...');
       const { data: carFilesResult, error: carFilesError } = await supabase
         .rpc('admin_get_car_files', { p_car_id: carId });
       
@@ -262,8 +293,19 @@ export function useFileManagement(carId: string, sellerId: string) {
   };
 
   useEffect(() => {
-    fetchFiles();
-  }, [carId]);
+    // Only fetch files when auth is ready and we have admin status
+    if (!authLoading && isAdmin && session && carId) {
+      console.log('[useFileManagement] useEffect triggered - fetching files');
+      fetchFiles();
+    } else {
+      console.log('[useFileManagement] useEffect - conditions not met:', {
+        authLoading,
+        isAdmin,
+        hasSession: !!session,
+        carId
+      });
+    }
+  }, [carId, authLoading, isAdmin, session]);
 
   return {
     images,
