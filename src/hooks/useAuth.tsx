@@ -29,12 +29,12 @@ export function useAuth() {
             setIsAdmin(Boolean(data));
             console.log('Admin status:', data);
           }
+          setIsLoading(false); // Only set loading false after admin check completes
         });
       } else {
         setIsAdmin(false);
+        setIsLoading(false); // Set loading false immediately if no user
       }
-        
-        setIsLoading(false);
       }
     );
 
@@ -54,12 +54,12 @@ export function useAuth() {
             setIsAdmin(Boolean(data));
             console.log('Initial admin status:', data);
           }
+          setIsLoading(false); // Only set loading false after admin check completes
         });
       } else {
         setIsAdmin(false);
+        setIsLoading(false); // Set loading false immediately if no user
       }
-      
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
