@@ -19,7 +19,17 @@ export function useFileManagement(carId: string, sellerId: string) {
     setIsLoadingDocuments(true);
     
     try {
-      // Step 1: Get car's manual_valuation_id if it exists
+      // Use SECURITY DEFINER function to fetch car files (bypasses RLS for admins)
+      const { data: carFilesResult, error: carFilesError } = await supabase
+        .rpc('admin_get_car_files', { p_car_id: carId });
+      
+      if (carFilesError) throw carFilesError;
+      
+      if (!carFilesResult?.success) {
+        throw new Error(carFilesResult?.error || 'Failed to fetch car files');
+      }
+      
+      // Step 2: Get car's manual_valuation_id if it exists
       const { data: carData } = await supabase
         .from('cars')
         .select('valuation_data')
@@ -29,16 +39,6 @@ export function useFileManagement(carId: string, sellerId: string) {
       const manualValuationId = carData?.valuation_data 
         ? (carData.valuation_data as any)?.manual_valuation_id 
         : null;
-      
-      // Step 2: Fetch from car_file_uploads
-      const { data: carFiles, error: carFilesError } = await supabase
-        .from('car_file_uploads')
-        .select('*')
-        .eq('car_id', carId)
-        .eq('upload_status', 'completed')
-        .order('display_order');
-      
-      if (carFilesError) throw carFilesError;
       
       // Step 3: Fetch from manual_file_uploads if applicable
       let manualFiles: any[] = [];
@@ -54,9 +54,10 @@ export function useFileManagement(carId: string, sellerId: string) {
         manualFiles = data || [];
       }
       
-      // Step 4: Combine and categorize files
+      // Step 4: Combine car files from RPC with manual files
+      const carFiles = carFilesResult.files || [];
       const allFiles = [
-        ...(carFiles || []).map(f => ({ ...f, source: 'car_file_uploads' as const })),
+        ...carFiles,
         ...manualFiles.map(f => ({ ...f, source: 'manual_file_uploads' as const }))
       ];
       
@@ -66,20 +67,25 @@ export function useFileManagement(carId: string, sellerId: string) {
       for (const file of allFiles) {
         const isImage = isImageFile(file.file_type, file.file_path);
         const isDoc = isDocumentFile(file.file_type, file.file_path);
-        const bucket = getStorageBucket(file.file_path, isDoc);
         
-        const { data: urlData } = await supabase.storage
-          .from(bucket)
-          .createSignedUrl(file.file_path, 3600);
+        // Use signed URL from RPC for car files, or generate for manual files
+        let signedUrl = file.signed_url;
+        if (!signedUrl && file.source === 'manual_file_uploads') {
+          const bucket = getStorageBucket(file.file_path, isDoc);
+          const { data: urlData } = await supabase.storage
+            .from(bucket)
+            .createSignedUrl(file.file_path, 3600);
+          signedUrl = urlData?.signedUrl;
+        }
         
-        if (urlData?.signedUrl) {
+        if (signedUrl) {
           if (isImage) {
             imagesList.push({
               id: file.id,
               file_path: file.file_path,
               category: file.category || 'general',
               display_order: file.display_order || 0,
-              url: urlData.signedUrl
+              url: signedUrl
             });
           } else if (isDoc) {
             documentsList.push({
@@ -89,7 +95,7 @@ export function useFileManagement(carId: string, sellerId: string) {
               file_name: extractFileName(file.file_path),
               category: file.category || 'other',
               display_order: file.display_order || 0,
-              url: urlData.signedUrl,
+              url: signedUrl,
               uploaded_at: file.created_at,
               source: file.source
             });

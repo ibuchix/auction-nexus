@@ -15,7 +15,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 declare module '@supabase/supabase-js' {
   interface SupabaseClient {
     rpc<R>(
-      fn: 'approve_listing' | 'reject_listing' | 'verify_dealer' | 'reject_dealer' | 'admin_end_auction' | 'authenticate_dealer' | 'calculate_reserve_price' | 'calculate_reserve_price_from_min_med' | 'check_email_exists' | 'close_ended_auctions' | 'create_dealer_with_profile' | 'debug_auth_user_id' | 'debug_dealer_access' | 'get_dealer_by_user_id' | 'get_user_id_by_email' | 'is_admin' | 'log_admin_action' | 'place_bid' | 'verify_password' | 'test_admin_access' | 'debug_admin_context' | 'get_email_notification_counts' | 'get_admin_notifications' | 'mark_notification_read' | 'mark_all_notifications_read' | 'get_form_tracking_logs' | 'get_activity_logs' | 'check_is_admin',
+      fn: 'approve_listing' | 'reject_listing' | 'verify_dealer' | 'reject_dealer' | 'admin_end_auction' | 'authenticate_dealer' | 'calculate_reserve_price' | 'calculate_reserve_price_from_min_med' | 'check_email_exists' | 'close_ended_auctions' | 'create_dealer_with_profile' | 'debug_auth_user_id' | 'debug_dealer_access' | 'get_dealer_by_user_id' | 'get_user_id_by_email' | 'is_admin' | 'log_admin_action' | 'place_bid' | 'verify_password' | 'test_admin_access' | 'debug_admin_context' | 'get_email_notification_counts' | 'get_admin_notifications' | 'mark_notification_read' | 'mark_all_notifications_read' | 'get_form_tracking_logs' | 'get_activity_logs' | 'check_is_admin' | 'admin_get_car_files',
       params?: object,
       options?: object
     ): Promise<{
