@@ -2431,6 +2431,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_get_car_files: { Args: { p_car_id: string }; Returns: Json }
       admin_get_manual_valuations: {
         Args: { p_status?: string }
         Returns: Json

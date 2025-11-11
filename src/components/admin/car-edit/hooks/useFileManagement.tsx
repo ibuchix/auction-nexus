@@ -25,8 +25,9 @@ export function useFileManagement(carId: string, sellerId: string) {
       
       if (carFilesError) throw carFilesError;
       
-      if (!carFilesResult?.success) {
-        throw new Error(carFilesResult?.error || 'Failed to fetch car files');
+      const result = carFilesResult as { success: boolean; files?: any[]; error?: string };
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to fetch car files');
       }
       
       // Step 2: Get car's manual_valuation_id if it exists
@@ -55,7 +56,7 @@ export function useFileManagement(carId: string, sellerId: string) {
       }
       
       // Step 4: Combine car files from RPC with manual files
-      const carFiles = carFilesResult.files || [];
+      const carFiles = result.files || [];
       const allFiles = [
         ...carFiles,
         ...manualFiles.map(f => ({ ...f, source: 'manual_file_uploads' as const }))
