@@ -2435,9 +2435,9 @@ export type Database = {
         Args: { p_car_id: string }
         Returns: {
           car_id: string
+          category: string
           created_at: string
           display_order: number
-          file_category: string
           file_path: string
           file_type: string
           id: string
