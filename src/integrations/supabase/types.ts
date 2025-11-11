@@ -2431,7 +2431,19 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      admin_get_car_files: { Args: { p_car_id: string }; Returns: Json }
+      admin_get_car_files: {
+        Args: { p_car_id: string }
+        Returns: {
+          car_id: string
+          created_at: string
+          display_order: number
+          file_category: string
+          file_path: string
+          file_type: string
+          id: string
+          upload_status: string
+        }[]
+      }
       admin_get_manual_valuations: {
         Args: { p_status?: string }
         Returns: Json
