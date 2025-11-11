@@ -16,7 +16,7 @@ const Auth = () => {
   const [loginPassword, setLoginPassword] = useState("");
   // Removed signup state - admin only system
   
-  const { signIn, signOut, user, isAdmin, isLoading: authLoading, adminCheckError, retryAdminCheck } = useAuth();
+  const { signIn, signOut, user, isAdmin, isLoading: authLoading, adminCheckError, retryAdminCheck, refreshSession } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showAccessError, setShowAccessError] = useState(false);
@@ -51,6 +51,11 @@ const Auth = () => {
   const handleRetryAdminCheck = async () => {
     setShowAccessError(false);
     await retryAdminCheck();
+  };
+
+  const handleRefreshSession = async () => {
+    setShowAccessError(false);
+    await refreshSession();
   };
 
   const handleSignOut = async () => {
@@ -92,9 +97,14 @@ const Auth = () => {
             )}
             <div className="flex flex-col gap-2">
               {adminCheckError && (
-                <Button onClick={handleRetryAdminCheck} className="w-full">
-                  Retry Admin Verification
-                </Button>
+                <>
+                  <Button onClick={handleRefreshSession} className="w-full">
+                    Refresh Session
+                  </Button>
+                  <Button onClick={handleRetryAdminCheck} variant="outline" className="w-full">
+                    Retry Admin Verification
+                  </Button>
+                </>
               )}
               <Button onClick={handleSignOut} variant="outline" className="w-full">
                 Sign Out

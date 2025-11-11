@@ -118,6 +118,18 @@ export function useAuth() {
 
       if (error) throw error;
 
+      // Force token refresh to get latest JWT claims
+      if (data.session) {
+        console.log('Forcing session refresh to get latest JWT claims...');
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          console.warn('Session refresh after login failed:', refreshError);
+        } else {
+          console.log('Session refreshed successfully with latest JWT claims');
+        }
+      }
+
       return { data, error: null };
     } catch (error) {
       console.error('Sign in error:', error);
@@ -127,10 +139,37 @@ export function useAuth() {
 
   // Removed signUp function - admin only system
 
+  const clearAllAuthData = () => {
+    // Clear all possible Supabase auth storage keys
+    const keysToRemove = [
+      'supabase.auth.token',
+      'sb-sdvakfhmoaoucmhbhwvy-auth-token',
+    ];
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
+    
+    // Clear all keys that start with 'sb-'
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    Object.keys(sessionStorage).forEach(key => {
+      if (key.startsWith('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  };
+
   const signOut = async () => {
     try {
       // If no session exists, just clear state and return success
       if (!session) {
+        clearAllAuthData();
         setUser(null);
         setSession(null);
         setIsAdmin(false);
@@ -142,7 +181,11 @@ export function useAuth() {
         return;
       }
 
-      const { error } = await supabase.auth.signOut();
+      // Sign out globally to invalidate all sessions
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      // Always clear local storage regardless of error
+      clearAllAuthData();
       
       // Ignore "session missing" errors - this means we're already logged out
       if (error && error.message.includes('session')) {
@@ -159,6 +202,10 @@ export function useAuth() {
       
       if (error) throw error;
       
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
+      
       toast({
         title: "Signed out",
         description: "You have been successfully signed out.",
@@ -166,7 +213,8 @@ export function useAuth() {
       window.location.href = '/auth';
     } catch (error) {
       console.error('Sign out error:', error);
-      // Still clear local state even on error
+      // Still clear local state and storage even on error
+      clearAllAuthData();
       setUser(null);
       setSession(null);
       setIsAdmin(false);
@@ -188,6 +236,55 @@ export function useAuth() {
       }
       // Always navigate to login even on error
       window.location.href = '/auth';
+    }
+  };
+
+  const refreshSession = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Manually refreshing session to get latest JWT claims...');
+      
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('Session refresh error:', error);
+        toast({
+          title: "Refresh Failed",
+          description: error.message || "Failed to refresh session",
+          variant: "destructive",
+        });
+        return { success: false, error };
+      }
+      
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        
+        // Re-check admin status with new token
+        const result = await checkAdminWithRetry(data.session, 0);
+        setIsAdmin(result.isAdmin);
+        setAdminCheckError(result.error);
+        
+        toast({
+          title: "Session Refreshed",
+          description: "Your session has been updated with the latest permissions.",
+        });
+        
+        return { success: true, error: null };
+      }
+      
+      return { success: false, error: new Error('No session returned') };
+    } catch (error) {
+      console.error('Exception during session refresh:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast({
+        title: "Refresh Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -223,5 +320,6 @@ export function useAuth() {
     signIn,
     signOut,
     retryAdminCheck,
+    refreshSession,
   };
 }
