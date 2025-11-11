@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { extractAllCarImages, fetchCarImagesFromDatabase, type CategorizedImage } from "@/utils/imageUtils";
 
 interface VehicleImagesProps {
@@ -17,6 +18,7 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageIndex, setImageIndex] = useState<number>(0);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const loadImages = async () => {
@@ -110,16 +112,22 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
           <Dialog key={index}>
             <DialogTrigger asChild>
               <div 
-                className="cursor-pointer hover:opacity-90 transition-opacity relative"
+                className="cursor-pointer hover:opacity-90 transition-opacity relative group"
                 onClick={() => {
                   setSelectedImage(image.url);
                   setImageIndex(index);
                 }}
               >
+                {!loadedImages.has(index) && (
+                  <Skeleton className="absolute inset-0 w-full h-32 rounded" />
+                )}
                 <img
                   src={image.url}
                   alt={`${image.category} image ${index + 1}`}
                   className="w-full h-32 object-cover rounded"
+                  loading="lazy"
+                  decoding="async"
+                  onLoad={() => setLoadedImages(prev => new Set(prev).add(index))}
                 />
                 <Badge 
                   variant="secondary" 
@@ -166,6 +174,7 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
                   src={selectedImage || ''}
                   alt="Vehicle image full size"
                   className="max-h-[calc(90vh-2rem)] max-w-full object-contain"
+                  loading="eager"
                 />
               </div>
               <div className="p-4 text-center bg-white">
