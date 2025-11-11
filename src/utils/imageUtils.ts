@@ -60,7 +60,7 @@ export async function fetchCarImagesFromDatabase(carId: string): Promise<Categor
     console.log('Fetching car images from database for car ID:', carId);
     
     // Use RPC function to bypass RLS and get files
-    const { data: fileUploads, error } = await supabase
+    const { data: fileUploadsData, error } = await supabase
       .rpc('admin_get_car_files', { p_car_id: carId });
 
     if (error) {
@@ -68,7 +68,10 @@ export async function fetchCarImagesFromDatabase(carId: string): Promise<Categor
       return [];
     }
 
-    if (!fileUploads || fileUploads.length === 0) {
+    // Cast the RPC response to an array
+    const fileUploads = (fileUploadsData as any[]) || [];
+
+    if (fileUploads.length === 0) {
       console.log('No file uploads found for car:', carId);
       return [];
     }
