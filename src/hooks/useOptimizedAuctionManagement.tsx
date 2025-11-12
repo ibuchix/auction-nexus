@@ -38,12 +38,20 @@ export function useOptimizedAuctionManagement() {
   // Get current tab state
   const currentState = tabStates[currentTab];
 
-  // Build tab-specific query
-  const buildTabQuery = useCallback((tab: TabType, limit: number) => {
+  // Build tab-specific query with database-level filtering
+  const buildTabQuery = useCallback(async (tab: TabType, limit: number) => {
     // Tab-specific filters with appropriate joins
     switch (tab) {
       case 'ready': {
-        // Use LEFT JOIN to include cars with no schedules
+        // Step 1: Get car IDs that have active or scheduled auctions (to exclude them)
+        const { data: activeSchedules } = await supabase
+          .from('auction_schedules')
+          .select('car_id')
+          .in('status', ['active', 'scheduled']);
+        
+        const excludeCarIds = activeSchedules?.map(s => s.car_id) || [];
+        
+        // Step 2: Query cars with reserve_price > 0, excluding active/scheduled ones
         let query = supabase
           .from('cars')
           .select(`
@@ -58,6 +66,11 @@ export function useOptimizedAuctionManagement() {
             )
           `, { count: 'exact' })
           .gt('reserve_price', 0);
+
+        // Exclude cars with active/scheduled auctions
+        if (excludeCarIds.length > 0) {
+          query = query.not('id', 'in', `(${excludeCarIds.join(',')})`);
+        }
 
         if (searchTerm) {
           query = query.or(
@@ -155,21 +168,9 @@ export function useOptimizedAuctionManagement() {
     }
   }, [searchTerm]);
 
-  // Filter results based on auction_schedules (only needed for 'ready' tab)
+  // No client-side filtering needed anymore - all filtering done at DB level
   const filterByTabLogic = useCallback((data: any[], tab: TabType): any[] => {
-    // Only filter 'ready' tab - all other tabs filtered at DB level
-    if (tab !== 'ready') {
-      return data;
-    }
-    
-    // For 'ready' tab: exclude cars with active/scheduled schedules
-    return data.filter(item => {
-      const schedules = item.auctionSchedules || [];
-      const hasActiveSchedule = schedules.some((s: any) => 
-        s.status === 'active' || s.status === 'scheduled'
-      );
-      return !hasActiveSchedule && item.reservePrice > 0;
-    });
+    return data;
   }, []);
 
   // Query for current tab
@@ -177,7 +178,7 @@ export function useOptimizedAuctionManagement() {
     queryKey: ['optimizedAuctionManagement', currentTab, searchTerm, currentState.loadedItems],
     queryFn: async () => {
       try {
-        const query = buildTabQuery(currentTab, currentState.loadedItems);
+        const query = await buildTabQuery(currentTab, currentState.loadedItems);
         const { data, error, count } = await query;
         
         if (error) {
@@ -190,11 +191,11 @@ export function useOptimizedAuctionManagement() {
         // Transform data
         const transformedData = (data || []).map(item => objectToCamelCase(item) as Auction);
         
-        // Apply tab-specific filtering (only needed for 'ready' tab)
+        // Apply tab-specific filtering (no longer needed, but keeping for consistency)
         const filteredData = filterByTabLogic(transformedData, currentTab);
         
-        // For 'ready' tab use filtered count, for others use DB count
-        const actualCount = currentTab === 'ready' ? filteredData.length : (count || 0);
+        // Use DB count directly for all tabs now
+        const actualCount = count || 0;
         
         // Update tab state
         setTabStates(prev => ({
