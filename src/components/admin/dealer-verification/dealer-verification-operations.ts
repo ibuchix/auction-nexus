@@ -2,7 +2,7 @@
 import { toast } from "sonner";
 import { DealerData } from "./types";
 import { supabase } from "@/integrations/supabase/client";
-import { adminOperations } from "@/utils/adminOperations";
+import { edgeFunctionAdminOperations } from "@/utils/edgeFunctionAdminOperations";
 
 // Helper to validate UUID format
 const isValidUUID = (uuid: string) => {
@@ -124,8 +124,8 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
   try {
     console.log('Fetching dealers with status:', status);
     
-    // Use admin operations which now includes email fetching
-    const result = await adminOperations.getAllDealers(status);
+    // Use edge function which includes email fetching with service role
+    const result = await edgeFunctionAdminOperations.getAllDealers(status);
     
     if (!result) {
       console.log('No dealers data returned');
@@ -155,8 +155,8 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
       isVerified: dealer.is_verified,
       createdAt: dealer.created_at,
       updatedAt: dealer.updated_at,
-      email: dealer.email, // Include email from admin operations
-      phoneNumber: dealer.phoneNumber // Include phone number from admin operations
+      email: dealer.email, // Email from auth.users via edge function
+      phoneNumber: dealer.phone_number // Phone from auth.users via edge function
     }));
     
     console.log(`Returning ${typedDealers.length} dealers`);
