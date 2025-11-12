@@ -24,6 +24,7 @@ interface AdminAuctionCardProps {
   onStart?: (id: string) => Promise<void>;
   onExtendTime?: (id: string) => Promise<void>;
   onScheduleClick?: (auction: any) => void;
+  onSuccess?: () => void;
 }
 
 export function AdminAuctionCard({ 
@@ -33,7 +34,8 @@ export function AdminAuctionCard({
   onCancel, 
   onStart, 
   onExtendTime,
-  onScheduleClick 
+  onScheduleClick,
+  onSuccess
 }: AdminAuctionCardProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
@@ -163,7 +165,7 @@ export function AdminAuctionCard({
         onClose={() => setIsEditDialogOpen(false)}
         onSuccess={() => {
           setIsEditDialogOpen(false);
-          window.location.reload();
+          onSuccess?.();
         }}
       />
     </Card>

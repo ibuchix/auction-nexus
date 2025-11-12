@@ -15,6 +15,7 @@ interface AuctionTabContentProps {
   onStart: (id: string) => Promise<void>;
   onScheduleClick?: (auction: Auction) => void;
   showScheduleButton?: boolean;
+  onSuccess?: () => void;
 }
 export function AuctionTabContent({
   title,
@@ -26,7 +27,8 @@ export function AuctionTabContent({
   onCancel,
   onStart,
   onScheduleClick,
-  showScheduleButton = false
+  showScheduleButton = false,
+  onSuccess
 }: AuctionTabContentProps) {
   return <Card>
       <CardHeader>
@@ -44,7 +46,7 @@ export function AuctionTabContent({
                   <CalendarClock className="h-4 w-4 mr-1" />
                   Schedule
                 </Button>}
-              <AdminAuctionCard auction={listing} allowEdit={allowEdit} onPause={onPause} onCancel={onCancel} onStart={onStart} />
+              <AdminAuctionCard auction={listing} allowEdit={allowEdit} onPause={onPause} onCancel={onCancel} onStart={onStart} onSuccess={onSuccess} />
             </div>)}
       </CardContent>
     </Card>;

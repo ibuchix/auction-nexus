@@ -15,9 +15,10 @@ export function useAuctionManagement() {
   const errorCountRef = useRef(0);
   
   // Infinite scroll state
-  const [loadedItems, setLoadedItems] = useState(50); // Start with 50 items
+  const [loadedItems, setLoadedItems] = useState(30); // Start with 30 items
   const [totalCount, setTotalCount] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
@@ -202,16 +203,23 @@ export function useAuctionManagement() {
     refetch();
   };
 
-  // Infinite scroll control function
+  // Infinite scroll control function with loading lock
   const loadMore = () => {
-    if (hasMore && !isLoading) {
-      setLoadedItems(prev => prev + 50); // Load 50 more items
+    if (hasMore && !isLoading && !isLoadingMore) {
+      setIsLoadingMore(true);
+      setLoadedItems(prev => {
+        const newCount = prev + 30; // Load 30 more items
+        // Release lock after state update
+        setTimeout(() => setIsLoadingMore(false), 300);
+        return newCount;
+      });
     }
   };
 
   // Reset loaded items when filters change
   useEffect(() => {
-    setLoadedItems(50);
+    setLoadedItems(30);
+    setIsLoadingMore(false);
   }, [searchTerm, statusFilter, showAllCars]);
 
   return {

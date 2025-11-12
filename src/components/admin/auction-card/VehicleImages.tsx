@@ -112,21 +112,24 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
           <Dialog key={index}>
             <DialogTrigger asChild>
               <div 
-                className="cursor-pointer hover:opacity-90 transition-opacity relative group"
+                className="cursor-pointer hover:opacity-90 transition-opacity relative group aspect-[4/3] overflow-hidden rounded"
+                style={{ minHeight: '128px', maxHeight: '128px' }}
                 onClick={() => {
                   setSelectedImage(image.url);
                   setImageIndex(index);
                 }}
               >
                 {!loadedImages.has(index) && (
-                  <Skeleton className="absolute inset-0 w-full h-32 rounded" />
+                  <Skeleton className="absolute inset-0 w-full h-full rounded" />
                 )}
                 <img
                   src={image.url}
                   alt={`${image.category} image ${index + 1}`}
-                  className="w-full h-32 object-cover rounded"
+                  className="w-full h-full object-cover"
                   loading="lazy"
                   decoding="async"
+                  width="200"
+                  height="150"
                   onLoad={() => setLoadedImages(prev => new Set(prev).add(index))}
                 />
                 <Badge 

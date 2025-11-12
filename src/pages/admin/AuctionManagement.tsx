@@ -20,6 +20,7 @@ const AuctionManagement = () => {
     setShowAllCars,
     isLoading,
     error,
+    refetch,
     readyAuctions,
     activeAuctions,
     endedAuctions,
@@ -129,6 +130,7 @@ const AuctionManagement = () => {
             onStart={startAuction}
             onScheduleClick={handleScheduleClick}
             showScheduleButton={true}
+            onSuccess={refetch}
           />
           <InfiniteScrollTrigger
             onLoadMore={loadMore}
@@ -148,6 +150,7 @@ const AuctionManagement = () => {
             onPause={pauseAuction}
             onCancel={cancelAuction}
             onStart={startAuction}
+            onSuccess={refetch}
           />
           <InfiniteScrollTrigger
             onLoadMore={loadMore}
@@ -167,6 +170,7 @@ const AuctionManagement = () => {
             onPause={pauseAuction}
             onCancel={cancelAuction}
             onStart={startAuction}
+            onSuccess={refetch}
           />
           <InfiniteScrollTrigger
             onLoadMore={loadMore}
@@ -188,6 +192,7 @@ const AuctionManagement = () => {
             onStart={startAuction}
             onScheduleClick={handleScheduleClick}
             showScheduleButton={true}
+            onSuccess={refetch}
           />
           <InfiniteScrollTrigger
             onLoadMore={loadMore}
