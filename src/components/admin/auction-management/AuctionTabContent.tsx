@@ -4,6 +4,7 @@ import { AdminAuctionCard } from "@/components/admin/AdminAuctionCard";
 import { Button } from "@/components/ui/button";
 import { CalendarClock } from "lucide-react";
 import { Auction } from "@/types/auction";
+import { AuctionCardSkeletonList } from "./AuctionCardSkeleton";
 interface AuctionTabContentProps {
   title: string;
   icon: React.ReactNode;
@@ -40,16 +41,39 @@ export function AuctionTabContent({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isLoading ? <p className="text-center py-4">Loading...</p> : auctions?.length === 0 ? <div className="text-center py-6 text-muted-foreground">
+        {isLoading ? (
+          <AuctionCardSkeletonList count={3} />
+        ) : auctions?.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
             <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
             <p>No {title.toLowerCase()}</p>
-          </div> : auctions?.map(listing => <div key={listing.id} className={showScheduleButton ? "relative" : ""}>
-              {showScheduleButton && <Button variant="outline" size="sm" onClick={() => onScheduleClick && onScheduleClick(listing)} className="absolute right-44 top-3 z-5 text-left text-sm bg-green-500 hover:bg-green-400 mx-0 my-[12px]">
+          </div>
+        ) : (
+          auctions?.map(listing => (
+            <div key={listing.id} className={showScheduleButton ? "relative" : ""}>
+              {showScheduleButton && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onScheduleClick && onScheduleClick(listing)} 
+                  className="absolute right-44 top-3 z-5 text-left text-sm bg-green-500 hover:bg-green-400 mx-0 my-[12px]"
+                >
                   <CalendarClock className="h-4 w-4 mr-1" />
                   Schedule
-                </Button>}
-              <AdminAuctionCard auction={listing} allowEdit={allowEdit} onPause={onPause} onCancel={onCancel} onStart={onStart} onSuccess={onSuccess} autoLoadImages={autoLoadImages} />
-            </div>)}
+                </Button>
+              )}
+              <AdminAuctionCard 
+                auction={listing} 
+                allowEdit={allowEdit} 
+                onPause={onPause} 
+                onCancel={onCancel} 
+                onStart={onStart} 
+                onSuccess={onSuccess} 
+                autoLoadImages={autoLoadImages} 
+              />
+            </div>
+          ))
+        )}
       </CardContent>
     </Card>;
 }
