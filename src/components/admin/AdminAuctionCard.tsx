@@ -8,6 +8,7 @@ import { EditForm } from "./auction-card/EditForm";
 import { AuctionDetails } from "./auction-card/AuctionDetails";
 import { SellerInfo } from "./auction-card/SellerInfo";
 import { VehicleImages } from "./auction-card/VehicleImages";
+import { ImageCount } from "./auction-card/ImageCount";
 import { AuctionStatus } from "@/types/auction";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { AuctionDetails as AuctionDetailsView } from "@/components/admin/AuctionDetails";
@@ -25,7 +26,8 @@ interface AdminAuctionCardProps {
   onExtendTime?: (id: string) => Promise<void>;
   onScheduleClick?: (auction: any) => void;
   onSuccess?: () => void;
-  autoLoadImages?: boolean; // Whether to auto-load images
+  autoLoadImages?: boolean;
+  showImageCount?: boolean;
 }
 
 export function AdminAuctionCard({ 
@@ -37,7 +39,8 @@ export function AdminAuctionCard({
   onExtendTime,
   onScheduleClick,
   onSuccess,
-  autoLoadImages = true
+  autoLoadImages = true,
+  showImageCount = false
 }: AdminAuctionCardProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
@@ -147,7 +150,14 @@ export function AdminAuctionCard({
             sellerEmail={auction.sellerEmail}
           />
 
-          <VehicleImages car={auction} autoLoad={autoLoadImages} />
+          {showImageCount ? (
+            <div className="mt-4">
+              <h4 className="text-sm font-semibold mb-2">Vehicle Images</h4>
+              <ImageCount carId={auction.id} />
+            </div>
+          ) : (
+            <VehicleImages car={auction} autoLoad={autoLoadImages} />
+          )}
 
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="details">

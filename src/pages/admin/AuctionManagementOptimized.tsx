@@ -191,7 +191,8 @@ const AuctionManagementOptimized = () => {
             onScheduleClick={handleScheduleClick}
             showScheduleButton={true}
             onSuccess={refetch}
-            autoLoadImages={true}
+            autoLoadImages={false}
+            showImageCount={true}
           />
           <InfiniteScrollTrigger
             onLoadMore={loadMore}
