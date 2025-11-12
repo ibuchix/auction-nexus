@@ -205,9 +205,18 @@ export function useAuctionManagement() {
     refetch();
   };
 
-  // Shared load logic
+  // Refs to track scroll position
+  const scrollPositionRef = useRef(0);
+  const scrollContainerHeightRef = useRef(0);
+
+  // Shared load logic with scroll position preservation
   const performLoad = (itemsToLoad: number) => {
     console.log('[Auction Management] Loading items:', itemsToLoad);
+    
+    // Save current scroll position before loading
+    scrollPositionRef.current = window.scrollY;
+    scrollContainerHeightRef.current = document.documentElement.scrollHeight;
+    
     setIsLoadingMore(true);
     
     // Add a delay to prevent rapid-fire loads during image loading
@@ -218,6 +227,17 @@ export function useAuctionManagement() {
         return newCount;
       });
       setIsLoadingMore(false);
+      
+      // Restore scroll position after DOM updates
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          console.log('[Auction Management] Restoring scroll position:', scrollPositionRef.current);
+          window.scrollTo({
+            top: scrollPositionRef.current,
+            behavior: 'instant'
+          });
+        });
+      });
     }, 500);
   };
 
