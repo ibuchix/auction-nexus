@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DealerData, VerificationStatus } from "./types";
@@ -187,7 +186,7 @@ export const useDealerVerification = () => {
   };
 
   // Reset to page 1 when tab changes
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
     setSearchQuery("");
   }, [activeTab]);
