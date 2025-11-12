@@ -2096,6 +2096,35 @@ export type Database = {
           },
         ]
       }
+      cleanup_monitoring_dashboard: {
+        Row: {
+          audit_logs_ready_to_clean: number | null
+          cars_history_ready_to_clean: number | null
+          cleanup_urgency: string | null
+          cron_schedule: string | null
+          current_audit_logs: number | null
+          current_cars_history: number | null
+          current_system_logs: number | null
+          failed_runs: number | null
+          health_status: string | null
+          is_active: boolean | null
+          jobname: string | null
+          last_audit_logs_deleted: number | null
+          last_cars_history_deleted: number | null
+          last_run_duration: unknown
+          last_run_ended: string | null
+          last_run_started: string | null
+          last_run_status: string | null
+          last_system_logs_deleted: number | null
+          last_total_deleted: number | null
+          next_scheduled_run: string | null
+          successful_runs: number | null
+          system_logs_ready_to_clean: number | null
+          total_rows_deleted_lifetime: number | null
+          total_runs: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       activate_listing: {
@@ -2639,6 +2668,23 @@ export type Database = {
           seller_id: string
         }[]
       }
+      get_cleanup_job_status: {
+        Args: never
+        Returns: {
+          avg_duration_seconds: number
+          failed_runs: number
+          is_active: boolean
+          job_name: string
+          last_run_duration: unknown
+          last_run_status: string
+          last_run_time: string
+          next_scheduled_run: string
+          rows_deleted_last_run: number
+          schedule: string
+          successful_runs: number
+          total_runs: number
+        }[]
+      }
       get_correct_auction_status: {
         Args: {
           p_current_status?: Database["public"]["Enums"]["auction_schedule_status"]
@@ -3083,6 +3129,7 @@ export type Database = {
         Returns: undefined
       }
       test_admin_policies: { Args: never; Returns: Json }
+      test_cleanup_small: { Args: never; Returns: Json }
       test_live_auction_schedules_no_auth: {
         Args: never
         Returns: {
