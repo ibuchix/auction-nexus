@@ -4,6 +4,7 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { useDealerVerification } from "@/components/admin/dealer-verification/useDealerVerification";
 import { DealerVerificationTabs } from "@/components/admin/dealer-verification/DealerVerificationTabs";
 import { DealerReviewDialog } from "@/components/admin/dealer-verification/DealerReviewDialog";
+import { DealerPagination } from "@/components/admin/dealer-verification/DealerPagination";
 import { SearchBar } from "@/components/dashboard/SearchBar";
 
 const DealerVerification = () => {
@@ -23,6 +24,11 @@ const DealerVerification = () => {
     isProcessing,
     searchQuery,
     setSearchQuery,
+    currentPage,
+    pageSize,
+    pagination,
+    handlePageChange,
+    handlePageSizeChange,
     handleApproveDealer,
     handleRejectDealer,
     handleToggleVerification,
@@ -46,10 +52,10 @@ const DealerVerification = () => {
             <Loader2 className="h-4 w-4" />
             Refresh
           </Button>
-          {activeTab === "pending" && (
+          {activeTab === "pending" && pagination && (
             <Button className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4" />
-              Pending <Badge variant="secondary" className="ml-1">{dealers?.filter(d => d.verification_status === 'pending').length || 0}</Badge>
+              Pending <Badge variant="secondary" className="ml-1">{pagination.totalCount}</Badge>
             </Button>
           )}
         </div>
@@ -69,6 +75,14 @@ const DealerVerification = () => {
         )}
       </div>
 
+      {pagination && (
+        <DealerPagination
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      )}
+
       <DealerVerificationTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -77,6 +91,14 @@ const DealerVerification = () => {
         onToggleVerification={handleToggleVerification}
         onReviewDealer={handleReviewDealer}
       />
+
+      {pagination && (
+        <DealerPagination
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      )}
 
       <DealerReviewDialog 
         selectedDealer={selectedDealer}

@@ -2,6 +2,15 @@
 // Define a type for verification status
 export type VerificationStatus = "pending" | "approved" | "rejected";
 
+export interface PaginationMetadata {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface DealerData {
   id: string;
   userId: string;
@@ -15,6 +24,6 @@ export interface DealerData {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
-  email?: string; // Add email field
-  phoneNumber?: string; // Add phone number field
+  email?: string;
+  phoneNumber?: string;
 }

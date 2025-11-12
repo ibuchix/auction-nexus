@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DealerData, VerificationStatus } from "./types";
@@ -14,26 +13,34 @@ export const useDealerVerification = () => {
   const [activeTab, setActiveTab] = useState<VerificationStatus | "all">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(40);
+  
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { 
-    data: dealers, 
+    data: dealerData, 
     isLoading, 
     refetch 
   } = useQuery({
-    queryKey: ['dealersList', activeTab],
-    queryFn: () => fetchDealers(activeTab),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: ['dealersList', activeTab, currentPage, pageSize],
+    queryFn: () => fetchDealers(activeTab, currentPage, pageSize),
+    staleTime: 5 * 60 * 1000,
   });
 
+  const dealers = dealerData?.dealers || [];
+  const pagination = dealerData?.pagination;
+
+  // Client-side search filtering (only for current page)
   const filteredDealers = useMemo(() => {
-    if (!dealers) return [];
     if (!searchQuery.trim()) return dealers;
     
     const query = searchQuery.toLowerCase().trim();
     return dealers.filter(dealer => 
-      dealer.email?.toLowerCase().includes(query)
+      dealer.email?.toLowerCase().includes(query) ||
+      dealer.dealershipName?.toLowerCase().includes(query) ||
+      dealer.supervisorName?.toLowerCase().includes(query)
     );
   }, [dealers, searchQuery]);
 
@@ -168,6 +175,22 @@ export const useDealerVerification = () => {
     setAdminNotes("");
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setSearchQuery("");
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+  };
+
+  // Reset to page 1 when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setSearchQuery("");
+  }, [activeTab]);
+
   return {
     dealers: filteredDealers,
     isLoading,
@@ -185,6 +208,11 @@ export const useDealerVerification = () => {
     isProcessing,
     searchQuery,
     setSearchQuery,
+    currentPage,
+    pageSize,
+    pagination,
+    handlePageChange,
+    handlePageSizeChange,
     handleApproveDealer,
     handleRejectDealer,
     handleToggleVerification,
