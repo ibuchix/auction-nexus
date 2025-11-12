@@ -25,7 +25,7 @@ export function ImageCount({ carId }: ImageCountProps) {
         }
         
         const fileUploads = (fileUploadsData as any[]) || [];
-        const imageCount = fileUploads.filter(f => f.file_type === 'image').length;
+        const imageCount = fileUploads.filter(f => f.file_type?.startsWith('image/')).length;
         
         setCount(imageCount);
       } catch (error) {
