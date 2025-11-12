@@ -147,7 +147,7 @@ export const fetchDealers = async (
     console.log('Fetching dealers with pagination:', { status, page, pageSize });
     
     // Use edge function which includes email fetching with service role
-    const result = await edgeFunctionAdminOperations.getAllDealers(status, page, pageSize);
+    const result = await edgeFunctionAdminOperations.getAllDealers(status, page, pageSize) as any;
     
     if (!result) {
       console.log('No dealers data returned');
