@@ -18,7 +18,8 @@ export function ImageCount({ carId }: ImageCountProps) {
           .from('car_file_uploads')
           .select('*', { count: 'exact', head: true })
           .eq('car_id', carId)
-          .eq('file_type', 'image');
+          .eq('file_type', 'image')
+          .eq('upload_status', 'completed');
         
         setCount(imageCount || 0);
       } catch (error) {

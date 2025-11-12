@@ -325,13 +325,15 @@ export function useOptimizedAuctionManagement() {
     if (!currentState.isLoadingMore) {
       const savedPosition = sessionStorage.getItem('auction-scroll-position');
       if (savedPosition) {
-        setTimeout(() => {
-          window.scrollTo({
-            top: parseInt(savedPosition, 10),
-            behavior: 'smooth'
-          });
-          sessionStorage.removeItem('auction-scroll-position');
-        }, 150);
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            window.scrollTo({
+              top: parseInt(savedPosition, 10),
+              behavior: 'instant'
+            });
+            sessionStorage.removeItem('auction-scroll-position');
+          }, 200);
+        });
       }
     }
   }, [currentState.isLoadingMore]);
