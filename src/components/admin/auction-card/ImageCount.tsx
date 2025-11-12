@@ -14,14 +14,20 @@ export function ImageCount({ carId }: ImageCountProps) {
   useEffect(() => {
     const fetchImageCount = async () => {
       try {
-        const { count: imageCount } = await supabase
-          .from('car_file_uploads')
-          .select('*', { count: 'exact', head: true })
-          .eq('car_id', carId)
-          .eq('file_type', 'image')
-          .eq('upload_status', 'completed');
+        // Use RPC function to bypass RLS (same as VehicleImages component)
+        const { data: fileUploadsData, error } = await supabase
+          .rpc('admin_get_car_files', { p_car_id: carId });
         
-        setCount(imageCount || 0);
+        if (error) {
+          console.error('Error fetching image count:', error);
+          setCount(0);
+          return;
+        }
+        
+        const fileUploads = (fileUploadsData as any[]) || [];
+        const imageCount = fileUploads.filter(f => f.file_type === 'image').length;
+        
+        setCount(imageCount);
       } catch (error) {
         console.error('Error fetching image count:', error);
         setCount(0);

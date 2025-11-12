@@ -9,10 +9,8 @@ import { objectToCamelCase } from "@/utils/caseConverter";
 type TabType = 'ready' | 'active' | 'ended' | 'notConfigured';
 
 interface TabState {
-  loadedItems: number;
+  currentPage: number;
   totalCount: number;
-  hasMore: boolean;
-  isLoadingMore: boolean;
 }
 
 export function useOptimizedAuctionManagement() {
@@ -25,10 +23,10 @@ export function useOptimizedAuctionManagement() {
   
   // Per-tab state management
   const [tabStates, setTabStates] = useState<Record<TabType, TabState>>({
-    ready: { loadedItems: 30, totalCount: 0, hasMore: true, isLoadingMore: false },
-    active: { loadedItems: 30, totalCount: 0, hasMore: true, isLoadingMore: false },
-    ended: { loadedItems: 30, totalCount: 0, hasMore: true, isLoadingMore: false },
-    notConfigured: { loadedItems: 30, totalCount: 0, hasMore: true, isLoadingMore: false },
+    ready: { currentPage: 1, totalCount: 0 },
+    active: { currentPage: 1, totalCount: 0 },
+    ended: { currentPage: 1, totalCount: 0 },
+    notConfigured: { currentPage: 1, totalCount: 0 },
   });
 
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
@@ -39,48 +37,42 @@ export function useOptimizedAuctionManagement() {
   const currentState = tabStates[currentTab];
 
   // Build tab-specific query with database-level filtering
-  const buildTabQuery = useCallback(async (tab: TabType, limit: number) => {
+  const buildTabQuery = useCallback((tab: TabType, page: number, itemsPerPage: number) => {
+    const offset = (page - 1) * itemsPerPage;
+    const limit = offset + itemsPerPage - 1;
+    
     // Tab-specific filters with appropriate joins
     switch (tab) {
       case 'ready': {
-        // Step 1: Get car IDs that have active or scheduled auctions (to exclude them)
-        const { data: activeSchedules } = await supabase
+        // Get car IDs that have ANY auction schedule (to exclude them)
+        // Only show cars that have NEVER been to auction
+        return supabase
           .from('auction_schedules')
           .select('car_id')
-          .in('status', ['active', 'scheduled']);
-        
-        const excludeCarIds = activeSchedules?.map(s => s.car_id) || [];
-        
-        // Step 2: Query cars with reserve_price > 0, excluding active/scheduled ones
-        let query = supabase
-          .from('cars')
-          .select(`
-            *,
-            auction_schedules (
-              id,
-              status,
-              start_time,
-              end_time,
-              created_at,
-              notes
-            )
-          `, { count: 'exact' })
-          .gt('reserve_price', 0);
+          .then(({ data: allSchedules }) => {
+            const excludeCarIds = allSchedules?.map(s => s.car_id) || [];
+            
+            // Query cars with reserve_price > 0, excluding ALL cars with any schedule
+            let query = supabase
+              .from('cars')
+              .select(`*`, { count: 'exact' })
+              .gt('reserve_price', 0);
 
-        // Exclude cars with active/scheduled auctions
-        if (excludeCarIds.length > 0) {
-          query = query.not('id', 'in', `(${excludeCarIds.join(',')})`);
-        }
+            // Exclude cars with ANY auction history
+            if (excludeCarIds.length > 0) {
+              query = query.not('id', 'in', `(${excludeCarIds.join(',')})`);
+            }
 
-        if (searchTerm) {
-          query = query.or(
-            `title.ilike.%${searchTerm}%,make.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%,vin.ilike.%${searchTerm}%`
-          );
-        }
+            if (searchTerm) {
+              query = query.or(
+                `title.ilike.%${searchTerm}%,make.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%,vin.ilike.%${searchTerm}%`
+              );
+            }
 
-        return query
-          .order('created_at', { ascending: false })
-          .range(0, limit - 1);
+            return query
+              .order('created_at', { ascending: false })
+              .range(offset, limit);
+          });
       }
       
       case 'active': {
@@ -109,7 +101,7 @@ export function useOptimizedAuctionManagement() {
 
         return query
           .order('created_at', { ascending: false })
-          .range(0, limit - 1);
+          .range(offset, limit);
       }
       
       case 'ended': {
@@ -142,7 +134,7 @@ export function useOptimizedAuctionManagement() {
 
         return query
           .order('created_at', { ascending: false })
-          .range(0, limit - 1);
+          .range(offset, limit);
       }
       
       case 'notConfigured': {
@@ -160,7 +152,7 @@ export function useOptimizedAuctionManagement() {
 
         return query
           .order('created_at', { ascending: false })
-          .range(0, limit - 1);
+          .range(offset, limit);
       }
       
       default:
@@ -175,10 +167,10 @@ export function useOptimizedAuctionManagement() {
 
   // Query for current tab
   const { data: listings = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['optimizedAuctionManagement', currentTab, searchTerm, currentState.loadedItems],
+    queryKey: ['optimizedAuctionManagement', currentTab, searchTerm, currentState.currentPage, pageSize],
     queryFn: async () => {
       try {
-        const query = await buildTabQuery(currentTab, currentState.loadedItems);
+        const query = await buildTabQuery(currentTab, currentState.currentPage, pageSize);
         const { data, error, count } = await query;
         
         if (error) {
@@ -201,10 +193,8 @@ export function useOptimizedAuctionManagement() {
         setTabStates(prev => ({
           ...prev,
           [currentTab]: {
-            ...prev[currentTab],
+            currentPage: currentState.currentPage,
             totalCount: actualCount,
-            hasMore: currentState.loadedItems < actualCount,
-            isLoadingMore: false,
           }
         }));
         
@@ -268,87 +258,43 @@ export function useOptimizedAuctionManagement() {
     };
   }, [currentTab, refetch]);
 
-  // Load more for current tab
-  const loadMore = useCallback(() => {
-    if (currentState.isLoadingMore || !currentState.hasMore || !autoLoadEnabled) {
-      return;
-    }
-    
+  // Pagination logic
+  const totalPages = Math.ceil(currentState.totalCount / pageSize);
+  const hasNextPage = currentState.currentPage < totalPages;
+  const hasPreviousPage = currentState.currentPage > 1;
+
+  const goToPage = useCallback((page: number) => {
     setTabStates(prev => ({
       ...prev,
       [currentTab]: {
         ...prev[currentTab],
-        loadedItems: prev[currentTab].loadedItems + pageSize,
-        isLoadingMore: true,
+        currentPage: page
       }
     }));
-  }, [currentTab, currentState, autoLoadEnabled, pageSize]);
+  }, [currentTab]);
 
-  // Manual load more with scroll preservation
-  const loadMoreManual = useCallback(() => {
-    if (currentState.isLoadingMore || !currentState.hasMore) {
-      return;
+  const nextPage = useCallback(() => {
+    if (hasNextPage) {
+      goToPage(currentState.currentPage + 1);
     }
-    
-    // Save current scroll position
-    const scrollY = window.scrollY;
-    sessionStorage.setItem('auction-scroll-position', scrollY.toString());
-    
-    setTabStates(prev => ({
-      ...prev,
-      [currentTab]: {
-        ...prev[currentTab],
-        loadedItems: prev[currentTab].loadedItems + pageSize,
-        isLoadingMore: true,
-      }
-    }));
-  }, [currentTab, currentState, pageSize]);
+  }, [hasNextPage, currentState.currentPage, goToPage]);
 
-  // Load all for current tab
-  const loadAll = useCallback(() => {
-    if (currentState.isLoadingMore) {
-      return;
+  const previousPage = useCallback(() => {
+    if (hasPreviousPage) {
+      goToPage(currentState.currentPage - 1);
     }
-    
-    setTabStates(prev => ({
-      ...prev,
-      [currentTab]: {
-        ...prev[currentTab],
-        loadedItems: prev[currentTab].totalCount,
-        isLoadingMore: true,
-      }
-    }));
-  }, [currentTab, currentState]);
+  }, [hasPreviousPage, currentState.currentPage, goToPage]);
 
-  // Restore scroll position after loading more items
-  useEffect(() => {
-    if (!currentState.isLoadingMore) {
-      const savedPosition = sessionStorage.getItem('auction-scroll-position');
-      if (savedPosition) {
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            window.scrollTo({
-              top: parseInt(savedPosition, 10),
-              behavior: 'instant'
-            });
-            sessionStorage.removeItem('auction-scroll-position');
-          }, 200);
-        });
-      }
-    }
-  }, [currentState.isLoadingMore]);
-
-  // Reset tab state when search changes
+  // Reset to page 1 when search changes
   useEffect(() => {
     setTabStates(prev => ({
       ...prev,
       [currentTab]: {
         ...prev[currentTab],
-        loadedItems: pageSize,
-        hasMore: true,
+        currentPage: 1,
       }
     }));
-  }, [searchTerm, pageSize]);
+  }, [searchTerm, currentTab]);
 
   // Handle tab change
   const handleTabChange = useCallback((tab: TabType) => {
@@ -382,20 +328,16 @@ export function useOptimizedAuctionManagement() {
     searchTerm,
     setSearchTerm,
     
-    // Current tab state
+    // Pagination
+    currentPage: currentState.currentPage,
+    totalPages,
     totalCount: currentState.totalCount,
-    hasMore: currentState.hasMore,
-    loadedItems: currentState.loadedItems,
-    isLoadingMore: currentState.isLoadingMore,
-    
-    // Controls
-    loadMore,
-    loadMoreManual,
-    loadAll,
     pageSize,
-    setPageSize,
-    autoLoadEnabled,
-    setAutoLoadEnabled,
+    hasNextPage,
+    hasPreviousPage,
+    onNextPage: nextPage,
+    onPreviousPage: previousPage,
+    onGoToPage: goToPage,
     
     // Auction operations
     selectedAuction,
