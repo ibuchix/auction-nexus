@@ -253,32 +253,47 @@ serve(async (req) => {
         break
 
       case 'getAllDealers':
-        console.log('Fetching all dealers with emails and phone numbers...', params)
+        console.log('Fetching dealers with pagination...', params)
         
-        // Build query with optional status filtering
+        // Extract pagination params (with defaults)
+        const page = params.page || 1
+        const pageSize = params.pageSize || 40
+        const status = params.status
+        
+        // Calculate offset for SQL query
+        const from = (page - 1) * pageSize
+        const to = from + pageSize - 1
+        
+        console.log(`Fetching dealers: page ${page}, size ${pageSize}, range ${from}-${to}`)
+        
+        // Build base query with count
         let dealersQuery = supabase
           .from('dealers')
-          .select('*')
+          .select('*', { count: 'exact' })
           .order('created_at', { ascending: false })
         
         // Apply status filter if provided
-        if (params.status && params.status !== 'all') {
-          console.log('Filtering dealers by status:', params.status)
-          dealersQuery = dealersQuery.eq('verification_status', params.status)
+        if (status && status !== 'all') {
+          console.log('Filtering dealers by status:', status)
+          dealersQuery = dealersQuery.eq('verification_status', status)
         }
         
-        const { data: dealersData, error: dealersError } = await dealersQuery
+        // Apply pagination using range
+        dealersQuery = dealersQuery.range(from, to)
+        
+        const { data: dealersData, error: dealersError, count } = await dealersQuery
 
         if (dealersError) {
           console.error('Dealers query error:', dealersError)
           throw new Error(`Dealers query failed: ${dealersError.message}`)
         }
 
-        // Fetch email and phone for each dealer from auth.users using service role
+        console.log(`Fetched ${dealersData?.length || 0} dealers, total count: ${count}`)
+
+        // Fetch email and phone for ONLY the paginated dealers
         const dealersWithEmails = await Promise.all(
           (dealersData || []).map(async (dealer) => {
             try {
-              // Use service role to access auth.users
               const { data: userData, error: userError } = await supabase.auth.admin.getUserById(dealer.user_id)
               
               if (userError) {
@@ -301,8 +316,20 @@ serve(async (req) => {
           })
         )
 
-        console.log(`Successfully fetched ${dealersWithEmails.length} dealers with emails and phone numbers`)
-        result = dealersWithEmails
+        // Return paginated response with metadata
+        result = {
+          dealers: dealersWithEmails,
+          pagination: {
+            page: page,
+            pageSize: pageSize,
+            totalCount: count || 0,
+            totalPages: Math.ceil((count || 0) / pageSize),
+            hasNextPage: to < (count || 0) - 1,
+            hasPreviousPage: page > 1
+          }
+        }
+        
+        console.log('Pagination metadata:', result.pagination)
         break
 
       case 'updateUserRole':
