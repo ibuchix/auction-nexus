@@ -164,11 +164,11 @@ export function useOptimizedAuctionManagement() {
     
     // For 'ready' tab: exclude cars with active/scheduled schedules
     return data.filter(item => {
-      const schedules = item.auction_schedules || [];
+      const schedules = item.auctionSchedules || [];
       const hasActiveSchedule = schedules.some((s: any) => 
         s.status === 'active' || s.status === 'scheduled'
       );
-      return !hasActiveSchedule && item.reserve_price > 0;
+      return !hasActiveSchedule && item.reservePrice > 0;
     });
   }, []);
 
