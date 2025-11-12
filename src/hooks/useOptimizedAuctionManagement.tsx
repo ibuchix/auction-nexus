@@ -136,8 +136,8 @@ export function useOptimizedAuctionManagement() {
     queryKey: ['optimizedAuctionManagement', currentTab, searchTerm, currentState.loadedItems],
     queryFn: async () => {
       try {
-        const query = buildTabQuery(currentTab, currentState.loadedItems);
-        const { data, error, count } = await query;
+        const query = buildTabQuery(currentTab, currentState.loadedItems * 3); // Fetch extra to account for filtering
+        const { data, error } = await query;
         
         if (error) {
           console.error('❌ [OptimizedAuctionMgmt] Database error:', error);
@@ -152,19 +152,22 @@ export function useOptimizedAuctionManagement() {
         // Apply tab-specific filtering
         const filteredData = filterByTabLogic(transformedData, currentTab);
         
-        // Update tab state
-        const totalRecords = count || 0;
+        // Use filtered count as the actual total
+        const filteredCount = filteredData.length;
+        
+        // Update tab state with FILTERED count
         setTabStates(prev => ({
           ...prev,
           [currentTab]: {
             ...prev[currentTab],
-            totalCount: totalRecords,
-            hasMore: currentState.loadedItems < totalRecords,
+            totalCount: filteredCount,
+            hasMore: filteredCount >= currentState.loadedItems,
             isLoadingMore: false,
           }
         }));
         
-        return filteredData;
+        // Return only up to loadedItems
+        return filteredData.slice(0, currentState.loadedItems);
       } catch (err) {
         console.error('💥 [OptimizedAuctionMgmt] Exception:', err);
         errorCountRef.current++;
