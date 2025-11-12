@@ -32,25 +32,16 @@ export const approveDealer = async (
       return false;
     }
 
-    console.log('Approving dealer with params:', { dealerId, adminId, notes });
+    console.log('Approving dealer via edge function:', { dealerId, adminId, notes });
     
-    // Update dealer verification status directly
-    const { data, error } = await supabase
-      .from('dealers')
-      .update({ 
-        verification_status: 'approved',
-        is_verified: true,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', dealerId)
-      .select();
+    // Use edge function with service role access to bypass RLS
+    const result = await edgeFunctionAdminOperations.verifyDealer(dealerId, notes);
     
-    if (error) {
-      console.error('Error approving dealer:', error);
-      throw error;
+    if (!result) {
+      throw new Error('Failed to approve dealer - no response from server');
     }
     
-    console.log('Dealer approved successfully:', data);
+    console.log('Dealer approved successfully:', result);
     toast.success('Dealer approved successfully');
     return true;
   } catch (error) {
@@ -88,25 +79,16 @@ export const rejectDealer = async (
       return false;
     }
     
-    console.log('Rejecting dealer with params:', { dealerId, adminId, rejectionReason, notes });
+    console.log('Rejecting dealer via edge function:', { dealerId, adminId, rejectionReason, notes });
     
-    // Update dealer verification status directly
-    const { data, error } = await supabase
-      .from('dealers')
-      .update({ 
-        verification_status: 'rejected',
-        is_verified: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', dealerId)
-      .select();
+    // Use edge function with service role access to bypass RLS
+    const result = await edgeFunctionAdminOperations.rejectDealer(dealerId, rejectionReason, notes);
     
-    if (error) {
-      console.error('Error rejecting dealer:', error);
-      throw error;
+    if (!result) {
+      throw new Error('Failed to reject dealer - no response from server');
     }
     
-    console.log('Dealer rejected successfully:', data);
+    console.log('Dealer rejected successfully:', result);
     toast.success('Dealer rejected successfully');
     return true;
   } catch (error) {
