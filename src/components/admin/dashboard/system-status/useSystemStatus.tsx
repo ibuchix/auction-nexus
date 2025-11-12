@@ -89,6 +89,10 @@ export function useSystemStatus() {
       
       setOperationsStatus(statuses);
       
+      // Temporarily disabled - system_health table not yet implemented
+      setSystemHealth([]);
+      
+      /* 
       // Use a join to get system health and database performance metrics
       const { data: healthData, error: healthError } = await supabase
         .from('system_health')
@@ -110,6 +114,7 @@ export function useSystemStatus() {
       })) || [];
       
       setSystemHealth(transformedHealthData);
+      */
       setLastRefreshTime(now);
     } catch (error) {
       console.error('Error fetching system data:', error);
