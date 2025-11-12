@@ -96,20 +96,31 @@ export function useOptimizedAuctionManagement() {
       const hasActiveSchedule = schedules.some((s: any) => 
         s.status === 'running' || s.status === 'scheduled'
       );
-      const hasEndedSchedule = schedules.some((s: any) => 
-        s.status === 'completed' || s.status === 'cancelled'
-      );
+      
+      // For ended auctions, check if ended in last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const hasRecentEndedSchedule = schedules.some((s: any) => {
+        const isEnded = s.status === 'completed' || s.status === 'cancelled';
+        if (!isEnded) return false;
+        
+        // Check if ended in last 7 days using end_time or updated_at
+        const endDate = new Date(s.end_time || s.updated_at);
+        return endDate >= sevenDaysAgo;
+      });
 
       switch (tab) {
         case 'ready':
-          // Ready if no active/scheduled schedules
-          return !hasActiveSchedule && !hasEndedSchedule && item.reserve_price > 0;
+          // Ready if no active/scheduled schedules - cars can have ended schedules and be re-auctioned
+          return !hasActiveSchedule && item.reserve_price > 0;
         
         case 'active':
           return hasActiveSchedule;
         
         case 'ended':
-          return hasEndedSchedule || item.auction_status === 'sold';
+          // Only show auctions that ended in the last 7 days
+          return hasRecentEndedSchedule;
         
         case 'notConfigured':
           return !item.reserve_price || item.reserve_price === 0;
