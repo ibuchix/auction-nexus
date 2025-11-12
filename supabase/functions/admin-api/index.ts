@@ -26,11 +26,11 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
     console.log('Environment check:', {
       hasUrl: !!supabaseUrl,
-      hasAnonKey: !!anonKey
+      hasServiceRoleKey: !!serviceRoleKey
     })
     
     // Get the authorization header from the request
@@ -50,8 +50,8 @@ serve(async (req) => {
     // Extract JWT token from Authorization header
     const token = authHeader.replace('Bearer ', '')
     
-    // Create supabase client
-    const supabase = createClient(supabaseUrl, anonKey)
+    // Create supabase client with service role key for admin operations
+    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     // Verify the user is authenticated by passing JWT directly
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
@@ -253,19 +253,56 @@ serve(async (req) => {
         break
 
       case 'getAllDealers':
-        console.log('Fetching all dealers...')
-        const { data: dealersData, error: dealersError } = await supabase
+        console.log('Fetching all dealers with emails and phone numbers...', params)
+        
+        // Build query with optional status filtering
+        let dealersQuery = supabase
           .from('dealers')
           .select('*')
           .order('created_at', { ascending: false })
+        
+        // Apply status filter if provided
+        if (params.status && params.status !== 'all') {
+          console.log('Filtering dealers by status:', params.status)
+          dealersQuery = dealersQuery.eq('verification_status', params.status)
+        }
+        
+        const { data: dealersData, error: dealersError } = await dealersQuery
 
         if (dealersError) {
           console.error('Dealers query error:', dealersError)
           throw new Error(`Dealers query failed: ${dealersError.message}`)
         }
 
-        console.log(`Successfully fetched ${dealersData?.length || 0} dealers`)
-        result = dealersData
+        // Fetch email and phone for each dealer from auth.users using service role
+        const dealersWithEmails = await Promise.all(
+          (dealersData || []).map(async (dealer) => {
+            try {
+              // Use service role to access auth.users
+              const { data: userData, error: userError } = await supabase.auth.admin.getUserById(dealer.user_id)
+              
+              if (userError) {
+                console.warn(`Could not fetch user data for dealer ${dealer.id}:`, userError)
+              }
+              
+              return {
+                ...dealer,
+                email: userData?.user?.email || null,
+                phone_number: userData?.user?.phone || null
+              }
+            } catch (err) {
+              console.error(`Error fetching user for dealer ${dealer.id}:`, err)
+              return {
+                ...dealer,
+                email: null,
+                phone_number: null
+              }
+            }
+          })
+        )
+
+        console.log(`Successfully fetched ${dealersWithEmails.length} dealers with emails and phone numbers`)
+        result = dealersWithEmails
         break
 
       case 'updateUserRole':
