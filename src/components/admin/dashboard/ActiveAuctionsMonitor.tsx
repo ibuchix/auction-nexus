@@ -63,7 +63,8 @@ export function ActiveAuctionsMonitor() {
 
     fetchActiveAuctions();
     
-    // Set up realtime subscription
+    // Set up realtime subscription with debouncing
+    let refetchTimeout: NodeJS.Timeout;
     const channel = supabase
       .channel('active-auctions')
       .on(
@@ -75,12 +76,17 @@ export function ActiveAuctionsMonitor() {
           filter: 'auction_status=eq.active'
         },
         () => {
-          fetchActiveAuctions();
+          // Debounce refetch by 3 seconds to prevent rapid database calls
+          clearTimeout(refetchTimeout);
+          refetchTimeout = setTimeout(() => {
+            fetchActiveAuctions();
+          }, 3000);
         }
       )
       .subscribe();
 
     return () => {
+      clearTimeout(refetchTimeout);
       supabase.removeChannel(channel);
     };
   }, []);

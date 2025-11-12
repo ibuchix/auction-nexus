@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { SystemHealth, OperationStatus } from "./types";
 import { toast } from "sonner";
 
-// Define cache TTL in milliseconds (2 minutes)
-const CACHE_TTL = 2 * 60 * 1000;
+// Define cache TTL in milliseconds (7 minutes)
+const CACHE_TTL = 7 * 60 * 1000;
 
 export function useSystemStatus() {
   const [isLoading, setIsLoading] = useState(true);
@@ -129,7 +129,7 @@ export function useSystemStatus() {
       if (now - lastRefreshTime >= CACHE_TTL) {
         fetchSystemData();
       }
-    }, CACHE_TTL / 2); // Check half as often as the TTL
+    }, CACHE_TTL); // Check at full TTL interval
     
     return () => clearInterval(interval);
   }, [fetchSystemData, lastRefreshTime]);
