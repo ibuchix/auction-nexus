@@ -19,6 +19,8 @@ export function useAuctionManagement() {
   const [totalCount, setTotalCount] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [pageSize, setPageSize] = useState(30);
+  const [autoLoadEnabled, setAutoLoadEnabled] = useState(true);
   
   const { pauseAuction, cancelAuction, startAuction } = useAuctionOperations();
   const { toast } = useToast();
@@ -205,22 +207,40 @@ export function useAuctionManagement() {
 
   // Infinite scroll control function with loading lock
   const loadMore = () => {
-    if (hasMore && !isLoading && !isLoadingMore) {
-      setIsLoadingMore(true);
+    if (isLoadingMore || !hasMore || !autoLoadEnabled) {
+      console.log('[Auction Management] Load blocked:', { isLoadingMore, hasMore, autoLoadEnabled });
+      return;
+    }
+
+    console.log('[Auction Management] Loading more items');
+    setIsLoadingMore(true);
+    
+    // Add a delay to prevent rapid-fire loads during image loading
+    setTimeout(() => {
       setLoadedItems(prev => {
-        const newCount = prev + 30; // Load 30 more items
-        // Release lock after state update
-        setTimeout(() => setIsLoadingMore(false), 300);
+        const newCount = prev + pageSize;
+        console.log('[Auction Management] New loaded count:', newCount);
         return newCount;
       });
-    }
+      setIsLoadingMore(false);
+    }, 500);
+  };
+
+  const loadAll = () => {
+    console.log('[Auction Management] Loading all items');
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      setLoadedItems(totalCount);
+      setIsLoadingMore(false);
+    }, 300);
   };
 
   // Reset loaded items when filters change
   useEffect(() => {
-    setLoadedItems(30);
+    setLoadedItems(pageSize);
+    setHasMore(true);
     setIsLoadingMore(false);
-  }, [searchTerm, statusFilter, showAllCars]);
+  }, [searchTerm, statusFilter, showAllCars, pageSize]);
 
   return {
     searchTerm,
@@ -250,6 +270,12 @@ export function useAuctionManagement() {
     totalCount,
     hasMore,
     loadMore,
+    loadAll,
     loadedItems,
+    isLoadingMore,
+    pageSize,
+    setPageSize,
+    autoLoadEnabled,
+    setAutoLoadEnabled,
   };
 }

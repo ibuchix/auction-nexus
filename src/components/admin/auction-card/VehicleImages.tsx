@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Loader2, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { extractAllCarImages, fetchCarImagesFromDatabase, type CategorizedImage } from "@/utils/imageUtils";
+import { useImageCache } from "@/hooks/useImageCache";
 
 interface VehicleImagesProps {
   images?: string[];
@@ -19,10 +20,20 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageIndex, setImageIndex] = useState<number>(0);
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  const [showAllImages, setShowAllImages] = useState(false);
+  const { getCachedImages, setCachedImages } = useImageCache();
 
   useEffect(() => {
     const loadImages = async () => {
       if (car?.id) {
+        // Check cache first
+        const cachedImages = getCachedImages(car.id);
+        if (cachedImages) {
+          console.log(`[VehicleImages] Using cached images for car ${car.id}`);
+          setAllImages(cachedImages);
+          return;
+        }
+        
         // For admin, fetch images from database using car ID
         setIsLoading(true);
         setError(null);
@@ -32,10 +43,12 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
           
           if (dbImages.length > 0) {
             setAllImages(dbImages);
+            setCachedImages(car.id, dbImages);
           } else {
             // Fallback to legacy method if no database images found
             const legacyImages = extractAllCarImages(car);
             setAllImages(legacyImages);
+            setCachedImages(car.id, legacyImages);
           }
         } catch (err) {
           console.error('Error loading images:', err);
@@ -43,6 +56,7 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
           // Fallback to legacy method on error
           const legacyImages = extractAllCarImages(car);
           setAllImages(legacyImages);
+          setCachedImages(car.id, legacyImages);
         } finally {
           setIsLoading(false);
         }
@@ -56,7 +70,7 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
     };
 
     loadImages();
-  }, [car?.id, images]);
+  }, [car?.id, images, getCachedImages, setCachedImages]);
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -99,16 +113,23 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
     return (
       <div className="mt-4">
         <h4 className="text-sm font-semibold mb-2">Vehicle Images</h4>
-        <div className="text-sm text-muted-foreground">No images available</div>
+        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+          <ImageIcon className="h-12 w-12 mb-2 opacity-50" />
+          <p className="text-sm">No images available</p>
+        </div>
       </div>
     );
   }
+
+  // Progressive loading: show first 4 images initially
+  const displayedImages = showAllImages ? allImages : allImages.slice(0, 4);
+  const remainingCount = allImages.length - 4;
 
   return (
     <div className="mt-4">
       <h4 className="text-sm font-semibold mb-2">Vehicle Images ({allImages.length})</h4>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {allImages.map((image, index) => (
+        {displayedImages.map((image, index) => (
           <Dialog key={index}>
             <DialogTrigger asChild>
               <div 
@@ -189,6 +210,34 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
           </Dialog>
         ))}
       </div>
+      
+      {/* Show "Load More Images" button if there are more than 4 images */}
+      {!showAllImages && remainingCount > 0 && (
+        <div className="text-center mt-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAllImages(true)}
+            className="gap-2"
+          >
+            <ImageIcon className="h-4 w-4" />
+            Show {remainingCount} more image{remainingCount !== 1 ? 's' : ''}
+          </Button>
+        </div>
+      )}
+      
+      {showAllImages && allImages.length > 4 && (
+        <div className="text-center mt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAllImages(false)}
+            className="text-xs"
+          >
+            Show less
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

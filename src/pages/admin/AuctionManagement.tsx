@@ -1,7 +1,10 @@
 
-import { Clock, CheckCircle, XCircle, Package, Loader2 } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Package, Loader2, ChevronDown } from "lucide-react";
 import { useAuctionManagement } from "@/hooks/useAuctionManagement";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionScheduleDialog } from "@/components/admin/auction-scheduling/AuctionScheduleDialog";
 import { AuctionFilters } from "@/components/admin/auction-management/AuctionFilters";
@@ -37,7 +40,13 @@ const AuctionManagement = () => {
     totalCount,
     hasMore,
     loadMore,
+    loadAll,
     loadedItems,
+    isLoadingMore,
+    pageSize,
+    setPageSize,
+    autoLoadEnabled,
+    setAutoLoadEnabled,
   } = useAuctionManagement();
 
   if (isLoading) {
@@ -67,23 +76,73 @@ const AuctionManagement = () => {
         Auction Management
       </h1>
 
-      <div className="bg-white p-4 rounded-lg border mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <AuctionFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-          />
-          <div className="flex items-center gap-2">
-            <Switch 
-              id="show-all-cars" 
-              checked={showAllCars} 
-              onCheckedChange={setShowAllCars}
-            />
-            <Label htmlFor="show-all-cars">Show All Cars</Label>
+      <div className="space-y-4">
+        <AuctionFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+        />
+
+        {/* Manual Controls */}
+        <Card className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="page-size" className="text-sm whitespace-nowrap">
+                Items per page:
+              </Label>
+              <Select
+                value={pageSize.toString()}
+                onValueChange={(value) => setPageSize(Number(value))}
+              >
+                <SelectTrigger id="page-size" className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch
+                id="auto-load"
+                checked={autoLoadEnabled}
+                onCheckedChange={setAutoLoadEnabled}
+              />
+              <Label htmlFor="auto-load" className="text-sm cursor-pointer">
+                Auto-load on scroll
+              </Label>
+            </div>
+
+            <div className="flex-1" />
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Showing {loadedItems} of {totalCount}
+              </span>
+              {hasMore && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadAll}
+                  disabled={isLoadingMore}
+                  className="gap-2"
+                >
+                  {isLoadingMore ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                  Load All
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       <Tabs defaultValue="ready" className="space-y-4">
@@ -135,10 +194,24 @@ const AuctionManagement = () => {
           <InfiniteScrollTrigger
             onLoadMore={loadMore}
             hasMore={hasMore}
-            isLoading={isLoading}
+            isLoading={isLoadingMore}
             totalCount={totalCount}
             loadedCount={loadedItems}
           />
+          
+          {!autoLoadEnabled && hasMore && !isLoadingMore && (
+            <div className="text-center py-6">
+              <Button
+                onClick={loadMore}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                <ChevronDown className="h-4 w-4" />
+                Load More Auctions ({totalCount - loadedItems} remaining)
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="active" className="space-y-4">
@@ -155,10 +228,24 @@ const AuctionManagement = () => {
           <InfiniteScrollTrigger
             onLoadMore={loadMore}
             hasMore={hasMore}
-            isLoading={isLoading}
+            isLoading={isLoadingMore}
             totalCount={totalCount}
             loadedCount={loadedItems}
           />
+          
+          {!autoLoadEnabled && hasMore && !isLoadingMore && (
+            <div className="text-center py-6">
+              <Button
+                onClick={loadMore}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                <ChevronDown className="h-4 w-4" />
+                Load More Auctions ({totalCount - loadedItems} remaining)
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="ended" className="space-y-4">
@@ -175,10 +262,24 @@ const AuctionManagement = () => {
           <InfiniteScrollTrigger
             onLoadMore={loadMore}
             hasMore={hasMore}
-            isLoading={isLoading}
+            isLoading={isLoadingMore}
             totalCount={totalCount}
             loadedCount={loadedItems}
           />
+          
+          {!autoLoadEnabled && hasMore && !isLoadingMore && (
+            <div className="text-center py-6">
+              <Button
+                onClick={loadMore}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                <ChevronDown className="h-4 w-4" />
+                Load More Auctions ({totalCount - loadedItems} remaining)
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="notConfigured" className="space-y-4">
@@ -197,12 +298,39 @@ const AuctionManagement = () => {
           <InfiniteScrollTrigger
             onLoadMore={loadMore}
             hasMore={hasMore}
-            isLoading={isLoading}
+            isLoading={isLoadingMore}
             totalCount={totalCount}
             loadedCount={loadedItems}
           />
+          
+          {!autoLoadEnabled && hasMore && !isLoadingMore && (
+            <div className="text-center py-6">
+              <Button
+                onClick={loadMore}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                <ChevronDown className="h-4 w-4" />
+                Load More Auctions ({totalCount - loadedItems} remaining)
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
+      
+      {/* Loading Overlay */}
+      {isLoadingMore && (
+        <div className="fixed bottom-4 right-4 bg-background border border-border rounded-lg shadow-lg p-4 flex items-center gap-3 z-50">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <div>
+            <p className="text-sm font-medium">Loading more auctions...</p>
+            <p className="text-xs text-muted-foreground">
+              {loadedItems} of {totalCount} loaded
+            </p>
+          </div>
+        </div>
+      )}
 
       {selectedAuction && (
         <AuctionScheduleDialog

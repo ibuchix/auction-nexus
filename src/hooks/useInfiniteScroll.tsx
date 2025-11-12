@@ -5,6 +5,7 @@ interface UseInfiniteScrollOptions {
   hasMore: boolean;
   isLoading: boolean;
   threshold?: number;
+  minLoadInterval?: number; // Minimum ms between loads
 }
 
 /**
@@ -17,22 +18,41 @@ export function useInfiniteScroll({
   hasMore,
   isLoading,
   threshold = 0.5,
+  minLoadInterval = 3000, // Default 3 seconds between loads
 }: UseInfiniteScrollOptions) {
   const observerTarget = useRef<HTMLDivElement>(null);
   const [shouldLoad, setShouldLoad] = useState(false);
   const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastLoadTimeRef = useRef<number>(0);
+  const lastScrollYRef = useRef<number>(0);
 
   const debouncedLoadTrigger = useCallback(() => {
     if (loadTimeoutRef.current) {
       clearTimeout(loadTimeoutRef.current);
     }
     
+    // Check if enough time has passed since last load
+    const timeSinceLastLoad = Date.now() - lastLoadTimeRef.current;
+    const isScrollingUp = window.scrollY < lastScrollYRef.current;
+    lastScrollYRef.current = window.scrollY;
+    
+    // Don't trigger if scrolling up or too soon after last load
+    if (isScrollingUp || timeSinceLastLoad < minLoadInterval) {
+      console.log('[Infinite Scroll] Blocked: scrolling up or too soon', { 
+        isScrollingUp, 
+        timeSinceLastLoad 
+      });
+      return;
+    }
+    
     loadTimeoutRef.current = setTimeout(() => {
       if (hasMore && !isLoading) {
+        console.log('[Infinite Scroll] Triggering load');
+        lastLoadTimeRef.current = Date.now();
         setShouldLoad(true);
       }
-    }, 500); // Debounce by 500ms to prevent rapid triggers
-  }, [hasMore, isLoading]);
+    }, 1500); // Increased debounce to 1.5 seconds
+  }, [hasMore, isLoading, minLoadInterval]);
 
   useEffect(() => {
     const target = observerTarget.current;
@@ -47,7 +67,7 @@ export function useInfiniteScroll({
       },
       {
         threshold,
-        rootMargin: "100px", // Reduced from 200px for more precise triggering
+        rootMargin: "50px", // Trigger only 50px before reaching trigger element
       }
     );
 
