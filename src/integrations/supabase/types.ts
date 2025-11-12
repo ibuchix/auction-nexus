@@ -2388,6 +2388,10 @@ export type Database = {
       }
       cleanup_expired_reset_tokens: { Args: never; Returns: undefined }
       cleanup_expired_vin_reservations: { Args: never; Returns: number }
+      cleanup_logs_manual: {
+        Args: { batch_size?: number; max_rows_to_delete?: number }
+        Returns: Json
+      }
       cleanup_old_logs: { Args: never; Returns: Json }
       cleanup_vin_valuation_cache: { Args: never; Returns: undefined }
       close_ended_auctions: { Args: never; Returns: Json }
