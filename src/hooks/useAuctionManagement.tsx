@@ -205,20 +205,15 @@ export function useAuctionManagement() {
     refetch();
   };
 
-  // Infinite scroll control function with loading lock
-  const loadMore = () => {
-    if (isLoadingMore || !hasMore || !autoLoadEnabled) {
-      console.log('[Auction Management] Load blocked:', { isLoadingMore, hasMore, autoLoadEnabled });
-      return;
-    }
-
-    console.log('[Auction Management] Loading more items');
+  // Shared load logic
+  const performLoad = (itemsToLoad: number) => {
+    console.log('[Auction Management] Loading items:', itemsToLoad);
     setIsLoadingMore(true);
     
     // Add a delay to prevent rapid-fire loads during image loading
     setTimeout(() => {
       setLoadedItems(prev => {
-        const newCount = prev + pageSize;
+        const newCount = prev + itemsToLoad;
         console.log('[Auction Management] New loaded count:', newCount);
         return newCount;
       });
@@ -226,7 +221,30 @@ export function useAuctionManagement() {
     }, 500);
   };
 
+  // Auto-load function (for IntersectionObserver) - checks autoLoadEnabled
+  const loadMore = () => {
+    if (isLoadingMore || !hasMore || !autoLoadEnabled) {
+      console.log('[Auction Management] Auto-load blocked:', { isLoadingMore, hasMore, autoLoadEnabled });
+      return;
+    }
+    performLoad(pageSize);
+  };
+
+  // Manual load function (for button clicks) - ignores autoLoadEnabled
+  const loadMoreManual = () => {
+    if (isLoadingMore || !hasMore) {
+      console.log('[Auction Management] Manual load blocked:', { isLoadingMore, hasMore });
+      return;
+    }
+    console.log('[Auction Management] Manual load triggered');
+    performLoad(pageSize);
+  };
+
   const loadAll = () => {
+    if (isLoadingMore) {
+      console.log('[Auction Management] Load all blocked - already loading');
+      return;
+    }
     console.log('[Auction Management] Loading all items');
     setIsLoadingMore(true);
     setTimeout(() => {
@@ -270,6 +288,7 @@ export function useAuctionManagement() {
     totalCount,
     hasMore,
     loadMore,
+    loadMoreManual,
     loadAll,
     loadedItems,
     isLoadingMore,

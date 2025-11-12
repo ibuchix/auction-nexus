@@ -40,6 +40,7 @@ const AuctionManagement = () => {
     totalCount,
     hasMore,
     loadMore,
+    loadMoreManual,
     loadAll,
     loadedItems,
     isLoadingMore,
@@ -202,7 +203,7 @@ const AuctionManagement = () => {
           {!autoLoadEnabled && hasMore && !isLoadingMore && (
             <div className="text-center py-6">
               <Button
-                onClick={loadMore}
+                onClick={loadMoreManual}
                 variant="outline"
                 size="lg"
                 className="gap-2"
@@ -236,7 +237,7 @@ const AuctionManagement = () => {
           {!autoLoadEnabled && hasMore && !isLoadingMore && (
             <div className="text-center py-6">
               <Button
-                onClick={loadMore}
+                onClick={loadMoreManual}
                 variant="outline"
                 size="lg"
                 className="gap-2"
@@ -270,7 +271,7 @@ const AuctionManagement = () => {
           {!autoLoadEnabled && hasMore && !isLoadingMore && (
             <div className="text-center py-6">
               <Button
-                onClick={loadMore}
+                onClick={loadMoreManual}
                 variant="outline"
                 size="lg"
                 className="gap-2"
@@ -306,7 +307,7 @@ const AuctionManagement = () => {
           {!autoLoadEnabled && hasMore && !isLoadingMore && (
             <div className="text-center py-6">
               <Button
-                onClick={loadMore}
+                onClick={loadMoreManual}
                 variant="outline"
                 size="lg"
                 className="gap-2"
