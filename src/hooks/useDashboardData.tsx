@@ -82,6 +82,10 @@ export function useDashboardData() {
     }
   });
 
+  // Temporarily disabled - bid_metrics table not yet implemented
+  const suspiciousActivities = 0;
+  
+  /* 
   const { data: suspiciousActivities } = useQuery({
     queryKey: ['suspiciousActivities'],
     queryFn: async () => {
@@ -93,6 +97,7 @@ export function useDashboardData() {
       return count || 0;
     }
   });
+  */
 
   return {
     sellerCount: sellerCount || 0,

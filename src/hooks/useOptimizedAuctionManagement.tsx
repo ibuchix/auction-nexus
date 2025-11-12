@@ -64,10 +64,8 @@ export function useOptimizedAuctionManagement() {
     // Tab-specific filters
     switch (tab) {
       case 'ready':
-        // Cars without any active schedules and have reserve price
-        query = query
-          .gt('reserve_price', 0)
-          .is('auction_status', null);
+        // Cars with reserve price - post-processing will filter by schedule status
+        query = query.gt('reserve_price', 0);
         break;
       
       case 'active':
