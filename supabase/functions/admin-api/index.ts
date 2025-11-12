@@ -47,17 +47,14 @@ serve(async (req) => {
       )
     }
 
-    // Create supabase client with the user's session token
-    const supabase = createClient(supabaseUrl, anonKey, {
-      global: {
-        headers: {
-          Authorization: authHeader
-        }
-      }
-    })
+    // Extract JWT token from Authorization header
+    const token = authHeader.replace('Bearer ', '')
+    
+    // Create supabase client
+    const supabase = createClient(supabaseUrl, anonKey)
 
-    // Verify the user is authenticated and is an admin
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    // Verify the user is authenticated by passing JWT directly
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     
     if (userError || !user) {
       console.error('User authentication failed:', userError)
