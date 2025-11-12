@@ -116,33 +116,46 @@ export const rejectDealer = async (
   }
 };
 
+export interface PaginationMetadata {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+const defaultPagination: PaginationMetadata = {
+  page: 1,
+  pageSize: 40,
+  totalCount: 0,
+  totalPages: 0,
+  hasNextPage: false,
+  hasPreviousPage: false
+};
+
 /**
  * Fetches the list of dealers with optional filtering by verification status
- * Uses direct admin client access
+ * Uses direct admin client access with server-side pagination
  */
-export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
+export const fetchDealers = async (
+  status?: string,
+  page: number = 1,
+  pageSize: number = 40
+): Promise<{ dealers: DealerData[], pagination: PaginationMetadata }> => {
   try {
-    console.log('Fetching dealers with status:', status);
+    console.log('Fetching dealers with pagination:', { status, page, pageSize });
     
     // Use edge function which includes email fetching with service role
-    const result = await edgeFunctionAdminOperations.getAllDealers(status);
+    const result = await edgeFunctionAdminOperations.getAllDealers(status, page, pageSize);
     
     if (!result) {
       console.log('No dealers data returned');
-      return [];
-    }
-    
-    // Type guard to ensure result is an array
-    const dealersArray = Array.isArray(result) ? result : [];
-    
-    console.log(`Fetched ${dealersArray.length || 0} dealers from database`);
-    
-    if (!dealersArray || dealersArray.length === 0) {
-      return [];
+      return { dealers: [], pagination: defaultPagination };
     }
     
     // Convert to frontend format
-    const typedDealers: DealerData[] = dealersArray.map((dealer: any) => ({
+    const typedDealers: DealerData[] = (result.dealers || []).map((dealer: any) => ({
       id: dealer.id,
       userId: dealer.user_id,
       supervisorName: dealer.supervisor_name,
@@ -155,15 +168,17 @@ export const fetchDealers = async (status?: string): Promise<DealerData[]> => {
       isVerified: dealer.is_verified,
       createdAt: dealer.created_at,
       updatedAt: dealer.updated_at,
-      email: dealer.email, // Email from auth.users via edge function
-      phoneNumber: dealer.phone_number // Phone from auth.users via edge function
+      email: dealer.email,
+      phoneNumber: dealer.phone_number
     }));
     
-    console.log(`Returning ${typedDealers.length} dealers`);
-    return typedDealers;
+    return {
+      dealers: typedDealers,
+      pagination: result.pagination || defaultPagination
+    };
   } catch (error) {
     console.error('Error fetching dealers:', error);
-    toast.error('Failed to load dealers: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    return [];
+    toast.error('Failed to load dealers');
+    return { dealers: [], pagination: defaultPagination };
   }
 };
