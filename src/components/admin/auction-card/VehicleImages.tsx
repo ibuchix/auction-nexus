@@ -11,11 +11,13 @@ import { useImageCache } from "@/hooks/useImageCache";
 interface VehicleImagesProps {
   images?: string[];
   car?: any; // For accessing all image sources
+  autoLoad?: boolean; // Whether to auto-load images or show a button
 }
 
-export function VehicleImages({ images, car }: VehicleImagesProps) {
+export function VehicleImages({ images, car, autoLoad = true }: VehicleImagesProps) {
   const [allImages, setAllImages] = useState<CategorizedImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [shouldLoad, setShouldLoad] = useState(autoLoad);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageIndex, setImageIndex] = useState<number>(0);
@@ -25,6 +27,8 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
 
   useEffect(() => {
     const loadImages = async () => {
+      if (!shouldLoad) return; // Don't load if not requested
+      
       if (car?.id) {
         // Check cache first
         const cachedImages = getCachedImages(car.id);
@@ -70,7 +74,7 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
     };
 
     loadImages();
-  }, [car?.id, images, getCachedImages, setCachedImages]);
+  }, [shouldLoad, car?.id, images, getCachedImages, setCachedImages]);
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -87,6 +91,24 @@ export function VehicleImages({ images, car }: VehicleImagesProps) {
       setSelectedImage(allImages[imageIndex - 1].url);
     }
   };
+
+  // Show "Load Images" button if not auto-loading
+  if (!shouldLoad) {
+    return (
+      <div className="mt-4">
+        <h4 className="text-sm font-semibold mb-2">Vehicle Images</h4>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShouldLoad(true)}
+          className="gap-2"
+        >
+          <ImageIcon className="h-4 w-4" />
+          Load Images
+        </Button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

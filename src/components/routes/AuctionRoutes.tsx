@@ -1,7 +1,7 @@
 
 import { Route } from "react-router-dom";
 import { AdminProtectedRoute } from "./AdminProtectedRoute";
-import AuctionManagement from "@/pages/admin/AuctionManagement";
+import AuctionManagement from "@/pages/admin/AuctionManagementOptimized";
 import AuctionScheduling from "@/pages/admin/AuctionScheduling";
 import AuctionMonitoring from "@/pages/admin/AuctionMonitoring";
 import AuctionOutcomes from "@/pages/admin/AuctionOutcomes";

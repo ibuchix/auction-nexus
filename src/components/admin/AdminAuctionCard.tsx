@@ -25,6 +25,7 @@ interface AdminAuctionCardProps {
   onExtendTime?: (id: string) => Promise<void>;
   onScheduleClick?: (auction: any) => void;
   onSuccess?: () => void;
+  autoLoadImages?: boolean; // Whether to auto-load images
 }
 
 export function AdminAuctionCard({ 
@@ -35,7 +36,8 @@ export function AdminAuctionCard({
   onStart, 
   onExtendTime,
   onScheduleClick,
-  onSuccess
+  onSuccess,
+  autoLoadImages = true
 }: AdminAuctionCardProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
@@ -145,7 +147,7 @@ export function AdminAuctionCard({
             sellerEmail={auction.sellerEmail}
           />
 
-          <VehicleImages car={auction} />
+          <VehicleImages car={auction} autoLoad={autoLoadImages} />
 
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="details">

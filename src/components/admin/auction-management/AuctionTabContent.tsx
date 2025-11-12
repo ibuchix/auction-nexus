@@ -16,6 +16,7 @@ interface AuctionTabContentProps {
   onScheduleClick?: (auction: Auction) => void;
   showScheduleButton?: boolean;
   onSuccess?: () => void;
+  autoLoadImages?: boolean; // Whether to auto-load images for this tab
 }
 export function AuctionTabContent({
   title,
@@ -28,7 +29,8 @@ export function AuctionTabContent({
   onStart,
   onScheduleClick,
   showScheduleButton = false,
-  onSuccess
+  onSuccess,
+  autoLoadImages = true
 }: AuctionTabContentProps) {
   return <Card>
       <CardHeader>
@@ -46,7 +48,7 @@ export function AuctionTabContent({
                   <CalendarClock className="h-4 w-4 mr-1" />
                   Schedule
                 </Button>}
-              <AdminAuctionCard auction={listing} allowEdit={allowEdit} onPause={onPause} onCancel={onCancel} onStart={onStart} onSuccess={onSuccess} />
+              <AdminAuctionCard auction={listing} allowEdit={allowEdit} onPause={onPause} onCancel={onCancel} onStart={onStart} onSuccess={onSuccess} autoLoadImages={autoLoadImages} />
             </div>)}
       </CardContent>
     </Card>;
