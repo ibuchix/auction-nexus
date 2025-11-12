@@ -151,8 +151,8 @@ export const edgeFunctionAdminOperations = {
     return performAdminOperation('getAllSellers');
   },
   
-  getAllDealers: async () => {
-    return performAdminOperation('getAllDealers');
+  getAllDealers: async (status?: string) => {
+    return performAdminOperation('getAllDealers', { status });
   },
   
   getSellerCars: async () => {
