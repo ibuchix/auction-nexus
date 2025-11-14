@@ -2,11 +2,14 @@ import { PLNCurrency } from "@/components/ui/PLNCurrency";
 
 interface CurrentBidDisplayProps {
   currentBid: number | null | undefined;
+  dealerName?: string | null;
   isActive?: boolean;
 }
 
-export function CurrentBidDisplay({ currentBid, isActive = false }: CurrentBidDisplayProps) {
+export function CurrentBidDisplay({ currentBid, dealerName, isActive = false }: CurrentBidDisplayProps) {
   if (!isActive) return null;
+  
+  const hasBid = currentBid && currentBid > 0;
   
   return (
     <div className="flex justify-end mt-6 pt-4 border-t">
@@ -16,6 +19,11 @@ export function CurrentBidDisplay({ currentBid, isActive = false }: CurrentBidDi
           value={currentBid || 0} 
           className="text-3xl font-bold text-purple-600"
         />
+        {hasBid && dealerName && (
+          <p className="text-sm text-muted-foreground mt-1">
+            by {dealerName}
+          </p>
+        )}
       </div>
     </div>
   );
