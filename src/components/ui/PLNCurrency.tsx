@@ -5,12 +5,10 @@ interface PLNCurrencyProps {
 }
 
 export function PLNCurrency({ value, className }: PLNCurrencyProps) {
-  const formattedValue = new Intl.NumberFormat('pl-PL', {
-    style: 'currency',
-    currency: 'PLN',
+  const formattedValue = value.toLocaleString('pl-PL', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value);
+  });
 
-  return <span className={className}>{formattedValue}</span>;
+  return <span className={className}>{formattedValue} zł</span>;
 }
