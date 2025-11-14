@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { DealerData, VerificationStatus } from "./types";
 import { useAuth } from "@/hooks/useAuth";
 import { approveDealer, rejectDealer, fetchDealers } from "./dealer-verification-operations";
+import { exportDealerVerificationsToCSV } from "@/utils/exportDealerVerifications";
 
 export const useDealerVerification = () => {
   const [selectedDealer, setSelectedDealer] = useState<DealerData | null>(null);
@@ -191,6 +192,21 @@ export const useDealerVerification = () => {
     setSearchQuery("");
   }, [activeTab]);
 
+  const handleExportCSV = () => {
+    if (filteredDealers.length === 0) {
+      toast.error("No dealers to export");
+      return;
+    }
+
+    try {
+      exportDealerVerificationsToCSV(filteredDealers, activeTab);
+      toast.success(`Successfully exported ${filteredDealers.length} dealer${filteredDealers.length !== 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Error exporting dealers:', error);
+      toast.error('Failed to export dealers');
+    }
+  };
+
   return {
     dealers: filteredDealers,
     isLoading,
@@ -216,6 +232,7 @@ export const useDealerVerification = () => {
     handleApproveDealer,
     handleRejectDealer,
     handleToggleVerification,
-    handleReviewDealer
+    handleReviewDealer,
+    handleExportCSV
   };
 };
