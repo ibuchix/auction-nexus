@@ -173,7 +173,9 @@ export function AdminAuctionCard({
           <CurrentBidDisplay 
             currentBid={auction.current_bid}
             isActive={
-              auction.auction_schedules?.some((schedule: any) => schedule.status === 'active') || 
+              auction.auctionSchedules?.some((schedule: any) => schedule.status === 'active') || 
+              auction.auction_schedules?.some((schedule: any) => schedule.status === 'active') ||
+              auction.auctionStatus === 'active' ||
               auction.auction_status === 'active'
             }
           />
