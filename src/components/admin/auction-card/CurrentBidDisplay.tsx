@@ -2,9 +2,12 @@ import { PLNCurrency } from "@/components/ui/PLNCurrency";
 
 interface CurrentBidDisplayProps {
   currentBid: number | null | undefined;
+  isActive?: boolean;
 }
 
-export function CurrentBidDisplay({ currentBid }: CurrentBidDisplayProps) {
+export function CurrentBidDisplay({ currentBid, isActive = false }: CurrentBidDisplayProps) {
+  if (!isActive) return null;
+  
   return (
     <div className="flex justify-end mt-6 pt-4 border-t">
       <div className="text-right">

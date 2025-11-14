@@ -65,6 +65,7 @@ export function useAuctionRealtime(initialAuctions: Auction[]) {
               updated[index] = {
                 ...auction,
                 bids: [...(auction.bids || []), newBid],
+                current_bid: newBid.amount,
               };
             }
             
