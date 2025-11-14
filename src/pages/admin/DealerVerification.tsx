@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, Download } from "lucide-react";
 import { useDealerVerification } from "@/components/admin/dealer-verification/useDealerVerification";
 import { DealerVerificationTabs } from "@/components/admin/dealer-verification/DealerVerificationTabs";
 import { DealerReviewDialog } from "@/components/admin/dealer-verification/DealerReviewDialog";
@@ -32,7 +32,8 @@ const DealerVerification = () => {
     handleApproveDealer,
     handleRejectDealer,
     handleToggleVerification,
-    handleReviewDealer
+    handleReviewDealer,
+    handleExportCSV
   } = useDealerVerification();
 
   if (isLoading) {
@@ -48,6 +49,18 @@ const DealerVerification = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Dealer Verification</h1>
         <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2" 
+            onClick={handleExportCSV}
+            disabled={!dealers || dealers.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+            {dealers && dealers.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{dealers.length}</Badge>
+            )}
+          </Button>
           <Button variant="outline" className="flex items-center gap-2" onClick={() => refetch()}>
             <Loader2 className="h-4 w-4" />
             Refresh
