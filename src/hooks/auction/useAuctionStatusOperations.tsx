@@ -90,46 +90,28 @@ export function useAuctionStatusOperations() {
     }
   };
 
-  const extendAuctionTime = async (auctionId: string): Promise<void> => {
+  const extendAuctionTime = async (auctionId: string, hours: number, reason?: string): Promise<void> => {
     try {
-      // Get current auction end time and status
-      const { data: auction, error: fetchError } = await supabase
-        .from('cars')
-        .select('auction_end_time, auction_status')
-        .eq('id', auctionId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      // Check if auction has already ended
-      const currentEndTime = new Date(auction.auction_end_time);
-      const now = new Date();
-      
-      if (currentEndTime <= now) {
-        toast.error("Cannot extend auction time - auction has already ended");
-        return;
-      }
-      
-      // Check if auction is still active
-      if (auction.auction_status !== 'active') {
-        toast.error("Can only extend time for active auctions");
-        return;
-      }
-      
-      // Add 1 hour to the current end time
-      const newEndTime = addHours(currentEndTime, 1).toISOString();
-      
-      const { error } = await supabase
-        .from('cars')
-        .update({ 
-          auction_end_time: newEndTime,
-          is_manually_controlled: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', auctionId);
+      // Call the new database function that updates both cars and auction_schedules
+      const { data, error } = await supabase.rpc('extend_auction_time', {
+        p_car_id: auctionId,
+        p_hours_to_add: hours,
+        p_extension_reason: reason
+      });
 
       if (error) throw error;
-      toast.success("Auction time extended by 1 hour");
+      
+      // Cast data to expected type
+      const result = data as { success: boolean; error?: string } | null;
+      
+      if (!result?.success) {
+        toast.error(result?.error || "Failed to extend auction time");
+        return;
+      }
+
+      toast.success("Auction Extended", {
+        description: `Extended by ${hours >= 1 ? `${hours} hour${hours > 1 ? 's' : ''}` : '30 minutes'}`
+      });
     } catch (error) {
       toast.error("Failed to extend auction time");
       console.error('Error extending auction time:', error);

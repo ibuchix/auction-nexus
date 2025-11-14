@@ -17,6 +17,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { generateCarTitle, isGenericTitle } from "@/utils/carTitleGenerator";
 import { AdminCarEditDialog } from "./car-edit";
 import { CurrentBidDisplay } from "./auction-card/CurrentBidDisplay";
+import { AuctionExtensionDialog } from "./auction-card/AuctionExtensionDialog";
 
 interface AdminAuctionCardProps {
   auction: any;
@@ -46,6 +47,7 @@ export function AdminAuctionCard({
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isExtensionDialogOpen, setIsExtensionDialogOpen] = useState(false);
   const [editedPrice, setEditedPrice] = useState(auction.price?.toString() || "");
   const [editedNotes, setEditedNotes] = useState(auction.sellerNotes || "");
   
@@ -89,7 +91,14 @@ export function AdminAuctionCard({
   const handlePause = async () => onPause ? await onPause(auction.id) : await pauseAuction(auction.id);
   const handleCancel = async () => onCancel ? await onCancel(auction.id) : await cancelAuction(auction.id);
   const handleStart = async () => onStart ? await onStart(auction.id) : await startAuction(auction.id);
-  const handleExtendTime = async () => onExtendTime ? await onExtendTime(auction.id) : await extendAuctionTime(auction.id);
+  const handleExtendTime = async () => { setIsExtensionDialogOpen(true); };
+  const handleExtendTimeConfirm = async (hours: number, reason?: string) => {
+    if (onExtendTime) {
+      await onExtendTime(auction.id);
+    } else {
+      await extendAuctionTime(auction.id, hours, reason);
+    }
+  };
   const handleScheduleClick = () => onScheduleClick ? onScheduleClick(auction) : undefined;
 
   // Get proper pricing from valuation data if available
@@ -191,6 +200,14 @@ export function AdminAuctionCard({
           setIsEditDialogOpen(false);
           onSuccess?.();
         }}
+      />
+
+      <AuctionExtensionDialog
+        isOpen={isExtensionDialogOpen}
+        onClose={() => setIsExtensionDialogOpen(false)}
+        onExtend={handleExtendTimeConfirm}
+        currentEndTime={auction.auctionEndTime || auction.auction_end_time || new Date().toISOString()}
+        auctionTitle={displayTitle}
       />
     </Card>
   );
