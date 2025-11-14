@@ -88,10 +88,17 @@ export function useOptimizedAuctionManagement() {
               end_time,
               created_at,
               notes
+            ),
+            highest_bid:bids!left(
+              amount,
+              dealer_id,
+              dealer:dealers(dealership_name)
             )
           `, { count: 'exact' })
           .gt('reserve_price', 0)
-          .in('auction_schedules.status', ['active', 'scheduled']);
+          .in('auction_schedules.status', ['active', 'scheduled'])
+          .order('created_at', { referencedTable: 'bids', ascending: false })
+          .limit(1, { referencedTable: 'bids' });
 
         if (searchTerm) {
           query = query.or(

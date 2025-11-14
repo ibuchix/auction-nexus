@@ -1,5 +1,6 @@
 import { Clock, CheckCircle, XCircle, Package, Loader2 } from "lucide-react";
 import { useOptimizedAuctionManagement } from "@/hooks/useOptimizedAuctionManagement";
+import { useAuctionRealtime } from "@/hooks/useAuctionRealtime";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,6 +39,9 @@ const AuctionManagementOptimized = () => {
     handleScheduleSuccess,
     tabStates,
   } = useOptimizedAuctionManagement();
+
+  // Wrap listings with real-time updates
+  const realTimeListings = useAuctionRealtime(listings || []);
 
   if (isLoading && currentPage === 1) {
     return (
@@ -115,7 +119,7 @@ const AuctionManagementOptimized = () => {
           <AuctionTabContent
             title="Listings Ready to Start Auction"
             icon={<Clock className="h-5 w-5 text-blue-600" />}
-            auctions={listings}
+            auctions={realTimeListings}
             isLoading={isLoading}
             allowEdit={true}
             onPause={pauseAuction}
@@ -146,7 +150,7 @@ const AuctionManagementOptimized = () => {
           <AuctionTabContent
             title="Active Auctions"
             icon={<CheckCircle className="h-5 w-5 text-green-600" />}
-            auctions={listings}
+            auctions={realTimeListings}
             isLoading={isLoading}
             onPause={pauseAuction}
             onCancel={cancelAuction}
@@ -173,7 +177,7 @@ const AuctionManagementOptimized = () => {
           <AuctionTabContent
             title="Ended Auctions (Paused, Ended, Cancelled)"
             icon={<XCircle className="h-5 w-5 text-gray-600" />}
-            auctions={listings}
+            auctions={realTimeListings}
             isLoading={isLoading}
             onPause={pauseAuction}
             onCancel={cancelAuction}
@@ -200,7 +204,7 @@ const AuctionManagementOptimized = () => {
           <AuctionTabContent
             title="Non-Auction Cars (Needs Configuration)"
             icon={<Package className="h-5 w-5 text-amber-600" />}
-            auctions={listings}
+            auctions={realTimeListings}
             isLoading={isLoading}
             onPause={pauseAuction}
             onCancel={cancelAuction}
