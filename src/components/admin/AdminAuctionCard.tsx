@@ -172,7 +172,7 @@ export function AdminAuctionCard({
 
           <CurrentBidDisplay 
             currentBid={auction.currentBid ?? auction.current_bid}
-            dealerName={auction.highestBid?.[0]?.dealer?.dealershipName || auction.highest_bid?.[0]?.dealer?.dealership_name}
+            dealerName={auction.highestBid?.[0]?.dealers?.dealershipName}
             isActive={
               auction.auctionSchedules?.some((schedule: any) => schedule.status === 'active') || 
               auction.auction_schedules?.some((schedule: any) => schedule.status === 'active') ||
