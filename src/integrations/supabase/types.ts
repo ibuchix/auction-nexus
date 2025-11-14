@@ -436,6 +436,13 @@ export type Database = {
             referencedRelation: "cars_public_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_bids_dealer_id"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "dealers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       car_file_uploads: {
@@ -2463,6 +2470,14 @@ export type Database = {
       ensure_seller_registration:
         | { Args: never; Returns: Json }
         | { Args: { p_user_id?: string }; Returns: Json }
+      extend_auction_time: {
+        Args: {
+          p_car_id: string
+          p_extension_reason?: string
+          p_hours_to_add: number
+        }
+        Returns: Json
+      }
       fetch_car_details: { Args: { p_car_id: string }; Returns: Json }
       fetch_seller_auction_results: {
         Args: { p_seller_id?: string }
