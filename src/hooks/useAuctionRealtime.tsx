@@ -15,10 +15,6 @@ export function useAuctionRealtime(initialAuctions: Auction[]) {
   const [realTimeAuctions, setRealTimeAuctions] = useState<Auction[]>(initialAuctions);
 
   useEffect(() => {
-    setRealTimeAuctions(initialAuctions);
-  }, [initialAuctions]);
-
-  useEffect(() => {
     const channel = supabase // Changed to standard supabase client
       .channel('auction-updates')
       .on(
