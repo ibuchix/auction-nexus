@@ -3287,6 +3287,7 @@ export type Database = {
         | "auction_recovery"
         | "system_health_check"
         | "system_alert"
+        | "extend_auction"
       car_transmission_type: "automatic" | "manual"
       damage_severity: "minor" | "moderate" | "severe"
       dispute_status: "open" | "investigating" | "resolved" | "closed"
@@ -3474,6 +3475,7 @@ export const Constants = {
         "auction_recovery",
         "system_health_check",
         "system_alert",
+        "extend_auction",
       ],
       car_transmission_type: ["automatic", "manual"],
       damage_severity: ["minor", "moderate", "severe"],
