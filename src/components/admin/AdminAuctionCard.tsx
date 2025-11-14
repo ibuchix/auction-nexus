@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { generateCarTitle, isGenericTitle } from "@/utils/carTitleGenerator";
 import { AdminCarEditDialog } from "./car-edit";
+import { CurrentBidDisplay } from "./auction-card/CurrentBidDisplay";
 
 interface AdminAuctionCardProps {
   auction: any;
@@ -168,6 +169,8 @@ export function AdminAuctionCard({
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+
+          <CurrentBidDisplay currentBid={auction.current_bid} />
         </div>
       </CardContent>
 
