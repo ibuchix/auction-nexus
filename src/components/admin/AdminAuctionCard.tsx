@@ -171,7 +171,7 @@ export function AdminAuctionCard({
           </Accordion>
 
           <CurrentBidDisplay 
-            currentBid={auction.current_bid}
+            currentBid={auction.currentBid ?? auction.current_bid}
             isActive={
               auction.auctionSchedules?.some((schedule: any) => schedule.status === 'active') || 
               auction.auction_schedules?.some((schedule: any) => schedule.status === 'active') ||
