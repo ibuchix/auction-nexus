@@ -11,6 +11,15 @@ export function CurrentBidDisplay({ currentBid, dealerName, isActive = false }: 
   
   const hasBid = currentBid && currentBid > 0;
   
+  // Debug logging
+  console.log('CurrentBidDisplay render:', {
+    currentBid,
+    type: typeof currentBid,
+    isActive,
+    dealerName,
+    formattedTest: (currentBid || 0).toLocaleString('pl-PL')
+  });
+  
   return (
     <div className="flex justify-end mt-6 pt-4 border-t">
       <div className="text-right">
