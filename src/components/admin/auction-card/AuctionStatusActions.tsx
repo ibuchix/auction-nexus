@@ -1,8 +1,19 @@
 
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow, isBefore } from "date-fns";
-import { AlertTriangle, Clock, Hand, Pause, Play, Plus } from "lucide-react";
+import { AlertTriangle, Clock, Hand, Pause, Play, Plus, AlertCircle } from "lucide-react";
 import { AuctionStatus } from "@/types/auction";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AuctionStatusActionsProps {
   status: AuctionStatus;
@@ -13,6 +24,7 @@ interface AuctionStatusActionsProps {
   onPause: () => Promise<void>;
   onCancel: () => Promise<void>;
   onExtendTime?: () => Promise<void>;
+  onEndImmediately?: () => Promise<void>;
 }
 
 export function AuctionStatusActions({
@@ -23,8 +35,17 @@ export function AuctionStatusActions({
   onStart,
   onPause,
   onCancel,
-  onExtendTime
+  onExtendTime,
+  onEndImmediately
 }: AuctionStatusActionsProps) {
+  const [showEndDialog, setShowEndDialog] = useState(false);
+
+  const handleEndAuctionConfirm = async () => {
+    if (onEndImmediately) {
+      await onEndImmediately();
+    }
+    setShowEndDialog(false);
+  };
   
   // Calculate time remaining if auction is active and has an end time
   const renderTimeInfo = () => {
@@ -99,14 +120,27 @@ export function AuctionStatusActions({
                 </Button>
               )}
             </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={onCancel}
-            >
-              <AlertTriangle className="h-4 w-4 mr-1" />
-              Cancel Auction
-            </Button>
+            <div className="flex gap-2">
+              {onEndImmediately && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEndDialog(true)}
+                  className="border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-950"
+                >
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  End Auction Now
+                </Button>
+              )}
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={onCancel}
+              >
+                <AlertTriangle className="h-4 w-4 mr-1" />
+                Cancel Auction
+              </Button>
+            </div>
           </div>
         );
       case "paused":
@@ -139,6 +173,33 @@ export function AuctionStatusActions({
     <div className="mt-1">
       {renderTimeInfo()}
       {renderActions()}
+      
+      <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>End Auction Immediately?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>This will immediately end the auction and process the results. This action will:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Change the auction status to "ended"</li>
+                <li>Determine the winner based on highest bid (if reserve met)</li>
+                <li>Notify the seller of the results</li>
+                <li>Log this as a manually ended auction</li>
+              </ul>
+              <p className="font-semibold text-foreground mt-2">This action cannot be undone.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleEndAuctionConfirm}
+              className="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700"
+            >
+              End Auction Now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
