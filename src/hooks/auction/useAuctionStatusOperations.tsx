@@ -119,11 +119,39 @@ export function useAuctionStatusOperations() {
     }
   };
 
+  const endAuctionImmediately = async (auctionId: string): Promise<void> => {
+    try {
+      // Call the database function to immediately end the auction
+      const { data, error } = await supabase.rpc('admin_end_auction_immediately', {
+        p_car_id: auctionId
+      });
+
+      if (error) throw error;
+      
+      // Cast data to expected type
+      const result = data as { success: boolean; error?: string; message?: string } | null;
+      
+      if (!result?.success) {
+        toast.error(result?.error || "Failed to end auction");
+        return;
+      }
+
+      toast.success("Auction Ended Successfully", {
+        description: "The auction has been processed through the normal end flow"
+      });
+    } catch (error) {
+      toast.error("Failed to end auction immediately");
+      console.error('Error ending auction immediately:', error);
+      throw error;
+    }
+  };
+
   return {
     pauseAuction,
     cancelAuction,
     startAuction,
     resumeAuction,
-    extendAuctionTime
+    extendAuctionTime,
+    endAuctionImmediately
   };
 }
