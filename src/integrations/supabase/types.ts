@@ -2150,6 +2150,10 @@ export type Database = {
         Args: { p_admin_id: string; p_car_id: string; p_sold?: boolean }
         Returns: Json
       }
+      admin_end_auction_immediately: {
+        Args: { p_car_id: string }
+        Returns: Json
+      }
       admin_get_active_auctions: {
         Args: never
         Returns: {
