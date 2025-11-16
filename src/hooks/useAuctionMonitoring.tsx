@@ -13,16 +13,6 @@ export function useAuctionMonitoring() {
       try {
         console.log('Fetching active auctions via Edge Function');
         
-        // Check if VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables
-        const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-        if (!serviceRoleKey) {
-          console.warn('VITE_SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
-          toast.error('Admin API key is missing. Check your environment variables.');
-          return [];
-        } else {
-          console.log('VITE_SUPABASE_SERVICE_ROLE_KEY is set in environment variables');
-        }
-        
         // Using Edge Function to bypass RLS policies
         const data = await edgeFunctionAdminOperations.getActiveAuctions();
 
