@@ -132,6 +132,7 @@ export function useAuctionStatusOperations() {
       const result = data as { success: boolean; error?: string; message?: string } | null;
       
       if (!result?.success) {
+        console.error('Failed to end auction:', result?.error);
         toast.error(result?.error || "Failed to end auction");
         return;
       }
