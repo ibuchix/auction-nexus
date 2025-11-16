@@ -12,11 +12,13 @@ type RealtimeCarPayload = RealtimePostgresChangesPayload<CarRow>;
 type RealtimeBidPayload = RealtimePostgresChangesPayload<BidRow>;
 
 export function useAuctionRealtime(initialAuctions: Auction[]) {
-  const [realTimeAuctions, setRealTimeAuctions] = useState<Auction[]>(initialAuctions || []);
+  const [realTimeAuctions, setRealTimeAuctions] = useState<Auction[]>(() => 
+    Array.isArray(initialAuctions) ? initialAuctions : []
+  );
 
   // Sync state when initialAuctions changes (when query resolves)
   useEffect(() => {
-    if (initialAuctions && Array.isArray(initialAuctions)) {
+    if (Array.isArray(initialAuctions)) {
       setRealTimeAuctions(initialAuctions);
     }
   }, [initialAuctions]);
@@ -47,6 +49,7 @@ export function useAuctionRealtime(initialAuctions: Auction[]) {
           });
           
           setRealTimeAuctions((current) => {
+            if (!Array.isArray(current)) return [];
             const updated = [...current];
             const index = updated.findIndex((auction) => auction.id === newData.id);
             
@@ -88,6 +91,7 @@ export function useAuctionRealtime(initialAuctions: Auction[]) {
           });
 
           setRealTimeAuctions((current) => {
+            if (!Array.isArray(current)) return [];
             const updated = [...current];
             const index = updated.findIndex((auction) => auction.id === newBid.car_id);
             
