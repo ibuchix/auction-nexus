@@ -8,13 +8,15 @@ interface AuctionListProps {
   isLoading: boolean;
   onPause: (id: string) => Promise<void>;
   onCancel: (id: string) => Promise<void>;
+  onEndImmediately: (id: string) => Promise<void>;
 }
 
 export function AuctionList({ 
   auctions, 
   isLoading, 
   onPause, 
-  onCancel 
+  onCancel,
+  onEndImmediately
 }: AuctionListProps) {
   if (isLoading) {
     return <div className="text-center py-6">Loading...</div>;
@@ -37,6 +39,7 @@ export function AuctionList({
           auction={auction}
           onPause={onPause}
           onCancel={onCancel}
+          onEndImmediately={onEndImmediately}
         />
       ))}
     </div>
