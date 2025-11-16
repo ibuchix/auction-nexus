@@ -1,5 +1,5 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuctionRealtime } from './useAuctionRealtime';
 import { useAuctionOperations } from './useAuctionOperations';
 import { Auction } from '@/types/auction';
@@ -45,7 +45,15 @@ export function useAuctionMonitoring() {
   });
 
   const realTimeAuctions = useAuctionRealtime(initialAuctions || []);
-  const { pauseAuction, cancelAuction } = useAuctionOperations();
+  const { pauseAuction, cancelAuction, endAuctionImmediately } = useAuctionOperations();
+  const queryClient = useQueryClient();
+
+  // Wrap endAuctionImmediately with query invalidation
+  const endAuctionImmediatelyWithRefresh = async (auctionId: string) => {
+    await endAuctionImmediately(auctionId);
+    // Invalidate and refetch active auctions
+    queryClient.invalidateQueries({ queryKey: ['activeAuctions'] });
+  };
 
   return {
     auctions: realTimeAuctions,
@@ -53,5 +61,6 @@ export function useAuctionMonitoring() {
     error,
     pauseAuction,
     cancelAuction,
+    endAuctionImmediately: endAuctionImmediatelyWithRefresh,
   };
 }

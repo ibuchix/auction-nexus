@@ -7,7 +7,7 @@ import { AuctionList } from "@/components/admin/auction-monitoring/AuctionList";
 import { Auction } from "@/types/auction";
 
 const AuctionMonitoring = () => {
-  const { auctions, isLoading, pauseAuction, cancelAuction } = useAuctionMonitoring();
+  const { auctions, isLoading, pauseAuction, cancelAuction, endAuctionImmediately } = useAuctionMonitoring();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("end_time");
@@ -56,6 +56,7 @@ const AuctionMonitoring = () => {
         isLoading={isLoading}
         onPause={pauseAuction}
         onCancel={cancelAuction}
+        onEndImmediately={endAuctionImmediately}
       />
     </div>
   );
