@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuctionOperations } from "@/hooks/useAuctionOperations";
 import { supabase } from "@/integrations/supabase/client";
 import { objectToCamelCase } from "@/utils/caseConverter";
+import { exportAuctionsToCSV } from "@/utils/exportAuctionCSV";
 
 type TabType = 'ready' | 'active' | 'ended' | 'notConfigured';
 
@@ -324,6 +325,49 @@ export function useOptimizedAuctionManagement() {
     refetch();
   };
 
+  // Export current tab data to CSV
+  const [isExporting, setIsExporting] = useState(false);
+  
+  const exportCurrentTab = async () => {
+    setIsExporting(true);
+    try {
+      // Fetch all data for current tab (no pagination)
+      const query = await buildTabQuery(currentTab, 1, 10000);
+      const { data, error } = await query;
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        toast({
+          title: "No data to export",
+          description: "There are no listings in this tab to export.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Convert to camelCase and export
+      const auctions = data.map((item: any) => objectToCamelCase(item)) as Auction[];
+      exportAuctionsToCSV(auctions, currentTab);
+      
+      toast({
+        title: "Export successful",
+        description: `Exported ${auctions.length} listing${auctions.length !== 1 ? 's' : ''} to CSV`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: error instanceof Error ? error.message : "Failed to export data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return {
     // Current tab data
     currentTab,
@@ -357,6 +401,10 @@ export function useOptimizedAuctionManagement() {
     handleScheduleClick,
     handleScheduleClose,
     handleScheduleSuccess,
+    
+    // Export
+    exportCurrentTab,
+    isExporting,
     
     // All tab states (for badges)
     tabStates,
