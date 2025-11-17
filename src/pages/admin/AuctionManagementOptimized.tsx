@@ -37,6 +37,8 @@ const AuctionManagementOptimized = () => {
     handleScheduleClose,
     handleScheduleSuccess,
     tabStates,
+    exportCurrentTab,
+    isExporting,
   } = useOptimizedAuctionManagement();
 
   if (isLoading && currentPage === 1) {
@@ -126,6 +128,9 @@ const AuctionManagementOptimized = () => {
             onSuccess={refetch}
             autoLoadImages={false}
             showImageCount={true}
+            onExport={exportCurrentTab}
+            isExporting={isExporting}
+            totalCount={tabStates.ready.totalCount}
           />
           {!isLoading && totalCount > 0 && (
             <AuctionPagination
@@ -153,6 +158,9 @@ const AuctionManagementOptimized = () => {
             onStart={startAuction}
             onSuccess={refetch}
             autoLoadImages={false}
+            onExport={exportCurrentTab}
+            isExporting={isExporting}
+            totalCount={tabStates.active.totalCount}
           />
           {!isLoading && totalCount > 0 && (
             <AuctionPagination
@@ -180,6 +188,9 @@ const AuctionManagementOptimized = () => {
             onStart={startAuction}
             onSuccess={refetch}
             autoLoadImages={false}
+            onExport={exportCurrentTab}
+            isExporting={isExporting}
+            totalCount={tabStates.ended.totalCount}
           />
           {!isLoading && totalCount > 0 && (
             <AuctionPagination
@@ -202,6 +213,7 @@ const AuctionManagementOptimized = () => {
             icon={<Package className="h-5 w-5 text-amber-600" />}
             auctions={listings}
             isLoading={isLoading}
+            allowEdit={true}
             onPause={pauseAuction}
             onCancel={cancelAuction}
             onStart={startAuction}
@@ -209,6 +221,9 @@ const AuctionManagementOptimized = () => {
             showScheduleButton={true}
             onSuccess={refetch}
             autoLoadImages={false}
+            onExport={exportCurrentTab}
+            isExporting={isExporting}
+            totalCount={tabStates.notConfigured.totalCount}
           />
           {!isLoading && totalCount > 0 && (
             <AuctionPagination

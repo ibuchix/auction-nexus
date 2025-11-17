@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Download, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminAuctionCard } from "@/components/admin/AdminAuctionCard";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,9 @@ interface AuctionTabContentProps {
   onSuccess?: () => void;
   autoLoadImages?: boolean;
   showImageCount?: boolean;
+  onExport?: () => void;
+  isExporting?: boolean;
+  totalCount?: number;
 }
 export function AuctionTabContent({
   title,
@@ -33,14 +36,40 @@ export function AuctionTabContent({
   showScheduleButton = false,
   onSuccess,
   autoLoadImages = true,
-  showImageCount = false
+  showImageCount = false,
+  onExport,
+  isExporting = false,
+  totalCount
 }: AuctionTabContentProps) {
   return <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          {icon}
-          {title}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            {icon}
+            {title}
+          </CardTitle>
+          {onExport && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onExport}
+              disabled={isExporting || isLoading || !auctions || auctions.length === 0}
+              className="gap-2"
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Export {totalCount ? `(${totalCount})` : ''} to CSV
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading ? (
