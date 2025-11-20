@@ -2641,26 +2641,7 @@ export type Database = {
       }
       get_car_images_for_dealers: {
         Args: { p_car_ids: string[] }
-        Returns: {
-          car_id: string | null
-          category: string | null
-          created_at: string | null
-          display_order: number | null
-          file_path: string
-          file_type: string
-          id: string
-          image_metadata: Json | null
-          seller_id: string
-          session_id: string | null
-          updated_at: string | null
-          upload_status: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "car_file_uploads"
-          isOneToOne: false
-          isSetofReturn: true
-        }
+        Returns: Json
       }
       get_car_ownership_history: {
         Args: { p_car_id: string }
