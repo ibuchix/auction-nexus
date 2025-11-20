@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDealerPresenceMonitor } from '@/hooks/useDealerPresenceMonitor';
-import { Users } from 'lucide-react';
+import { Users, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function OnlineDealersCard() {
-  const { onlineCount, isLoading } = useDealerPresenceMonitor();
+  const { onlineCount, lastHourCount, isLoading } = useDealerPresenceMonitor();
 
   return (
     <Card className="bg-gradient-to-br from-background to-muted/20">
@@ -26,6 +26,12 @@ export function OnlineDealersCard() {
             <p className="text-xs text-muted-foreground mt-1">
               Currently Active
             </p>
+            <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/50">
+              <Clock className="h-3 w-3 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">
+                Last hour: <span className="font-medium text-foreground">{lastHourCount}</span> {lastHourCount === 1 ? 'dealer' : 'dealers'}
+              </p>
+            </div>
           </>
         )}
       </CardContent>
