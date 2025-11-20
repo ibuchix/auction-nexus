@@ -39,6 +39,17 @@ export function useDealerPresenceMonitor() {
     return uniqueDealers.size;
   }, [presenceHistory]);
 
+  // Calculate unique dealers seen in the last 5 hours
+  const lastFiveHoursCount = useMemo(() => {
+    const fiveHoursAgo = new Date(Date.now() - 5 * 60 * 60 * 1000);
+    const uniqueDealers = new Set(
+      presenceHistory
+        .filter(p => new Date(p.joined_at) >= fiveHoursAgo)
+        .map(p => p.user_id)
+    );
+    return uniqueDealers.size;
+  }, [presenceHistory]);
+
   useEffect(() => {
     const presenceChannel = supabase.channel('dealer-presence');
 
@@ -92,12 +103,12 @@ export function useDealerPresenceMonitor() {
     };
   }, []);
 
-  // Clean up old history entries (older than 2 hours) every 5 minutes
+  // Clean up old history entries (older than 6 hours) every 5 minutes
   useEffect(() => {
     const cleanupInterval = setInterval(() => {
-      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
       setPresenceHistory(prev =>
-        prev.filter(p => new Date(p.joined_at) >= twoHoursAgo)
+        prev.filter(p => new Date(p.joined_at) >= sixHoursAgo)
       );
     }, 5 * 60 * 1000); // Every 5 minutes
 
@@ -108,6 +119,7 @@ export function useDealerPresenceMonitor() {
     onlineCount,
     onlineDealers,
     lastHourCount,
+    lastFiveHoursCount,
     isLoading,
   };
 }
