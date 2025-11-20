@@ -26,10 +26,12 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
     console.log('Environment check:', {
       hasUrl: !!supabaseUrl,
+      hasAnonKey: !!supabaseAnonKey,
       hasServiceRoleKey: !!serviceRoleKey
     })
     
@@ -47,14 +49,18 @@ serve(async (req) => {
       )
     }
 
-    // Extract JWT token from Authorization header
-    const token = authHeader.replace('Bearer ', '')
+    // Create a Supabase client with the user's auth context for verification
+    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    })
+
+    // Verify the user is authenticated using their auth context
+    const { data: { user }, error: userError } = await userSupabase.auth.getUser()
     
     // Create supabase client with service role key for admin operations
     const supabase = createClient(supabaseUrl, serviceRoleKey)
-
-    // Verify the user is authenticated by passing JWT directly
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     
     if (userError || !user) {
       console.error('User authentication failed:', userError)
