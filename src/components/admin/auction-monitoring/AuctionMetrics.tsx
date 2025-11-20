@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Users, DollarSign, Clock } from "lucide-react";
 import { Auction } from "@/types/auction";
-import { OnlineDealersCard } from "@/components/admin/dashboard/OnlineDealersCard";
 
 interface AuctionMetricsProps {
   auctions: Auction[] | undefined;
@@ -10,7 +9,7 @@ interface AuctionMetricsProps {
 export function AuctionMetrics({ auctions }: AuctionMetricsProps) {
   if (!auctions || !Array.isArray(auctions)) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -21,7 +20,6 @@ export function AuctionMetrics({ auctions }: AuctionMetricsProps) {
             </CardContent>
           </Card>
         ))}
-        <OnlineDealersCard />
       </div>
     );
   }
@@ -35,7 +33,7 @@ export function AuctionMetrics({ auctions }: AuctionMetricsProps) {
   }, 0);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Auctions</CardTitle>
@@ -87,8 +85,6 @@ export function AuctionMetrics({ auctions }: AuctionMetricsProps) {
           </p>
         </CardContent>
       </Card>
-
-      <OnlineDealersCard />
     </div>
   );
 }

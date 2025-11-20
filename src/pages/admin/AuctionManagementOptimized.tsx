@@ -8,6 +8,7 @@ import { AuctionTabContent } from "@/components/admin/auction-management/Auction
 import { AuctionPagination } from "@/components/admin/auction-management/AuctionPagination";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { OnlineDealersCard } from "@/components/admin/dashboard/OnlineDealersCard";
 
 const AuctionManagementOptimized = () => {
   const {
@@ -67,6 +68,11 @@ const AuctionManagementOptimized = () => {
       <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
         Auction Management
       </h1>
+
+      {/* Online Dealers Card */}
+      <div className="max-w-sm">
+        <OnlineDealersCard />
+      </div>
 
       <div className="space-y-4">
         {/* Search */}
