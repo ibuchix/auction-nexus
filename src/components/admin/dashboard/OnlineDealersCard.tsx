@@ -4,7 +4,7 @@ import { Users, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function OnlineDealersCard() {
-  const { onlineCount, lastHourCount, lastFiveHoursCount, isLoading } = useDealerPresenceMonitor();
+  const { onlineCount, lastSixHoursCount, isLoading } = useDealerPresenceMonitor();
 
   return (
     <Card className="bg-gradient-to-br from-background to-muted/20">
@@ -30,13 +30,7 @@ export function OnlineDealersCard() {
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3 text-muted-foreground" />
                 <p className="text-xs text-muted-foreground">
-                  Last hour: <span className="font-medium text-foreground">{lastHourCount}</span> {lastHourCount === 1 ? 'dealer' : 'dealers'}
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">
-                  Last 5 hours: <span className="font-medium text-foreground">{lastFiveHoursCount}</span> {lastFiveHoursCount === 1 ? 'dealer' : 'dealers'}
+                  Last 6 hours: <span className="font-medium text-foreground">{lastSixHoursCount}</span> {lastSixHoursCount === 1 ? 'dealer' : 'dealers'}
                 </p>
               </div>
             </div>
