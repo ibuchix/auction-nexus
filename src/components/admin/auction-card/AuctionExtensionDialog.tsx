@@ -29,6 +29,9 @@ const EXTENSION_OPTIONS = [
   { hours: 8, label: "8 hours" },
   { hours: 12, label: "12 hours" },
   { hours: 24, label: "24 hours" },
+  { hours: 48, label: "2 days" },
+  { hours: 72, label: "3 days" },
+  { hours: 168, label: "7 days" },
 ];
 
 export function AuctionExtensionDialog({
@@ -95,7 +98,7 @@ export function AuctionExtensionDialog({
             <Label className="text-sm font-medium mb-3 block">
               Select Extension Duration
             </Label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-2">
               {EXTENSION_OPTIONS.map((option) => (
                 <Button
                   key={option.hours}
@@ -119,7 +122,11 @@ export function AuctionExtensionDialog({
                 {format(newEndDate, "PPp")}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                +{selectedHours! >= 1 ? `${selectedHours} hour${selectedHours! > 1 ? 's' : ''}` : '30 minutes'}
+                +{selectedHours! >= 24 
+                  ? `${selectedHours! / 24} day${selectedHours! / 24 > 1 ? 's' : ''}`
+                  : selectedHours! >= 1 
+                    ? `${selectedHours} hour${selectedHours! > 1 ? 's' : ''}` 
+                    : '30 minutes'}
               </div>
             </div>
           )}
