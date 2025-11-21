@@ -28,25 +28,13 @@ export function useDealerPresenceMonitor() {
   const [isLoading, setIsLoading] = useState(true);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
-  // Calculate unique dealers seen in the last hour (includes currently online)
-  const lastHourCount = useMemo(() => {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  // Calculate unique dealers seen in the last 6 hours (includes currently online)
+  const lastSixHoursCount = useMemo(() => {
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
     const uniqueDealers = new Set([
       ...onlineDealers.map(d => d.user_id),
       ...presenceHistory
-        .filter(p => new Date(p.joined_at) >= oneHourAgo)
-        .map(p => p.user_id)
-    ]);
-    return uniqueDealers.size;
-  }, [presenceHistory, onlineDealers]);
-
-  // Calculate unique dealers seen in the last 5 hours (includes currently online)
-  const lastFiveHoursCount = useMemo(() => {
-    const fiveHoursAgo = new Date(Date.now() - 5 * 60 * 60 * 1000);
-    const uniqueDealers = new Set([
-      ...onlineDealers.map(d => d.user_id),
-      ...presenceHistory
-        .filter(p => new Date(p.joined_at) >= fiveHoursAgo)
+        .filter(p => new Date(p.joined_at) >= sixHoursAgo)
         .map(p => p.user_id)
     ]);
     return uniqueDealers.size;
@@ -133,8 +121,7 @@ export function useDealerPresenceMonitor() {
   return {
     onlineCount,
     onlineDealers,
-    lastHourCount,
-    lastFiveHoursCount,
+    lastSixHoursCount,
     isLoading,
   };
 }
