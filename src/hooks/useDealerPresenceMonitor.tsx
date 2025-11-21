@@ -28,27 +28,29 @@ export function useDealerPresenceMonitor() {
   const [isLoading, setIsLoading] = useState(true);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
-  // Calculate unique dealers seen in the last hour
+  // Calculate unique dealers seen in the last hour (includes currently online)
   const lastHourCount = useMemo(() => {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const uniqueDealers = new Set(
-      presenceHistory
+    const uniqueDealers = new Set([
+      ...onlineDealers.map(d => d.user_id),
+      ...presenceHistory
         .filter(p => new Date(p.joined_at) >= oneHourAgo)
         .map(p => p.user_id)
-    );
+    ]);
     return uniqueDealers.size;
-  }, [presenceHistory]);
+  }, [presenceHistory, onlineDealers]);
 
-  // Calculate unique dealers seen in the last 5 hours
+  // Calculate unique dealers seen in the last 5 hours (includes currently online)
   const lastFiveHoursCount = useMemo(() => {
     const fiveHoursAgo = new Date(Date.now() - 5 * 60 * 60 * 1000);
-    const uniqueDealers = new Set(
-      presenceHistory
+    const uniqueDealers = new Set([
+      ...onlineDealers.map(d => d.user_id),
+      ...presenceHistory
         .filter(p => new Date(p.joined_at) >= fiveHoursAgo)
         .map(p => p.user_id)
-    );
+    ]);
     return uniqueDealers.size;
-  }, [presenceHistory]);
+  }, [presenceHistory, onlineDealers]);
 
   useEffect(() => {
     const presenceChannel = supabase.channel('dealer-presence');
@@ -66,6 +68,21 @@ export function useDealerPresenceMonitor() {
           }));
         setOnlineDealers(dealers);
         setOnlineCount(dealers.length);
+        
+        // Seed presence history from currently online dealers
+        setPresenceHistory(prev => {
+          const existingIds = new Set(prev.map(p => p.user_id));
+          const newEntries = dealers
+            .filter(d => !existingIds.has(d.user_id))
+            .map(d => ({
+              user_id: d.user_id,
+              name: d.name,
+              email: d.email,
+              joined_at: d.online_at || new Date().toISOString(),
+            }));
+          return [...prev, ...newEntries];
+        });
+        
         setIsLoading(false);
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
@@ -97,9 +114,7 @@ export function useDealerPresenceMonitor() {
     setChannel(presenceChannel);
 
     return () => {
-      if (channel) {
-        channel.unsubscribe();
-      }
+      presenceChannel.unsubscribe();
     };
   }, []);
 
