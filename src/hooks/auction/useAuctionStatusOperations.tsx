@@ -110,7 +110,13 @@ export function useAuctionStatusOperations() {
       }
 
       toast.success("Auction Extended", {
-        description: `Extended by ${hours >= 1 ? `${hours} hour${hours > 1 ? 's' : ''}` : '30 minutes'}`
+        description: `Extended by ${
+          hours >= 24 
+            ? `${hours / 24} day${hours / 24 > 1 ? 's' : ''}`
+            : hours >= 1 
+              ? `${hours} hour${hours > 1 ? 's' : ''}` 
+              : '30 minutes'
+        }`
       });
     } catch (error) {
       toast.error("Failed to extend auction time");
