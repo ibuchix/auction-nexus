@@ -7,15 +7,11 @@ import { TopNavbar } from "./navigation/TopNavbar";
 import { BreadcrumbNav } from "./navigation/Breadcrumb";
 import { MobileNav } from "./navigation/MobileNav";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useDealerPresence } from "@/hooks/useDealerPresence";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  
-  // Track dealer presence automatically (only activates for dealers)
-  useDealerPresence();
 
   // Keyboard shortcuts
   useHotkeys('alt+h', () => navigate('/'), { description: 'Go to Dashboard' });
