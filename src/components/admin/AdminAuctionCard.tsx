@@ -180,8 +180,8 @@ export function AdminAuctionCard({
           </Accordion>
 
           <CurrentBidDisplay 
+            carId={auction.id}
             currentBid={auction.currentBid ?? auction.current_bid}
-            dealerName={auction.highestBid?.[0]?.dealers?.dealershipName}
             isActive={
               auction.auctionSchedules?.some((schedule: any) => schedule.status === 'active') || 
               auction.auction_schedules?.some((schedule: any) => schedule.status === 'active') ||
