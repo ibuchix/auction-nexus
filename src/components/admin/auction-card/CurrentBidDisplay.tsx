@@ -1,40 +1,48 @@
 import { PLNCurrency } from "@/components/ui/PLNCurrency";
-import { useEffect, useState } from "react";
+import { useTopBids } from "@/hooks/useTopBids";
+import { Badge } from "@/components/ui/badge";
 
 interface CurrentBidDisplayProps {
+  carId: string;
   currentBid: number | null | undefined;
-  dealerName?: string | null;
   isActive?: boolean;
 }
 
-export function CurrentBidDisplay({ currentBid, dealerName, isActive = false }: CurrentBidDisplayProps) {
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [prevBid, setPrevBid] = useState(currentBid);
-  
-  useEffect(() => {
-    if (currentBid !== prevBid && currentBid && prevBid) {
-      console.log('💸 [Bid Update] Bid changed:', {
-        from: prevBid,
-        to: currentBid,
-        difference: currentBid - prevBid
-      });
-      setIsUpdating(true);
-      const timer = setTimeout(() => setIsUpdating(false), 1000);
-      setPrevBid(currentBid);
-      return () => clearTimeout(timer);
-    }
-    setPrevBid(currentBid);
-  }, [currentBid]);
+export function CurrentBidDisplay({ carId, currentBid, isActive = false }: CurrentBidDisplayProps) {
+  const { topBids, isLoading } = useTopBids(carId, isActive);
   
   if (!isActive) return null;
   
-  const hasBid = currentBid && currentBid > 0;
+  if (isLoading) {
+    return (
+      <div className="flex justify-end mt-6 pt-4 border-t">
+        <div className="text-sm text-muted-foreground">Loading bids...</div>
+      </div>
+    );
+  }
+  
+  if (topBids.length === 0) {
+    return (
+      <div className="flex justify-end mt-6 pt-4 border-t">
+        <div className="text-right">
+          <p className="text-sm text-muted-foreground">No bids yet</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const rankLabels = ['1st', '2nd', '3rd'];
+  const rankColors = [
+    'bg-purple-100 text-purple-800 border-purple-300',
+    'bg-gray-100 text-gray-800 border-gray-300',
+    'bg-orange-100 text-orange-800 border-orange-300'
+  ];
   
   return (
     <div className="flex justify-end mt-6 pt-4 border-t">
-      <div className="text-right">
-        <div className="flex items-center gap-2 justify-end mb-1">
-          <p className="text-sm text-muted-foreground">Current Bid</p>
+      <div className="text-right space-y-3 w-full">
+        <div className="flex items-center gap-2 justify-end mb-2">
+          <p className="text-sm text-muted-foreground">Top Bids</p>
           {isActive && (
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -42,17 +50,32 @@ export function CurrentBidDisplay({ currentBid, dealerName, isActive = false }: 
             </span>
           )}
         </div>
-        <div className={`transition-all duration-300 ${isUpdating ? 'scale-110' : 'scale-100'}`}>
-          <PLNCurrency 
-            value={currentBid || 0} 
-            className={`text-3xl font-bold ${isUpdating ? 'text-green-600' : 'text-purple-600'} transition-colors duration-300`}
-          />
-        </div>
-        {hasBid && dealerName && (
-          <p className="text-sm text-muted-foreground mt-1">
-            by {dealerName}
-          </p>
-        )}
+        
+        {topBids.map((bid, index) => (
+          <div 
+            key={bid.id} 
+            className={`flex items-center justify-between gap-3 p-2 rounded-lg ${
+              index === 0 ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50'
+            }`}
+          >
+            <Badge variant="outline" className={`${rankColors[index]} text-xs font-semibold shrink-0`}>
+              {rankLabels[index]}
+            </Badge>
+            <div className="flex-1 text-right min-w-0">
+              <PLNCurrency 
+                value={bid.amount} 
+                className={`${
+                  index === 0 ? 'text-2xl font-bold text-purple-600' :
+                  index === 1 ? 'text-xl font-semibold text-gray-700' :
+                  'text-lg font-medium text-gray-600'
+                }`}
+              />
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                by {bid.dealershipName}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
