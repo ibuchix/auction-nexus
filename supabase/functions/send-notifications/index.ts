@@ -706,6 +706,7 @@ interface NotifyRequest {
   type: "seller_auction_ended" | "dealer_bid_accepted" | "dealer_bid_declined" | "seller_ready_for_pickup";
   carId: string;
   dealerId?: string;
+  winningBid?: number;
 }
 
 async function getSellerUserId(carId: string) {
@@ -799,8 +800,8 @@ serve(async (req) => {
     }
 
     // Parse and log the request
-    const { type, carId, dealerId }: NotifyRequest = await req.json();
-    console.log("[send-notifications] request_received", { type, carId, dealerId, from: FROM_HEADER });
+    const { type, carId, dealerId, winningBid }: NotifyRequest = await req.json();
+    console.log("[send-notifications] request_received", { type, carId, dealerId, winningBid, from: FROM_HEADER });
 
     const car = await getCarSummary(carId);
     const carLabel = car ? `${car.year ?? ""} ${car.make ?? ""} ${car.model ?? ""}`.trim() : `Car ${carId}`;
@@ -815,12 +816,18 @@ serve(async (req) => {
       console.log("[send-notifications] seller_email_resolved", { sellerUserId, email });
       if (!email) throw new Error("Seller email not found");
 
-      // Get winning bid amount
-      const winningBid = await getWinningBid(carId);
-      console.log("[send-notifications] winning_bid_fetched", { carId, winningBid });
+      // Use provided winning bid OR fetch from database as fallback
+      const finalWinningBid = winningBid !== undefined 
+        ? winningBid 
+        : await getWinningBid(carId);
+      console.log("[send-notifications] winning_bid_fetched", { 
+        carId, 
+        winningBid: finalWinningBid, 
+        source: winningBid !== undefined ? 'provided' : 'fetched' 
+      });
 
       const subject = `Oferta za Twój samochód jest już dostępna - ${carLabel}`;
-      const html = buildSellerAuctionEndedEmail(car || {}, winningBid);
+      const html = buildSellerAuctionEndedEmail(car || {}, finalWinningBid);
       const { messageId } = await sendEmail(email, subject, html);
 
       // Mark that we sent notification (via SECURITY DEFINER RPC)

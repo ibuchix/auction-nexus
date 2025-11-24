@@ -249,7 +249,10 @@ const AuctionOutcomeCard = ({
             size="sm"
             onClick={async () => {
               try {
-                await sendEmail("seller_auction_ended", { carId: item.car_id });
+                await sendEmail("seller_auction_ended", { 
+                  carId: item.car_id,
+                  winningBid: item.winning_bid_amount 
+                });
                 toast.success("Seller notified about auction end");
                 onEmailSent();
               } catch (e: any) {
