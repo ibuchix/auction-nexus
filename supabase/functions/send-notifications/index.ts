@@ -16,7 +16,9 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 // New configurable envs (with safe defaults)
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "powiadomienia@autaro.pl";
 const FROM_NAME = Deno.env.get("RESEND_FROM_NAME") ?? "Autaro";
-const SITE_URL = Deno.env.get("SITE_URL") ?? "https://www.autaro.pl";
+// Hardcode the correct domains to avoid environment variable confusion
+const SELLER_SITE_URL = "https://www.autaro.pl";
+const DEALER_SITE_URL = "https://aukcja.autaro.pl";
 const FROM_HEADER = `${FROM_NAME} <${FROM_EMAIL}>`;
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY || "", {
@@ -31,7 +33,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY || "", {
 const resend = new Resend(RESEND_API_KEY || "");
 
 // Branding assets
-const BRAND_LOGO_URL = Deno.env.get("BRAND_LOGO_URL") ?? `${SITE_URL}/lovable-uploads/4e69fd8b-b4ed-44b6-a32d-5a7193af37f3.png`;
+const BRAND_LOGO_URL = Deno.env.get("BRAND_LOGO_URL") ?? `${SELLER_SITE_URL}/lovable-uploads/4e69fd8b-b4ed-44b6-a32d-5a7193af37f3.png`;
 
 // Custom email template for seller auction ended
 function buildSellerAuctionEndedEmail(carSummary: { make?: string; model?: string; year?: number }, winningBid: number): string {
@@ -97,7 +99,7 @@ function buildSellerAuctionEndedEmail(carSummary: { make?: string; model?: strin
                           <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin:20px 0">
                             <tr>
                               <td align="left">
-                                <a style="display:inline-block;padding:14px 19px;border-radius:8px;background-color:#d81b24;font-family:'Heebo',Arial,Helvetica,sans-serif;font-weight:600;font-size:15px;line-height:24px;color:#ffffff;text-decoration:none" href="${SITE_URL}/dashboard/seller" target="_blank">Sprawdź swoją ofertę tutaj!</a>
+                                <a style="display:inline-block;padding:14px 19px;border-radius:8px;background-color:#d81b24;font-family:'Heebo',Arial,Helvetica,sans-serif;font-weight:600;font-size:15px;line-height:24px;color:#ffffff;text-decoration:none" href="${SELLER_SITE_URL}/dashboard/seller" target="_blank">Sprawdź swoją ofertę tutaj!</a>
                               </td>
                             </tr>
                           </table>
@@ -191,7 +193,7 @@ function buildSellerAuctionEndedEmail(carSummary: { make?: string; model?: strin
                             <tr>
                               <td align="center" valign="top" style="padding:0 30px 39px 30px">
                                 <div style="font-size:14px;line-height:20px;color:#454545;font-family:'Inter',Arial,Helvetica,sans-serif;text-align:center">
-                                  <a href="${SITE_URL}/unsubscribe" style="text-decoration:underline;color:#454545">Tutaj</a> możesz zrezygnować z otrzymywania tych e-maili.
+                                  <a href="${SELLER_SITE_URL}/unsubscribe" style="text-decoration:underline;color:#454545">Tutaj</a> możesz zrezygnować z otrzymywania tych e-maili.
                                 </div>
                               </td>
                             </tr>
@@ -894,7 +896,7 @@ serve(async (req) => {
         title: 'Update on your bid',
         body: `Your bid for <strong>${carLabel}</strong> was declined by the seller. You can continue browsing and bidding on other vehicles.`,
         ctaText: 'Browse auctions',
-        ctaHref: `${SITE_URL}/auctions`
+        ctaHref: `${DEALER_SITE_URL}/auctions`
       });
       const { messageId } = await sendEmail(email, subject, html);
 
