@@ -3,12 +3,16 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useDealerPresence } from "@/hooks/useDealerPresence";
 import { TopNavbar } from "./navigation/TopNavbar";
 import { BreadcrumbNav } from "./navigation/Breadcrumb";
 import { MobileNav } from "./navigation/MobileNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // Track dealer presence - only activates for users with role='dealer'
+  useDealerPresence();
+  
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
