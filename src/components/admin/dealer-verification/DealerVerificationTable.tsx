@@ -18,6 +18,8 @@ import {
   TooltipTrigger 
 } from "@/components/ui/tooltip";
 import { DealerData, VerificationStatus } from "./types";
+import { useDealerPresenceMonitor } from "@/hooks/useDealerPresenceMonitor";
+import { DealerActivityBadge } from "./components/DealerActivityBadge";
 
 interface DealerVerificationTableProps {
   dealers: DealerData[] | undefined;
@@ -34,6 +36,7 @@ export const DealerVerificationTable = ({
   onReviewDealer,
   activeTab
 }: DealerVerificationTableProps) => {
+  const { getDealerActivityStatus } = useDealerPresenceMonitor();
   
   const getStatusBadge = (status: VerificationStatus) => {
     switch (status) {
@@ -76,6 +79,7 @@ export const DealerVerificationTable = ({
           <TableHead>Tax ID</TableHead>
           <TableHead>Submitted</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead>Activity</TableHead>
           <TableHead>Verified</TableHead>
           <TableHead>Action</TableHead>
         </TableRow>
@@ -100,6 +104,9 @@ export const DealerVerificationTable = ({
                 {formatDate(dealer.createdAt)}
               </TableCell>
               <TableCell>{getStatusBadge(dealer.verification_status)}</TableCell>
+              <TableCell>
+                <DealerActivityBadge {...getDealerActivityStatus(dealer.userId)} />
+              </TableCell>
               <TableCell>
                 <TooltipProvider>
                   <Tooltip>
@@ -132,7 +139,7 @@ export const DealerVerificationTable = ({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={8} className="text-center py-4">
+            <TableCell colSpan={9} className="text-center py-4">
               No {activeTab === "all" ? "" : activeTab} dealers found
             </TableCell>
           </TableRow>
