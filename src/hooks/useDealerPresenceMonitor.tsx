@@ -118,10 +118,65 @@ export function useDealerPresenceMonitor() {
     return () => clearInterval(cleanupInterval);
   }, []);
 
+  // Helper function to get activity status for a specific dealer
+  const getDealerActivityStatus = (userId: string) => {
+    // Check if currently online
+    const isOnline = onlineDealers.some(d => d.user_id === userId);
+    if (isOnline) {
+      return {
+        status: 'online' as const,
+        label: 'Active',
+        color: 'green' as const,
+      };
+    }
+
+    // Check presence history for recent activity
+    const dealerHistory = presenceHistory.find(p => p.user_id === userId);
+    if (!dealerHistory?.left_at) {
+      return {
+        status: 'inactive' as const,
+        label: null,
+        color: null,
+      };
+    }
+
+    const leftAt = new Date(dealerHistory.left_at);
+    const now = new Date();
+    const minutesAgo = Math.floor((now.getTime() - leftAt.getTime()) / (1000 * 60));
+    const hoursAgo = Math.floor(minutesAgo / 60);
+
+    // Within last hour - show minutes
+    if (minutesAgo < 60) {
+      return {
+        status: 'recent' as const,
+        label: `${minutesAgo}m ago`,
+        color: 'yellow' as const,
+      };
+    }
+
+    // Within last 6 hours - show hours
+    if (hoursAgo < 6) {
+      return {
+        status: 'recent' as const,
+        label: `${hoursAgo}h ago`,
+        color: 'blue' as const,
+      };
+    }
+
+    // No recent activity
+    return {
+      status: 'inactive' as const,
+      label: null,
+      color: null,
+    };
+  };
+
   return {
     onlineCount,
     onlineDealers,
     lastSixHoursCount,
+    presenceHistory,
     isLoading,
+    getDealerActivityStatus,
   };
 }
