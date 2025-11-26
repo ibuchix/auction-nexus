@@ -36,6 +36,11 @@ export function AuctionCard({ auction, onPause, onCancel, onEndImmediately }: Au
         <CardTitle className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold">{auction.title}</h3>
+            {auction.vin && (
+              <p className="text-xs text-muted-foreground font-mono">
+                VIN: {auction.vin}
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
               Ends: {new Date(auction.auction_end_time || '').toLocaleString()}
             </p>
