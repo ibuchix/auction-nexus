@@ -289,7 +289,26 @@ serve(async (req) => {
         
         const { data: dealersData, error: dealersError, count } = await dealersQuery
 
+        // Handle range out of bounds gracefully (PGRST103)
         if (dealersError) {
+          // If the error is "Requested range not satisfiable", it means we're trying to access
+          // a page beyond what exists. This is normal in pagination - just return empty results.
+          if (dealersError.code === 'PGRST103') {
+            console.log('Requested range out of bounds, returning empty results')
+            result = {
+              dealers: [],
+              pagination: {
+                page: page,
+                pageSize: pageSize,
+                totalCount: 0,
+                totalPages: 0,
+                hasNextPage: false,
+                hasPreviousPage: page > 1
+              }
+            }
+            break
+          }
+          
           console.error('Dealers query error:', dealersError)
           throw new Error(`Dealers query failed: ${dealersError.message}`)
         }
