@@ -144,7 +144,9 @@ export const AdminCarDetailsDialog = ({ car, isOpen, onClose }: AdminCarDetailsD
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">VIN</p>
-                  <p className="font-mono text-sm">{car.vin}</p>
+                  <p className="font-mono text-sm">
+                    {typeof car.vin === 'string' ? car.vin : 'N/A'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Transmission</p>

@@ -87,7 +87,9 @@ export function AuctionDetails({ car }: AuctionDetailsProps) {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <p className="text-sm font-medium">VIN</p>
-            <p className="text-sm text-gray-600">{car.vin}</p>
+            <p className="text-sm text-gray-600">
+              {typeof car.vin === 'string' ? car.vin : car.vin || 'N/A'}
+            </p>
           </div>
           <div>
             <p className="text-sm font-medium">Mileage</p>
