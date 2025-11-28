@@ -49,15 +49,24 @@ serve(async (req) => {
       )
     }
 
-    // Create a Supabase client with the user's auth context for verification
-    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    })
+    // Extract JWT token from "Bearer <token>" format
+    const token = authHeader.replace('Bearer ', '').trim()
+    
+    if (!token) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Invalid authorization token format'
+        }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Verify the user is authenticated using their auth context
-    const { data: { user }, error: userError } = await userSupabase.auth.getUser()
+    // Create a Supabase client with anon key to verify the JWT
+    const userSupabase = createClient(supabaseUrl, supabaseAnonKey)
+
+    // Verify the user is authenticated by passing the JWT directly
+    const { data: { user }, error: userError } = await userSupabase.auth.getUser(token)
     
     // Create supabase client with service role key for admin operations
     const supabase = createClient(supabaseUrl, serviceRoleKey)
