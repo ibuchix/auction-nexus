@@ -163,7 +163,7 @@ export function AdminAuctionCard({
           {showImageCount ? (
             <div className="mt-4">
               <h4 className="text-sm font-semibold mb-2">Vehicle Images</h4>
-              <ImageCount carId={auction.id} />
+              <ImageCount carId={auction.id} car={auction} />
             </div>
           ) : (
             <VehicleImages car={auction} autoLoad={autoLoadImages} />
