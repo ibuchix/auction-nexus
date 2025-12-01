@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { extractAllCarImages, fetchCarImagesFromDatabase, type CategorizedImage } from "@/utils/imageUtils";
 import { useImageCache } from "@/hooks/useImageCache";
+import { ExportImagesButton } from "./ExportImagesButton";
 
 interface VehicleImagesProps {
   images?: string[];
@@ -149,7 +150,12 @@ export function VehicleImages({ images, car, autoLoad = true }: VehicleImagesPro
 
   return (
     <div className="mt-4">
-      <h4 className="text-sm font-semibold mb-2">Vehicle Images ({allImages.length})</h4>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-sm font-semibold">Vehicle Images ({allImages.length})</h4>
+        {allImages.length > 0 && (
+          <ExportImagesButton car={car} images={allImages} />
+        )}
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {displayedImages.map((image, index) => (
           <Dialog key={index}>
