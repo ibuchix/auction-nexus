@@ -54,6 +54,22 @@ export interface ManualValuationData {
   updated_at: string | null;
   fuel_type: string | null;
   images: ManualValuationImage[];
+  // Condition questions
+  ac_working: boolean | null;
+  windows_working: boolean | null;
+  tires_legal_depth: boolean | null;
+  runs_smoothly: boolean | null;
+  has_scratches: boolean | null;
+  has_dents: boolean | null;
+  has_rust: boolean | null;
+  has_interior_stains: boolean | null;
+  engine_faults: boolean | null;
+  gearbox_faults: boolean | null;
+  electrical_faults: boolean | null;
+  engine_smokes: boolean | null;
+  brakes_noisy: boolean | null;
+  suspension_noisy: boolean | null;
+  warning_lights_on: boolean | null;
 }
 
 export function useManualValuation() {
