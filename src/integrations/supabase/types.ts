@@ -507,17 +507,23 @@ export type Database = {
       }
       cars: {
         Row: {
+          ac_working: boolean | null
+          accident_history: string | null
           additional_photos: Json | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          brakes_noisy: boolean | null
           contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
+          electrical_faults: boolean | null
           email_notification_sent: boolean
           engine_capacity: string | null
+          engine_faults: boolean | null
+          engine_smokes: boolean | null
           features: Json | null
           finance_amount: number | null
           finance_document_name: string | null
@@ -525,8 +531,13 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          gearbox_faults: boolean | null
+          has_dents: boolean | null
           has_full_registration_document: boolean | null
+          has_interior_stains: boolean | null
           has_outstanding_finance: boolean | null
+          has_rust: boolean | null
+          has_scratches: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -547,6 +558,7 @@ export type Database = {
           required_photos: Json | null
           reserve_price: number
           rim_photos: Json | null
+          runs_smoothly: boolean | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -554,26 +566,36 @@ export type Database = {
           service_history_type: string | null
           status: string | null
           street_address: string | null
+          suspension_noisy: boolean | null
+          tires_legal_depth: boolean | null
           title: string | null
           town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
           vin: string | null
+          warning_lights_on: boolean | null
+          windows_working: boolean | null
           year: number | null
         }
         Insert: {
+          ac_working?: boolean | null
+          accident_history?: string | null
           additional_photos?: Json | null
           auction_end_time?: string | null
           auction_scheduled?: boolean
           auction_status?: string | null
           awaiting_seller_decision?: boolean
+          brakes_noisy?: boolean | null
           contact_email: string
           county?: string | null
           created_at?: string
           current_bid?: number | null
+          electrical_faults?: boolean | null
           email_notification_sent?: boolean
           engine_capacity?: string | null
+          engine_faults?: boolean | null
+          engine_smokes?: boolean | null
           features?: Json | null
           finance_amount?: number | null
           finance_document_name?: string | null
@@ -581,8 +603,13 @@ export type Database = {
           finance_document_url?: string | null
           form_metadata?: Json | null
           fuel_type?: string | null
+          gearbox_faults?: boolean | null
+          has_dents?: boolean | null
           has_full_registration_document?: boolean | null
+          has_interior_stains?: boolean | null
           has_outstanding_finance?: boolean | null
+          has_rust?: boolean | null
+          has_scratches?: boolean | null
           has_service_history?: boolean | null
           id?: string
           images?: string[] | null
@@ -603,6 +630,7 @@ export type Database = {
           required_photos?: Json | null
           reserve_price?: number
           rim_photos?: Json | null
+          runs_smoothly?: boolean | null
           seat_material?: string | null
           seller_id?: string | null
           seller_name?: string | null
@@ -610,26 +638,36 @@ export type Database = {
           service_history_type?: string | null
           status?: string | null
           street_address?: string | null
+          suspension_noisy?: boolean | null
+          tires_legal_depth?: boolean | null
           title?: string | null
           town?: string | null
           transmission?: string | null
           updated_at?: string
           valuation_data?: Json | null
           vin?: string | null
+          warning_lights_on?: boolean | null
+          windows_working?: boolean | null
           year?: number | null
         }
         Update: {
+          ac_working?: boolean | null
+          accident_history?: string | null
           additional_photos?: Json | null
           auction_end_time?: string | null
           auction_scheduled?: boolean
           auction_status?: string | null
           awaiting_seller_decision?: boolean
+          brakes_noisy?: boolean | null
           contact_email?: string
           county?: string | null
           created_at?: string
           current_bid?: number | null
+          electrical_faults?: boolean | null
           email_notification_sent?: boolean
           engine_capacity?: string | null
+          engine_faults?: boolean | null
+          engine_smokes?: boolean | null
           features?: Json | null
           finance_amount?: number | null
           finance_document_name?: string | null
@@ -637,8 +675,13 @@ export type Database = {
           finance_document_url?: string | null
           form_metadata?: Json | null
           fuel_type?: string | null
+          gearbox_faults?: boolean | null
+          has_dents?: boolean | null
           has_full_registration_document?: boolean | null
+          has_interior_stains?: boolean | null
           has_outstanding_finance?: boolean | null
+          has_rust?: boolean | null
+          has_scratches?: boolean | null
           has_service_history?: boolean | null
           id?: string
           images?: string[] | null
@@ -659,6 +702,7 @@ export type Database = {
           required_photos?: Json | null
           reserve_price?: number
           rim_photos?: Json | null
+          runs_smoothly?: boolean | null
           seat_material?: string | null
           seller_id?: string | null
           seller_name?: string | null
@@ -666,12 +710,16 @@ export type Database = {
           service_history_type?: string | null
           status?: string | null
           street_address?: string | null
+          suspension_noisy?: boolean | null
+          tires_legal_depth?: boolean | null
           title?: string | null
           town?: string | null
           transmission?: string | null
           updated_at?: string
           valuation_data?: Json | null
           vin?: string | null
+          warning_lights_on?: boolean | null
+          windows_working?: boolean | null
           year?: number | null
         }
         Relationships: [
@@ -1416,19 +1464,30 @@ export type Database = {
       }
       manual_valuations: {
         Row: {
+          ac_working: boolean | null
+          accident_history: string | null
+          brakes_noisy: boolean | null
           contact_email: string | null
           contact_phone: string | null
           county: string | null
           created_at: string | null
+          electrical_faults: boolean | null
+          engine_faults: boolean | null
+          engine_smokes: boolean | null
           features: Json | null
           finance_amount: number | null
           finance_document_name: string | null
           finance_document_uploaded_at: string | null
           finance_document_url: string | null
           fuel_type: string | null
+          gearbox_faults: boolean | null
+          has_dents: boolean | null
           has_documentation: boolean | null
           has_full_registration_document: boolean | null
+          has_interior_stains: boolean | null
           has_outstanding_finance: boolean | null
+          has_rust: boolean | null
+          has_scratches: boolean | null
           id: string
           is_damaged: boolean | null
           is_registered_in_poland: boolean | null
@@ -1441,12 +1500,15 @@ export type Database = {
           number_of_keys: number | null
           postcode: string | null
           reserve_price: number | null
+          runs_smoothly: boolean | null
           seat_material: string | null
           seller_notes: string | null
           service_history_files: string[] | null
           service_history_type: string | null
           status: string | null
           street_address: string | null
+          suspension_noisy: boolean | null
+          tires_legal_depth: boolean | null
           town: string | null
           transmission:
             | Database["public"]["Enums"]["car_transmission_type"]
@@ -1456,22 +1518,35 @@ export type Database = {
           user_id: string | null
           valuation_result: Json | null
           vin: string | null
+          warning_lights_on: boolean | null
+          windows_working: boolean | null
           year: number | null
         }
         Insert: {
+          ac_working?: boolean | null
+          accident_history?: string | null
+          brakes_noisy?: boolean | null
           contact_email?: string | null
           contact_phone?: string | null
           county?: string | null
           created_at?: string | null
+          electrical_faults?: boolean | null
+          engine_faults?: boolean | null
+          engine_smokes?: boolean | null
           features?: Json | null
           finance_amount?: number | null
           finance_document_name?: string | null
           finance_document_uploaded_at?: string | null
           finance_document_url?: string | null
           fuel_type?: string | null
+          gearbox_faults?: boolean | null
+          has_dents?: boolean | null
           has_documentation?: boolean | null
           has_full_registration_document?: boolean | null
+          has_interior_stains?: boolean | null
           has_outstanding_finance?: boolean | null
+          has_rust?: boolean | null
+          has_scratches?: boolean | null
           id?: string
           is_damaged?: boolean | null
           is_registered_in_poland?: boolean | null
@@ -1484,12 +1559,15 @@ export type Database = {
           number_of_keys?: number | null
           postcode?: string | null
           reserve_price?: number | null
+          runs_smoothly?: boolean | null
           seat_material?: string | null
           seller_notes?: string | null
           service_history_files?: string[] | null
           service_history_type?: string | null
           status?: string | null
           street_address?: string | null
+          suspension_noisy?: boolean | null
+          tires_legal_depth?: boolean | null
           town?: string | null
           transmission?:
             | Database["public"]["Enums"]["car_transmission_type"]
@@ -1499,22 +1577,35 @@ export type Database = {
           user_id?: string | null
           valuation_result?: Json | null
           vin?: string | null
+          warning_lights_on?: boolean | null
+          windows_working?: boolean | null
           year?: number | null
         }
         Update: {
+          ac_working?: boolean | null
+          accident_history?: string | null
+          brakes_noisy?: boolean | null
           contact_email?: string | null
           contact_phone?: string | null
           county?: string | null
           created_at?: string | null
+          electrical_faults?: boolean | null
+          engine_faults?: boolean | null
+          engine_smokes?: boolean | null
           features?: Json | null
           finance_amount?: number | null
           finance_document_name?: string | null
           finance_document_uploaded_at?: string | null
           finance_document_url?: string | null
           fuel_type?: string | null
+          gearbox_faults?: boolean | null
+          has_dents?: boolean | null
           has_documentation?: boolean | null
           has_full_registration_document?: boolean | null
+          has_interior_stains?: boolean | null
           has_outstanding_finance?: boolean | null
+          has_rust?: boolean | null
+          has_scratches?: boolean | null
           id?: string
           is_damaged?: boolean | null
           is_registered_in_poland?: boolean | null
@@ -1527,12 +1618,15 @@ export type Database = {
           number_of_keys?: number | null
           postcode?: string | null
           reserve_price?: number | null
+          runs_smoothly?: boolean | null
           seat_material?: string | null
           seller_notes?: string | null
           service_history_files?: string[] | null
           service_history_type?: string | null
           status?: string | null
           street_address?: string | null
+          suspension_noisy?: boolean | null
+          tires_legal_depth?: boolean | null
           town?: string | null
           transmission?:
             | Database["public"]["Enums"]["car_transmission_type"]
@@ -1542,6 +1636,8 @@ export type Database = {
           user_id?: string | null
           valuation_result?: Json | null
           vin?: string | null
+          warning_lights_on?: boolean | null
+          windows_working?: boolean | null
           year?: number | null
         }
         Relationships: []
@@ -2206,17 +2302,23 @@ export type Database = {
       admin_get_active_auctions: {
         Args: never
         Returns: {
+          ac_working: boolean | null
+          accident_history: string | null
           additional_photos: Json | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          brakes_noisy: boolean | null
           contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
+          electrical_faults: boolean | null
           email_notification_sent: boolean
           engine_capacity: string | null
+          engine_faults: boolean | null
+          engine_smokes: boolean | null
           features: Json | null
           finance_amount: number | null
           finance_document_name: string | null
@@ -2224,8 +2326,13 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          gearbox_faults: boolean | null
+          has_dents: boolean | null
           has_full_registration_document: boolean | null
+          has_interior_stains: boolean | null
           has_outstanding_finance: boolean | null
+          has_rust: boolean | null
+          has_scratches: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -2246,6 +2353,7 @@ export type Database = {
           required_photos: Json | null
           reserve_price: number
           rim_photos: Json | null
+          runs_smoothly: boolean | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -2253,12 +2361,16 @@ export type Database = {
           service_history_type: string | null
           status: string | null
           street_address: string | null
+          suspension_noisy: boolean | null
+          tires_legal_depth: boolean | null
           title: string | null
           town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
           vin: string | null
+          warning_lights_on: boolean | null
+          windows_working: boolean | null
           year: number | null
         }[]
         SetofOptions: {
@@ -2288,17 +2400,23 @@ export type Database = {
       admin_get_auction_listings: {
         Args: { p_show_all?: boolean; p_status?: string }
         Returns: {
+          ac_working: boolean | null
+          accident_history: string | null
           additional_photos: Json | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          brakes_noisy: boolean | null
           contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
+          electrical_faults: boolean | null
           email_notification_sent: boolean
           engine_capacity: string | null
+          engine_faults: boolean | null
+          engine_smokes: boolean | null
           features: Json | null
           finance_amount: number | null
           finance_document_name: string | null
@@ -2306,8 +2424,13 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          gearbox_faults: boolean | null
+          has_dents: boolean | null
           has_full_registration_document: boolean | null
+          has_interior_stains: boolean | null
           has_outstanding_finance: boolean | null
+          has_rust: boolean | null
+          has_scratches: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -2328,6 +2451,7 @@ export type Database = {
           required_photos: Json | null
           reserve_price: number
           rim_photos: Json | null
+          runs_smoothly: boolean | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -2335,12 +2459,16 @@ export type Database = {
           service_history_type: string | null
           status: string | null
           street_address: string | null
+          suspension_noisy: boolean | null
+          tires_legal_depth: boolean | null
           title: string | null
           town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
           vin: string | null
+          warning_lights_on: boolean | null
+          windows_working: boolean | null
           year: number | null
         }[]
         SetofOptions: {
@@ -2860,17 +2988,23 @@ export type Database = {
       get_seller_auction_cars: {
         Args: { p_seller_id: string }
         Returns: {
+          ac_working: boolean | null
+          accident_history: string | null
           additional_photos: Json | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          brakes_noisy: boolean | null
           contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
+          electrical_faults: boolean | null
           email_notification_sent: boolean
           engine_capacity: string | null
+          engine_faults: boolean | null
+          engine_smokes: boolean | null
           features: Json | null
           finance_amount: number | null
           finance_document_name: string | null
@@ -2878,8 +3012,13 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          gearbox_faults: boolean | null
+          has_dents: boolean | null
           has_full_registration_document: boolean | null
+          has_interior_stains: boolean | null
           has_outstanding_finance: boolean | null
+          has_rust: boolean | null
+          has_scratches: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -2900,6 +3039,7 @@ export type Database = {
           required_photos: Json | null
           reserve_price: number
           rim_photos: Json | null
+          runs_smoothly: boolean | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -2907,12 +3047,16 @@ export type Database = {
           service_history_type: string | null
           status: string | null
           street_address: string | null
+          suspension_noisy: boolean | null
+          tires_legal_depth: boolean | null
           title: string | null
           town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
           vin: string | null
+          warning_lights_on: boolean | null
+          windows_working: boolean | null
           year: number | null
         }[]
         SetofOptions: {
@@ -2925,17 +3069,23 @@ export type Database = {
       get_seller_listings: {
         Args: { p_seller_id: string }
         Returns: {
+          ac_working: boolean | null
+          accident_history: string | null
           additional_photos: Json | null
           auction_end_time: string | null
           auction_scheduled: boolean
           auction_status: string | null
           awaiting_seller_decision: boolean
+          brakes_noisy: boolean | null
           contact_email: string
           county: string | null
           created_at: string
           current_bid: number | null
+          electrical_faults: boolean | null
           email_notification_sent: boolean
           engine_capacity: string | null
+          engine_faults: boolean | null
+          engine_smokes: boolean | null
           features: Json | null
           finance_amount: number | null
           finance_document_name: string | null
@@ -2943,8 +3093,13 @@ export type Database = {
           finance_document_url: string | null
           form_metadata: Json | null
           fuel_type: string | null
+          gearbox_faults: boolean | null
+          has_dents: boolean | null
           has_full_registration_document: boolean | null
+          has_interior_stains: boolean | null
           has_outstanding_finance: boolean | null
+          has_rust: boolean | null
+          has_scratches: boolean | null
           has_service_history: boolean | null
           id: string
           images: string[] | null
@@ -2965,6 +3120,7 @@ export type Database = {
           required_photos: Json | null
           reserve_price: number
           rim_photos: Json | null
+          runs_smoothly: boolean | null
           seat_material: string | null
           seller_id: string | null
           seller_name: string | null
@@ -2972,12 +3128,16 @@ export type Database = {
           service_history_type: string | null
           status: string | null
           street_address: string | null
+          suspension_noisy: boolean | null
+          tires_legal_depth: boolean | null
           title: string | null
           town: string | null
           transmission: string | null
           updated_at: string
           valuation_data: Json | null
           vin: string | null
+          warning_lights_on: boolean | null
+          windows_working: boolean | null
           year: number | null
         }[]
         SetofOptions: {
@@ -3177,11 +3337,11 @@ export type Database = {
         Returns: undefined
       }
       submit_manual_valuation_form:
+        | { Args: { p_form_data: Json }; Returns: string }
         | {
             Args: { p_form_data: Json; p_manual_valuation_id: string }
             Returns: Json
           }
-        | { Args: { p_form_data: Json }; Returns: string }
       sync_auction_results_with_seller_decisions: {
         Args: never
         Returns: undefined
