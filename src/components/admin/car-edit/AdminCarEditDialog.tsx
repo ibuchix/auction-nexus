@@ -30,8 +30,10 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
   const {
     images,
     documents,
+    videos,
     isLoadingImages,
     isLoadingDocuments,
+    isLoadingVideos,
     isUploading,
     uploadFile,
     deleteFile,
@@ -93,7 +95,9 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
           <TabsContent value="images" className="mt-4">
             <ImagesTab
               images={images}
+              videos={videos}
               isLoading={isLoadingImages}
+              isLoadingVideos={isLoadingVideos}
               isUploading={isUploading}
               uploadFile={uploadFile}
               deleteFile={deleteFile}
