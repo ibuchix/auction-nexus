@@ -89,7 +89,26 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
           </TabsContent>
 
           <TabsContent value="features" className="mt-4">
-            <FeaturesTab features={formData.features || {}} />
+            <FeaturesTab 
+              features={formData.features || {}} 
+              conditionQuestions={{
+                ac_working: auction.ac_working ?? auction.acWorking ?? null,
+                runs_smoothly: auction.runs_smoothly ?? auction.runsSmoothly ?? null,
+                tires_legal_depth: auction.tires_legal_depth ?? auction.tiresLegalDepth ?? null,
+                windows_working: auction.windows_working ?? auction.windowsWorking ?? null,
+                has_dents: auction.has_dents ?? auction.hasDents ?? null,
+                has_scratches: auction.has_scratches ?? auction.hasScratches ?? null,
+                has_rust: auction.has_rust ?? auction.hasRust ?? null,
+                has_interior_stains: auction.has_interior_stains ?? auction.hasInteriorStains ?? null,
+                engine_faults: auction.engine_faults ?? auction.engineFaults ?? null,
+                engine_smokes: auction.engine_smokes ?? auction.engineSmokes ?? null,
+                gearbox_faults: auction.gearbox_faults ?? auction.gearboxFaults ?? null,
+                electrical_faults: auction.electrical_faults ?? auction.electricalFaults ?? null,
+                brakes_noisy: auction.brakes_noisy ?? auction.brakesNoisy ?? null,
+                suspension_noisy: auction.suspension_noisy ?? auction.suspensionNoisy ?? null,
+                warning_lights_on: auction.warning_lights_on ?? auction.warningLightsOn ?? null,
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="images" className="mt-4">

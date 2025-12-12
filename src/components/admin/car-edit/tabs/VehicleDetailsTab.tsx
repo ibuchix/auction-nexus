@@ -202,6 +202,16 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
         </div>
 
         <div>
+          <Label htmlFor="engine_capacity">Engine Capacity</Label>
+          <Input
+            id="engine_capacity"
+            value={formData.engine_capacity || ''}
+            onChange={(e) => updateField('engine_capacity', e.target.value)}
+            placeholder="e.g., 2.0L, 3000cc"
+          />
+        </div>
+
+        <div>
           <Label htmlFor="seat_material">Seat Material</Label>
           <Input
             id="seat_material"
