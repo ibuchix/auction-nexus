@@ -11,6 +11,7 @@ export const vehicleDetailsSchema = z.object({
   reserve_price: z.number().min(1, "Reserve price must be positive"),
   transmission: z.enum(['manual', 'automatic']),
   fuel_type: z.string().nullable().optional(),
+  engine_capacity: z.string().nullable().optional(),
   seat_material: z.string().nullable().optional(),
   is_damaged: z.boolean().nullable().optional(),
   service_history_type: z.string().nullable().optional(),
