@@ -2,15 +2,17 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import type { CarImage, CarDocument } from "../types";
-import { isImageFile, isDocumentFile, getStorageBucket, extractFileName } from "@/utils/fileManagement";
+import type { CarImage, CarDocument, CarVideo } from "../types";
+import { isImageFile, isDocumentFile, isVideoFile, getStorageBucket, extractFileName } from "@/utils/fileManagement";
 
 export function useFileManagement(carId: string, sellerId: string) {
   const { user, session, isAdmin, isLoading: authLoading } = useAuth();
   const [images, setImages] = useState<CarImage[]>([]);
   const [documents, setDocuments] = useState<CarDocument[]>([]);
+  const [videos, setVideos] = useState<CarVideo[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
@@ -53,6 +55,7 @@ export function useFileManagement(carId: string, sellerId: string) {
     
     setIsLoadingImages(true);
     setIsLoadingDocuments(true);
+    setIsLoadingVideos(true);
     
     try {
       // Use SECURITY DEFINER function to fetch car files (bypasses RLS for admins)
@@ -101,15 +104,18 @@ export function useFileManagement(carId: string, sellerId: string) {
       
       const imagesList: CarImage[] = [];
       const documentsList: CarDocument[] = [];
+      const videosList: CarVideo[] = [];
       
       for (const file of allFiles) {
         const isImage = isImageFile(file.file_type, file.file_path);
         const isDoc = isDocumentFile(file.file_type, file.file_path);
+        const isVideo = isVideoFile(file.file_type, file.file_path);
         
         // Generate signed URL if not already present
         let signedUrl = file.signed_url;
         if (!signedUrl) {
-          const bucket = getStorageBucket(file.file_path, isDoc);
+          // Videos are stored in car-images bucket like images
+          const bucket = isDoc ? 'car-files' : 'car-images';
           const { data: urlData } = await supabase.storage
             .from(bucket)
             .createSignedUrl(file.file_path, 3600);
@@ -124,6 +130,16 @@ export function useFileManagement(carId: string, sellerId: string) {
               category: file.category || 'general',
               display_order: file.display_order || 0,
               url: signedUrl
+            });
+          } else if (isVideo) {
+            videosList.push({
+              id: file.id,
+              file_path: file.file_path,
+              file_type: file.file_type,
+              category: file.category || 'walkaround_video',
+              display_order: file.display_order || 0,
+              url: signedUrl,
+              source: file.source || 'car_file_uploads'
             });
           } else if (isDoc) {
             documentsList.push({
@@ -143,6 +159,7 @@ export function useFileManagement(carId: string, sellerId: string) {
       
       setImages(imagesList);
       setDocuments(documentsList);
+      setVideos(videosList);
     } catch (error) {
       console.error('Error fetching files:', error);
       toast({
@@ -153,6 +170,7 @@ export function useFileManagement(carId: string, sellerId: string) {
     } finally {
       setIsLoadingImages(false);
       setIsLoadingDocuments(false);
+      setIsLoadingVideos(false);
     }
   };
 
@@ -303,8 +321,10 @@ export function useFileManagement(carId: string, sellerId: string) {
   return {
     images,
     documents,
+    videos,
     isLoadingImages,
     isLoadingDocuments,
+    isLoadingVideos,
     isUploading,
     uploadFile,
     deleteFile,

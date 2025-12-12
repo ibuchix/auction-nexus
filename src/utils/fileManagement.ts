@@ -21,6 +21,23 @@ export function isImageFile(fileType: string, fileName?: string): boolean {
 }
 
 /**
+ * Determine if a file is a video based on MIME type or extension
+ */
+export function isVideoFile(fileType: string, fileName?: string): boolean {
+  const videoTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/avi'];
+  const videoExtensions = ['.mp4', '.mov', '.webm', '.avi'];
+  
+  if (videoTypes.includes(fileType.toLowerCase())) return true;
+  
+  if (fileName) {
+    const ext = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+    return videoExtensions.includes(ext);
+  }
+  
+  return false;
+}
+
+/**
  * Determine if a file is a document (PDF, DOC, etc.)
  */
 export function isDocumentFile(fileType: string, fileName?: string): boolean {

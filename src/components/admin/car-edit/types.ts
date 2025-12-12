@@ -64,3 +64,13 @@ export interface CarDocument {
   uploaded_at: string;
   source: 'car_file_uploads' | 'manual_file_uploads';
 }
+
+export interface CarVideo {
+  id: string;
+  file_path: string;
+  file_type: string;
+  category: string;
+  display_order: number;
+  url: string;
+  source: 'car_file_uploads' | 'manual_file_uploads';
+}
