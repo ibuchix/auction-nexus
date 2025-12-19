@@ -562,6 +562,68 @@ serve(async (req) => {
         }
         break
 
+      case 'bulkRestoreAuctions':
+        console.log('Bulk restoring auctions...')
+        const { carIds, auctionEndTime } = params
+        
+        if (!carIds || !Array.isArray(carIds) || carIds.length === 0) {
+          throw new Error('carIds array is required')
+        }
+        
+        if (!auctionEndTime) {
+          throw new Error('auctionEndTime is required')
+        }
+        
+        console.log(`Restoring ${carIds.length} auctions to active status with end time: ${auctionEndTime}`)
+        
+        // Update cars table
+        const { data: carsUpdateData, error: carsUpdateError } = await supabase
+          .from('cars')
+          .update({
+            auction_status: 'active',
+            status: 'available',
+            auction_end_time: auctionEndTime,
+            is_auction: true,
+            updated_at: new Date().toISOString()
+          })
+          .in('id', carIds)
+          .select('id, title, auction_status, auction_end_time, current_bid')
+        
+        if (carsUpdateError) {
+          console.error('Cars bulk update error:', carsUpdateError)
+          throw new Error(`Cars bulk update failed: ${carsUpdateError.message}`)
+        }
+        
+        console.log(`Successfully updated ${carsUpdateData?.length || 0} cars`)
+        
+        // Update auction_schedules table
+        const { data: schedulesUpdateData, error: schedulesUpdateError } = await supabase
+          .from('auction_schedules')
+          .update({
+            status: 'active',
+            end_time: auctionEndTime,
+            updated_at: new Date().toISOString(),
+            last_status_change: new Date().toISOString()
+          })
+          .in('car_id', carIds)
+          .select('id, car_id, status, end_time')
+        
+        if (schedulesUpdateError) {
+          console.error('Schedules bulk update error:', schedulesUpdateError)
+          // Don't throw - schedules update is optional
+        }
+        
+        console.log(`Updated ${schedulesUpdateData?.length || 0} auction schedules`)
+        
+        result = {
+          success: true,
+          carsUpdated: carsUpdateData?.length || 0,
+          schedulesUpdated: schedulesUpdateData?.length || 0,
+          cars: carsUpdateData,
+          schedules: schedulesUpdateData
+        }
+        break
+
       default:
         throw new Error(`Unknown action: ${action}`)
     }

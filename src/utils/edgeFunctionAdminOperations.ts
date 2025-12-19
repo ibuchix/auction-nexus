@@ -231,6 +231,14 @@ export const edgeFunctionAdminOperations = {
     return performAdminOperation('recoverAuction', { auctionId, action });
   },
   
+  // Bulk restore auctions to active status
+  bulkRestoreAuctions: async (carIds: string[], auctionEndTime: string) => {
+    console.log('=== Calling bulkRestoreAuctions ===');
+    console.log('Car IDs:', carIds);
+    console.log('Auction End Time:', auctionEndTime);
+    return performAdminOperation('bulkRestoreAuctions', { carIds, auctionEndTime });
+  },
+  
   resetSystemState: async () => {
     try {
       await performAdminOperation('checkSystemHealth');
