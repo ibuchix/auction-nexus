@@ -4,6 +4,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { CarEditFormData } from "../types";
 
 interface VehicleDetailsTabProps {
@@ -86,6 +93,17 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
           {errors.vin && <p className="text-sm text-destructive mt-1">{errors.vin}</p>}
         </div>
 
+        <div>
+          <Label htmlFor="horsepower">Horsepower (HP)</Label>
+          <Input
+            id="horsepower"
+            type="number"
+            value={formData.horsepower || ''}
+            onChange={(e) => updateField('horsepower', e.target.value ? parseInt(e.target.value) : null)}
+            placeholder="e.g., 184"
+          />
+        </div>
+
         <div className="col-span-2 mt-4">
           <h3 className="text-sm font-semibold mb-3">Registration & Documentation</h3>
         </div>
@@ -159,6 +177,191 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
                 </Label>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Vehicle History & Records Section */}
+        <div className="col-span-2 mt-6">
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            Vehicle History & Records
+          </h3>
+        </div>
+
+        <div className="col-span-2 p-4 border rounded-lg bg-muted/30 space-y-4">
+          {/* Origin & Ownership */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold uppercase text-muted-foreground">Origin & Ownership</h4>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="mb-2 block">Country of Origin</Label>
+                <RadioGroup
+                  value={formData.is_polish_origin === null ? '' : formData.is_polish_origin ? 'poland' : 'imported'}
+                  onValueChange={(value) => updateField('is_polish_origin', value === 'poland' ? true : value === 'imported' ? false : null)}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="poland" id="origin-poland" />
+                    <Label htmlFor="origin-poland" className="cursor-pointer">Poland</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="imported" id="origin-imported" />
+                    <Label htmlFor="origin-imported" className="cursor-pointer">Imported/Abroad</Label>
+                  </div>
+                </RadioGroup>
+                {formData.is_polish_origin === null && (
+                  <Badge variant="outline" className="mt-2 w-fit bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                    ⚠️ Not Specified
+                  </Badge>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="owners_count_poland">Number of Owners in Poland</Label>
+                <Input
+                  id="owners_count_poland"
+                  type="number"
+                  min={0}
+                  value={formData.owners_count_poland ?? ''}
+                  onChange={(e) => updateField('owners_count_poland', e.target.value ? parseInt(e.target.value) : null)}
+                  placeholder="e.g., 2"
+                />
+              </div>
+            </div>
+
+            {formData.is_polish_origin === false && (
+              <div className="max-w-xs">
+                <Label htmlFor="import_year">Year of Import</Label>
+                <Input
+                  id="import_year"
+                  type="number"
+                  min={1900}
+                  max={new Date().getFullYear()}
+                  value={formData.import_year ?? ''}
+                  onChange={(e) => updateField('import_year', e.target.value ? parseInt(e.target.value) : null)}
+                  placeholder="e.g., 2022"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* History Records */}
+          <div className="space-y-3 pt-3 border-t">
+            <h4 className="text-xs font-semibold uppercase text-muted-foreground">History Records</h4>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_damaged_record_poland"
+                  checked={formData.is_damaged_record_poland === true}
+                  onCheckedChange={(checked) => updateField('is_damaged_record_poland', checked === true ? true : checked === false ? false : null)}
+                />
+                <Label htmlFor="is_damaged_record_poland" className="cursor-pointer text-sm">
+                  Damaged record (Poland)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_damaged_record_abroad"
+                  checked={formData.is_damaged_record_abroad === true}
+                  onCheckedChange={(checked) => updateField('is_damaged_record_abroad', checked === true ? true : checked === false ? false : null)}
+                />
+                <Label htmlFor="is_damaged_record_abroad" className="cursor-pointer text-sm">
+                  Damaged record (Abroad)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_accident_record_poland"
+                  checked={formData.is_accident_record_poland === true}
+                  onCheckedChange={(checked) => updateField('is_accident_record_poland', checked === true ? true : checked === false ? false : null)}
+                />
+                <Label htmlFor="is_accident_record_poland" className="cursor-pointer text-sm">
+                  Accident record (Poland)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_accident_record_abroad"
+                  checked={formData.is_accident_record_abroad === true}
+                  onCheckedChange={(checked) => updateField('is_accident_record_abroad', checked === true ? true : checked === false ? false : null)}
+                />
+                <Label htmlFor="is_accident_record_abroad" className="cursor-pointer text-sm">
+                  Accident record (Abroad)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_mileage_discrepancy"
+                  checked={formData.has_mileage_discrepancy === true}
+                  onCheckedChange={(checked) => updateField('has_mileage_discrepancy', checked === true ? true : checked === false ? false : null)}
+                />
+                <Label htmlFor="has_mileage_discrepancy" className="cursor-pointer text-sm">
+                  Mileage discrepancy recorded
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_recorded_stolen"
+                  checked={formData.is_recorded_stolen === true}
+                  onCheckedChange={(checked) => updateField('is_recorded_stolen', checked === true ? true : checked === false ? false : null)}
+                />
+                <Label htmlFor="is_recorded_stolen" className="cursor-pointer text-sm text-destructive">
+                  Recorded as stolen
+                </Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Technical Inspection */}
+          <div className="space-y-3 pt-3 border-t">
+            <h4 className="text-xs font-semibold uppercase text-muted-foreground">Technical Inspection</h4>
+            
+            <div className="max-w-xs">
+              <Label>Badanie Techniczne Valid Until</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal mt-1",
+                      !formData.technical_inspection_valid_until && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.technical_inspection_valid_until ? (
+                      format(new Date(formData.technical_inspection_valid_until), "PPP")
+                    ) : (
+                      <span>Select date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.technical_inspection_valid_until ? new Date(formData.technical_inspection_valid_until) : undefined}
+                    onSelect={(date) => updateField('technical_inspection_valid_until', date ? date.toISOString().split('T')[0] : null)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {formData.technical_inspection_valid_until && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-1 text-xs"
+                  onClick={() => updateField('technical_inspection_valid_until', null)}
+                >
+                  Clear date
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -319,11 +522,11 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="has_service_history"
+                id="has_service_history_status"
                 checked={formData.has_service_history}
                 disabled
               />
-              <Label htmlFor="has_service_history" className="cursor-default">
+              <Label htmlFor="has_service_history_status" className="cursor-default">
                 Has Service History
               </Label>
             </div>

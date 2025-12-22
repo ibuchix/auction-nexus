@@ -39,7 +39,19 @@ export function useCarEdit(auction: any) {
     valuation_data: auction.valuation_data || auction.valuationData || null,
     finance_document_name: auction.finance_document_name || auction.financeDocumentName || '',
     finance_document_url: auction.finance_document_url || auction.financeDocumentUrl || '',
-    finance_document_uploaded_at: auction.finance_document_uploaded_at || auction.financeDocumentUploadedAt || null
+    finance_document_uploaded_at: auction.finance_document_uploaded_at || auction.financeDocumentUploadedAt || null,
+    // New vehicle history & specifications fields
+    is_polish_origin: auction.is_polish_origin ?? auction.isPolishOrigin ?? null,
+    owners_count_poland: auction.owners_count_poland ?? auction.ownersCountPoland ?? null,
+    import_year: auction.import_year ?? auction.importYear ?? null,
+    is_damaged_record_poland: auction.is_damaged_record_poland ?? auction.isDamagedRecordPoland ?? null,
+    is_damaged_record_abroad: auction.is_damaged_record_abroad ?? auction.isDamagedRecordAbroad ?? null,
+    is_accident_record_poland: auction.is_accident_record_poland ?? auction.isAccidentRecordPoland ?? null,
+    is_accident_record_abroad: auction.is_accident_record_abroad ?? auction.isAccidentRecordAbroad ?? null,
+    has_mileage_discrepancy: auction.has_mileage_discrepancy ?? auction.hasMileageDiscrepancy ?? null,
+    is_recorded_stolen: auction.is_recorded_stolen ?? auction.isRecordedStolen ?? null,
+    technical_inspection_valid_until: auction.technical_inspection_valid_until ?? auction.technicalInspectionValidUntil ?? null,
+    horsepower: auction.horsepower ?? null
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -86,7 +98,19 @@ export function useCarEdit(auction: any) {
         valuation_data: formData.valuation_data,
         finance_document_name: formData.finance_document_name,
         finance_document_url: formData.finance_document_url,
-        finance_document_uploaded_at: formData.finance_document_uploaded_at
+        finance_document_uploaded_at: formData.finance_document_uploaded_at,
+        // New vehicle history & specifications fields
+        is_polish_origin: formData.is_polish_origin,
+        owners_count_poland: formData.owners_count_poland,
+        import_year: formData.import_year,
+        is_damaged_record_poland: formData.is_damaged_record_poland,
+        is_damaged_record_abroad: formData.is_damaged_record_abroad,
+        is_accident_record_poland: formData.is_accident_record_poland,
+        is_accident_record_abroad: formData.is_accident_record_abroad,
+        has_mileage_discrepancy: formData.has_mileage_discrepancy,
+        is_recorded_stolen: formData.is_recorded_stolen,
+        technical_inspection_valid_until: formData.technical_inspection_valid_until,
+        horsepower: formData.horsepower
       });
 
       sellerInfoSchema.parse({

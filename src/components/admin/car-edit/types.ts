@@ -28,7 +28,19 @@ export const vehicleDetailsSchema = z.object({
   valuation_data: z.any().optional(),
   finance_document_name: z.string().nullable().optional(),
   finance_document_url: z.string().nullable().optional(),
-  finance_document_uploaded_at: z.string().nullable().optional()
+  finance_document_uploaded_at: z.string().nullable().optional(),
+  // New vehicle history & specifications fields
+  is_polish_origin: z.boolean().nullable().optional(),
+  owners_count_poland: z.number().int().min(0).nullable().optional(),
+  import_year: z.number().int().min(1900).max(new Date().getFullYear()).nullable().optional(),
+  is_damaged_record_poland: z.boolean().nullable().optional(),
+  is_damaged_record_abroad: z.boolean().nullable().optional(),
+  is_accident_record_poland: z.boolean().nullable().optional(),
+  is_accident_record_abroad: z.boolean().nullable().optional(),
+  has_mileage_discrepancy: z.boolean().nullable().optional(),
+  is_recorded_stolen: z.boolean().nullable().optional(),
+  technical_inspection_valid_until: z.string().nullable().optional(),
+  horsepower: z.number().int().min(0).nullable().optional()
 });
 
 export const sellerInfoSchema = z.object({
