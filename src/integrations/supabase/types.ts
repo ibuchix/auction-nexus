@@ -2650,6 +2650,8 @@ export type Database = {
         Args: { p_user_id: string; p_vin: string }
         Returns: Json
       }
+      cleanup_cars_history_backlog: { Args: never; Returns: Json }
+      cleanup_cars_history_daily: { Args: never; Returns: Json }
       cleanup_expired_reset_tokens: { Args: never; Returns: undefined }
       cleanup_expired_vin_reservations: { Args: never; Returns: number }
       cleanup_expired_wishlists: { Args: never; Returns: number }
