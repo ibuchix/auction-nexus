@@ -529,6 +529,7 @@ export type Database = {
           finance_document_name: string | null
           finance_document_uploaded_at: string | null
           finance_document_url: string | null
+          first_registration_date: string | null
           form_metadata: Json | null
           fuel_type: string | null
           gearbox_faults: boolean | null
@@ -612,6 +613,7 @@ export type Database = {
           finance_document_name?: string | null
           finance_document_uploaded_at?: string | null
           finance_document_url?: string | null
+          first_registration_date?: string | null
           form_metadata?: Json | null
           fuel_type?: string | null
           gearbox_faults?: boolean | null
@@ -695,6 +697,7 @@ export type Database = {
           finance_document_name?: string | null
           finance_document_uploaded_at?: string | null
           finance_document_url?: string | null
+          first_registration_date?: string | null
           form_metadata?: Json | null
           fuel_type?: string | null
           gearbox_faults?: boolean | null
@@ -1512,6 +1515,7 @@ export type Database = {
           finance_document_name: string | null
           finance_document_uploaded_at: string | null
           finance_document_url: string | null
+          first_registration_date: string | null
           fuel_type: string | null
           gearbox_faults: boolean | null
           has_dents: boolean | null
@@ -1532,6 +1536,7 @@ export type Database = {
           name: string | null
           number_of_keys: number | null
           postcode: string | null
+          registration_number: string | null
           reserve_price: number | null
           runs_smoothly: boolean | null
           seat_material: string | null
@@ -1571,6 +1576,7 @@ export type Database = {
           finance_document_name?: string | null
           finance_document_uploaded_at?: string | null
           finance_document_url?: string | null
+          first_registration_date?: string | null
           fuel_type?: string | null
           gearbox_faults?: boolean | null
           has_dents?: boolean | null
@@ -1591,6 +1597,7 @@ export type Database = {
           name?: string | null
           number_of_keys?: number | null
           postcode?: string | null
+          registration_number?: string | null
           reserve_price?: number | null
           runs_smoothly?: boolean | null
           seat_material?: string | null
@@ -1630,6 +1637,7 @@ export type Database = {
           finance_document_name?: string | null
           finance_document_uploaded_at?: string | null
           finance_document_url?: string | null
+          first_registration_date?: string | null
           fuel_type?: string | null
           gearbox_faults?: boolean | null
           has_dents?: boolean | null
@@ -1650,6 +1658,7 @@ export type Database = {
           name?: string | null
           number_of_keys?: number | null
           postcode?: string | null
+          registration_number?: string | null
           reserve_price?: number | null
           runs_smoothly?: boolean | null
           seat_material?: string | null
@@ -2357,6 +2366,7 @@ export type Database = {
           finance_document_name: string | null
           finance_document_uploaded_at: string | null
           finance_document_url: string | null
+          first_registration_date: string | null
           form_metadata: Json | null
           fuel_type: string | null
           gearbox_faults: boolean | null
@@ -2466,6 +2476,7 @@ export type Database = {
           finance_document_name: string | null
           finance_document_uploaded_at: string | null
           finance_document_url: string | null
+          first_registration_date: string | null
           form_metadata: Json | null
           fuel_type: string | null
           gearbox_faults: boolean | null
@@ -3065,6 +3076,7 @@ export type Database = {
           finance_document_name: string | null
           finance_document_uploaded_at: string | null
           finance_document_url: string | null
+          first_registration_date: string | null
           form_metadata: Json | null
           fuel_type: string | null
           gearbox_faults: boolean | null
@@ -3157,6 +3169,7 @@ export type Database = {
           finance_document_name: string | null
           finance_document_uploaded_at: string | null
           finance_document_url: string | null
+          first_registration_date: string | null
           form_metadata: Json | null
           fuel_type: string | null
           gearbox_faults: boolean | null
