@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_cars_history_changed_at ON cars_history(changed_at)
