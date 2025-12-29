@@ -2292,30 +2292,38 @@ export type Database = {
       }
       cleanup_monitoring_dashboard: {
         Row: {
-          audit_logs_ready_to_clean: number | null
           cars_history_ready_to_clean: number | null
+          cars_ready_to_clean: number | null
           cleanup_urgency: string | null
-          cron_schedule: string | null
           current_audit_logs: number | null
           current_cars_history: number | null
           current_system_logs: number | null
-          failed_runs: number | null
+          expired_tokens_to_clean: number | null
           health_status: string | null
-          is_active: boolean | null
-          jobname: string | null
-          last_audit_logs_deleted: number | null
-          last_cars_history_deleted: number | null
-          last_run_duration: unknown
-          last_run_ended: string | null
-          last_run_started: string | null
-          last_run_status: string | null
-          last_system_logs_deleted: number | null
-          last_total_deleted: number | null
-          next_scheduled_run: string | null
-          successful_runs: number | null
+          manual_valuations_ready_to_clean: number | null
+          monthly_failed_runs: number | null
+          monthly_is_active: boolean | null
+          monthly_job_name: string | null
+          monthly_last_run_duration: unknown
+          monthly_last_run_ended: string | null
+          monthly_last_run_started: string | null
+          monthly_last_run_status: string | null
+          monthly_schedule: string | null
+          monthly_successful_runs: number | null
+          monthly_total_runs: number | null
+          old_notifications_to_clean: number | null
           system_logs_ready_to_clean: number | null
-          total_rows_deleted_lifetime: number | null
-          total_runs: number | null
+          vin_cache_ready_to_clean: number | null
+          weekly_failed_runs: number | null
+          weekly_is_active: boolean | null
+          weekly_job_name: string | null
+          weekly_last_run_duration: unknown
+          weekly_last_run_ended: string | null
+          weekly_last_run_started: string | null
+          weekly_last_run_status: string | null
+          weekly_schedule: string | null
+          weekly_successful_runs: number | null
+          weekly_total_runs: number | null
         }
         Relationships: []
       }
