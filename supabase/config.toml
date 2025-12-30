@@ -25,3 +25,7 @@ project_id = "sdvakfhmoaoucmhbhwvy"
 [functions.cleanup-old-vehicle-files]
   verify_jwt = false
   import_map = "./import_map.json"
+
+[functions.cleanup-cars-history]
+  verify_jwt = false
+  import_map = "./import_map.json"
