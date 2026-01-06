@@ -118,6 +118,47 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
           />
         </div>
 
+        <div>
+          <Label>Date of First Registration</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal mt-1",
+                  !formData.first_registration_date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.first_registration_date ? (
+                  format(new Date(formData.first_registration_date), "PPP")
+                ) : (
+                  <span>Select date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.first_registration_date ? new Date(formData.first_registration_date) : undefined}
+                onSelect={(date) => updateField('first_registration_date', date ? date.toISOString().split('T')[0] : null)}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          {formData.first_registration_date && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-1 text-xs"
+              onClick={() => updateField('first_registration_date', null)}
+            >
+              Clear date
+            </Button>
+          )}
+        </div>
+
         <div className="col-span-2 grid grid-cols-3 gap-4">
           <div className="flex flex-col space-y-2">
             <Label>Registration Status</Label>

@@ -51,7 +51,8 @@ export function useCarEdit(auction: any) {
     has_mileage_discrepancy: auction.has_mileage_discrepancy ?? auction.hasMileageDiscrepancy ?? null,
     is_recorded_stolen: auction.is_recorded_stolen ?? auction.isRecordedStolen ?? null,
     technical_inspection_valid_until: auction.technical_inspection_valid_until ?? auction.technicalInspectionValidUntil ?? null,
-    horsepower: auction.horsepower ?? null
+    horsepower: auction.horsepower ?? null,
+    first_registration_date: auction.first_registration_date ?? auction.firstRegistrationDate ?? null
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -110,7 +111,8 @@ export function useCarEdit(auction: any) {
         has_mileage_discrepancy: formData.has_mileage_discrepancy,
         is_recorded_stolen: formData.is_recorded_stolen,
         technical_inspection_valid_until: formData.technical_inspection_valid_until,
-        horsepower: formData.horsepower
+        horsepower: formData.horsepower,
+        first_registration_date: formData.first_registration_date
       });
 
       sellerInfoSchema.parse({
