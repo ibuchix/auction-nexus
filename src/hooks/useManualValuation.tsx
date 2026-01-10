@@ -91,7 +91,7 @@ export function useManualValuation() {
       try {
         console.log("Fetching manual valuations with status:", activeStatus);
         const { data, error } = await supabase.rpc('admin_get_manual_valuations', {
-          p_status: activeStatus === "all" ? "all" : activeStatus
+          p_status: activeStatus === "all" ? null : activeStatus
         });
 
         if (error) {
@@ -101,27 +101,25 @@ export function useManualValuation() {
 
         console.log("Raw RPC data:", data);
 
-        // The RPC returns { success: true, data: [...] }
         if (!data) {
           console.log("No data received");
           return [];
         }
 
-        // Type cast the response to expected format
-        const response = data as { success: boolean; data?: any[]; error?: string };
-
-        // Check if the response has the expected structure
-        if (response.success && Array.isArray(response.data)) {
-          console.log("Parsed valuations:", response.data);
-          return response.data as ManualValuationData[];
-        } else if (response.success === false) {
-          console.error("RPC returned error:", response.error);
-          toast.error(response.error || "Failed to fetch valuations");
-          return [];
-        } else {
-          console.log("RPC returned unexpected format:", data);
-          return [];
+        // The RPC returns a plain JSONB array directly
+        if (Array.isArray(data)) {
+          console.log("Parsed valuations:", data);
+          return data as unknown as ManualValuationData[];
         }
+
+        // Fallback for wrapped response format (legacy support)
+        const response = data as { success: boolean; data?: any[]; error?: string };
+        if (response.success && Array.isArray(response.data)) {
+          return response.data as ManualValuationData[];
+        }
+
+        console.log("RPC returned unexpected format:", data);
+        return [];
       } catch (error) {
         console.error("Error fetching manual valuations:", error);
         throw error;
