@@ -419,6 +419,22 @@ export function VehicleDetailsTab({ formData, errors, updateField, financeDocCou
         </div>
 
         <div>
+          <Label className="text-muted-foreground">Seller's Acceptable Price (PLN)</Label>
+          <div className="mt-1 p-2 bg-muted/50 rounded-md border">
+            {formData.seller_acceptable_price != null ? (
+              <span className="font-semibold text-primary">
+                {formData.seller_acceptable_price.toLocaleString('pl-PL')} PLN
+              </span>
+            ) : (
+              <span className="text-muted-foreground text-sm">Not specified by seller</span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            The minimum price the seller will accept (read-only)
+          </p>
+        </div>
+
+        <div>
           <Label htmlFor="transmission">Transmission *</Label>
           <Select
             value={formData.transmission}

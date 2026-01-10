@@ -36,6 +36,26 @@ export function ManualValuationFinancial({ valuation }: ManualValuationFinancial
   return (
     <div className="space-y-6">
       
+      {/* Seller's Acceptable Price - prominent display */}
+      {valuation.seller_acceptable_price != null && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="text-primary">💰</span>
+              Seller's Acceptable Price
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">
+              <PLNCurrency value={valuation.seller_acceptable_price} />
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              The minimum price the seller is willing to accept for this vehicle
+            </p>
+          </CardContent>
+        </Card>
+      )}
+      
       {valuation.has_outstanding_finance && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
