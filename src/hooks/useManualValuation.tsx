@@ -48,6 +48,7 @@ export interface ManualValuationData {
   county: string | null;
   mobile_number: string | null;
   reserve_price: number | null;
+  seller_acceptable_price: number | null;
   created_at: string;
   status: string | null;
   valuation_result: any;

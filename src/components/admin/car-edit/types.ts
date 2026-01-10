@@ -40,6 +40,7 @@ export const vehicleDetailsSchema = z.object({
   has_mileage_discrepancy: z.boolean().nullable().optional(),
   is_recorded_stolen: z.boolean().nullable().optional(),
   technical_inspection_valid_until: z.string().nullable().optional(),
+  seller_acceptable_price: z.number().nullable().optional(),
   horsepower: z.number().int().min(0).nullable().optional(),
   first_registration_date: z.string().nullable().optional()
 });

@@ -571,6 +571,7 @@ export type Database = {
           rim_photos: Json | null
           runs_smoothly: boolean | null
           seat_material: string | null
+          seller_acceptable_price: number | null
           seller_id: string | null
           seller_name: string | null
           seller_notes: string | null
@@ -655,6 +656,7 @@ export type Database = {
           rim_photos?: Json | null
           runs_smoothly?: boolean | null
           seat_material?: string | null
+          seller_acceptable_price?: number | null
           seller_id?: string | null
           seller_name?: string | null
           seller_notes?: string | null
@@ -739,6 +741,7 @@ export type Database = {
           rim_photos?: Json | null
           runs_smoothly?: boolean | null
           seat_material?: string | null
+          seller_acceptable_price?: number | null
           seller_id?: string | null
           seller_name?: string | null
           seller_notes?: string | null
@@ -1540,6 +1543,7 @@ export type Database = {
           reserve_price: number | null
           runs_smoothly: boolean | null
           seat_material: string | null
+          seller_acceptable_price: number | null
           seller_notes: string | null
           service_history_files: string[] | null
           service_history_type: string | null
@@ -1601,6 +1605,7 @@ export type Database = {
           reserve_price?: number | null
           runs_smoothly?: boolean | null
           seat_material?: string | null
+          seller_acceptable_price?: number | null
           seller_notes?: string | null
           service_history_files?: string[] | null
           service_history_type?: string | null
@@ -1662,6 +1667,7 @@ export type Database = {
           reserve_price?: number | null
           runs_smoothly?: boolean | null
           seat_material?: string | null
+          seller_acceptable_price?: number | null
           seller_notes?: string | null
           service_history_files?: string[] | null
           service_history_type?: string | null
@@ -2416,6 +2422,7 @@ export type Database = {
           rim_photos: Json | null
           runs_smoothly: boolean | null
           seat_material: string | null
+          seller_acceptable_price: number | null
           seller_id: string | null
           seller_name: string | null
           seller_notes: string | null
@@ -2526,6 +2533,7 @@ export type Database = {
           rim_photos: Json | null
           runs_smoothly: boolean | null
           seat_material: string | null
+          seller_acceptable_price: number | null
           seller_id: string | null
           seller_name: string | null
           seller_notes: string | null
@@ -2699,10 +2707,9 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Json
       }
-      create_simple_car_listing: {
-        Args: { p_car_data: Json; p_user_id?: string }
-        Returns: Json
-      }
+      create_simple_car_listing:
+        | { Args: { p_car_data: Json }; Returns: Json }
+        | { Args: { p_car_data: Json; p_user_id?: string }; Returns: Json }
       create_simple_manual_valuation: {
         Args: { user_id_param: string; valuation_data: Json }
         Returns: Json
@@ -3129,6 +3136,7 @@ export type Database = {
           rim_photos: Json | null
           runs_smoothly: boolean | null
           seat_material: string | null
+          seller_acceptable_price: number | null
           seller_id: string | null
           seller_name: string | null
           seller_notes: string | null
@@ -3222,6 +3230,7 @@ export type Database = {
           rim_photos: Json | null
           runs_smoothly: boolean | null
           seat_material: string | null
+          seller_acceptable_price: number | null
           seller_id: string | null
           seller_name: string | null
           seller_notes: string | null
