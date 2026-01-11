@@ -38,33 +38,35 @@ export function useOptimizedAuctionManagement() {
   const currentState = tabStates[currentTab];
 
   // Build tab-specific query with database-level filtering
-  const buildTabQuery = useCallback((tab: TabType, page: number, itemsPerPage: number) => {
+  const buildTabQuery = useCallback(async (tab: TabType, page: number, itemsPerPage: number): Promise<{ data: any[]; error: any; count: number }> => {
     const offset = (page - 1) * itemsPerPage;
     const limit = offset + itemsPerPage - 1;
     
     // Tab-specific filters with appropriate joins
     switch (tab) {
       case 'ready': {
-        // Use LEFT JOIN to find cars that have NO auction schedules
-        // This avoids the URL length issue from excluding 600+ UUIDs
-        let query = supabase
-          .from('cars')
-          .select(`
-            *,
-            auction_schedules!left(id)
-          `, { count: 'exact' })
-          .gt('reserve_price', 0)
-          .is('auction_schedules.id', null);  // Only cars with NO matching auction_schedules
-
-        if (searchTerm) {
-          query = query.or(
-            `title.ilike.%${searchTerm}%,make.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%,vin.ilike.%${searchTerm}%`
-          );
+        // Use RPC function with NOT EXISTS to properly exclude cars with auction schedules
+        // This avoids PostgREST's limitation with anti-join filtering
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_cars_ready_for_auction', {
+          p_search_term: searchTerm || null,
+          p_limit: itemsPerPage,
+          p_offset: offset
+        });
+        
+        if (rpcError) {
+          console.error('❌ [OptimizedAuctionMgmt] RPC error for ready tab:', rpcError);
+          return { data: [], error: rpcError, count: 0 };
         }
-
-        return query
-          .order('created_at', { ascending: false })
-          .range(offset, limit);
+        
+        // RPC returns [{cars_data: jsonb, total_count: bigint}]
+        const result = rpcData?.[0];
+        const carsData = Array.isArray(result?.cars_data) ? result.cars_data : [];
+        
+        return {
+          data: carsData,
+          error: null,
+          count: Number(result?.total_count || 0)
+        };
       }
       
       case 'active': {
@@ -100,9 +102,11 @@ export function useOptimizedAuctionManagement() {
           );
         }
 
-        return query
+        const result = await query
           .order('created_at', { ascending: false })
           .range(offset, limit);
+          
+        return { data: result.data || [], error: result.error, count: result.count || 0 };
       }
       
       case 'ended': {
@@ -133,9 +137,11 @@ export function useOptimizedAuctionManagement() {
           );
         }
 
-        return query
+        const result = await query
           .order('created_at', { ascending: false })
           .range(offset, limit);
+          
+        return { data: result.data || [], error: result.error, count: result.count || 0 };
       }
       
       case 'notConfigured': {
@@ -151,9 +157,11 @@ export function useOptimizedAuctionManagement() {
           );
         }
 
-        return query
+        const result = await query
           .order('created_at', { ascending: false })
           .range(offset, limit);
+          
+        return { data: result.data || [], error: result.error, count: result.count || 0 };
       }
       
       default:
@@ -171,8 +179,7 @@ export function useOptimizedAuctionManagement() {
     queryKey: ['optimizedAuctionManagement', currentTab, searchTerm, currentState.currentPage, pageSize],
     queryFn: async () => {
       try {
-        const query = await buildTabQuery(currentTab, currentState.currentPage, pageSize);
-        const { data, error, count } = await query;
+        const { data, error, count } = await buildTabQuery(currentTab, currentState.currentPage, pageSize);
         
         if (error) {
           console.error('❌ [OptimizedAuctionMgmt] Database error:', error);
@@ -323,8 +330,7 @@ export function useOptimizedAuctionManagement() {
     setIsExporting(true);
     try {
       // Fetch all data for current tab (no pagination)
-      const query = await buildTabQuery(currentTab, 1, 10000);
-      const { data, error } = await query;
+      const { data, error } = await buildTabQuery(currentTab, 1, 10000);
       
       if (error) {
         throw error;

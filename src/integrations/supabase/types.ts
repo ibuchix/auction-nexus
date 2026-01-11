@@ -2929,6 +2929,13 @@ export type Database = {
           year: number
         }[]
       }
+      get_cars_ready_for_auction: {
+        Args: { p_limit?: number; p_offset?: number; p_search_term?: string }
+        Returns: {
+          cars_data: Json
+          total_count: number
+        }[]
+      }
       get_cars_with_seller_info: {
         Args: never
         Returns: {
