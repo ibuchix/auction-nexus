@@ -45,35 +45,26 @@ export function useOptimizedAuctionManagement() {
     // Tab-specific filters with appropriate joins
     switch (tab) {
       case 'ready': {
-        // Get car IDs that have ANY auction schedule (to exclude them)
-        // Only show cars that have NEVER been to auction
-        return supabase
-          .from('auction_schedules')
-          .select('car_id')
-          .then(({ data: allSchedules }) => {
-            const excludeCarIds = allSchedules?.map(s => s.car_id) || [];
-            
-            // Query cars with reserve_price > 0, excluding ALL cars with any schedule
-            let query = supabase
-              .from('cars')
-              .select(`*`, { count: 'exact' })
-              .gt('reserve_price', 0);
+        // Use LEFT JOIN to find cars that have NO auction schedules
+        // This avoids the URL length issue from excluding 600+ UUIDs
+        let query = supabase
+          .from('cars')
+          .select(`
+            *,
+            auction_schedules!left(id)
+          `, { count: 'exact' })
+          .gt('reserve_price', 0)
+          .is('auction_schedules.id', null);  // Only cars with NO matching auction_schedules
 
-            // Exclude cars with ANY auction history
-            if (excludeCarIds.length > 0) {
-              query = query.not('id', 'in', `(${excludeCarIds.join(',')})`);
-            }
+        if (searchTerm) {
+          query = query.or(
+            `title.ilike.%${searchTerm}%,make.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%,vin.ilike.%${searchTerm}%`
+          );
+        }
 
-            if (searchTerm) {
-              query = query.or(
-                `title.ilike.%${searchTerm}%,make.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%,vin.ilike.%${searchTerm}%`
-              );
-            }
-
-            return query
-              .order('created_at', { ascending: false })
-              .range(offset, limit);
-          });
+        return query
+          .order('created_at', { ascending: false })
+          .range(offset, limit);
       }
       
       case 'active': {
