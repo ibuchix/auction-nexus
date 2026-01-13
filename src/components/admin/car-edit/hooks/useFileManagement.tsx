@@ -114,8 +114,10 @@ export function useFileManagement(carId: string, sellerId: string) {
         // Generate signed URL if not already present
         let signedUrl = file.signed_url;
         if (!signedUrl) {
-          // Videos are stored in car-images bucket like images
-          const bucket = isDoc ? 'car-files' : 'car-images';
+          // Use getStorageBucket to correctly determine bucket from file path
+          // This handles files transferred from manual valuations that have
+          // 'manual-valuations/' prefix in their file_path
+          const bucket = getStorageBucket(file.file_path, isDoc);
           const { data: urlData } = await supabase.storage
             .from(bucket)
             .createSignedUrl(file.file_path, 3600);
