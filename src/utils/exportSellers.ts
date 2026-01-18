@@ -14,7 +14,7 @@ interface Seller {
   active_listings: number;
 }
 
-export function exportSellersToCSV(sellers: Seller[], exportType: 'emails_only' | 'full' = 'emails_only') {
+export function exportSellersToCSV(sellers: Seller[], exportType: 'emails_only' | 'with_listing_status' | 'full' = 'emails_only') {
   if (!sellers || sellers.length === 0) {
     throw new Error("No sellers to export");
   }
@@ -37,6 +37,21 @@ export function exportSellersToCSV(sellers: Seller[], exportType: 'emails_only' 
     rows = sellers
       .filter(seller => seller.email)
       .map(seller => [seller.email!]);
+  } else if (exportType === 'with_listing_status') {
+    // Email with listing status export
+    headers = ["Email", "Listing Status", "Active Listings", "Total Listings"];
+    rows = sellers
+      .filter(seller => seller.email)
+      .map(seller => {
+        const hasListings = (seller.total_listings || 0) > 0;
+        const listingStatus = hasListings ? "Has Listings" : "No Listings";
+        return [
+          seller.email!,
+          listingStatus,
+          String(seller.active_listings || 0),
+          String(seller.total_listings || 0)
+        ];
+      });
   } else {
     // Full seller data export
     headers = [
@@ -77,7 +92,8 @@ export function exportSellersToCSV(sellers: Seller[], exportType: 'emails_only' 
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
   
-  const typeLabel = exportType === 'emails_only' ? 'emails' : 'full';
+  const typeLabel = exportType === 'emails_only' ? 'emails' : 
+                    exportType === 'with_listing_status' ? 'emails-listing-status' : 'full';
   const filename = `sellers-${typeLabel}-${format(new Date(), "yyyyMMdd-HHmmss")}.csv`;
   
   link.setAttribute("href", url);
