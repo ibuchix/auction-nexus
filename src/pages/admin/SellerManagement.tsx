@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Loader2, Download } from "lucide-react";
+import { Loader2, Download, ChevronDown } from "lucide-react";
 import { SellerList } from "@/components/admin/seller-management/SellerList";
 import { DeleteSellerDialog } from "@/components/admin/seller-management/DeleteSellerDialog";
 import { SellerPagination } from "@/components/admin/seller-management/SellerPagination";
@@ -9,6 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { exportSellersToCSV } from "@/utils/exportSellers";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const SellerManagement = () => {
   const {
@@ -58,18 +64,21 @@ const SellerManagement = () => {
     setCurrentPage(1); // Reset to first page when searching
   };
 
-  const handleExportEmails = () => {
+  const handleExport = (exportType: 'emails_only' | 'with_listing_status' | 'full') => {
     if (paginatedSellers.length === 0) {
       toast.error("No sellers on current page to export");
       return;
     }
 
     try {
-      exportSellersToCSV(paginatedSellers, 'emails_only');
-      toast.success(`Exported ${paginatedSellers.length} seller email(s)`);
+      exportSellersToCSV(paginatedSellers, exportType);
+      const typeLabel = exportType === 'emails_only' ? 'email(s)' :
+                        exportType === 'with_listing_status' ? 'seller(s) with listing status' :
+                        'seller(s) with full data';
+      toast.success(`Exported ${paginatedSellers.length} ${typeLabel}`);
     } catch (error) {
       console.error('Error exporting sellers:', error);
-      toast.error('Failed to export seller emails');
+      toast.error('Failed to export sellers');
     }
   };
 
@@ -89,18 +98,33 @@ const SellerManagement = () => {
           <p className="text-muted-foreground">Manage and monitor seller accounts</p>
         </div>
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2" 
-            onClick={handleExportEmails}
-            disabled={paginatedSellers.length === 0}
-          >
-            <Download className="h-4 w-4" />
-            Export Emails
-            {paginatedSellers.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{paginatedSellers.length}</Badge>
-            )}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                disabled={paginatedSellers.length === 0}
+              >
+                <Download className="h-4 w-4" />
+                Export
+                {paginatedSellers.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">{paginatedSellers.length}</Badge>
+                )}
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('emails_only')}>
+                Export Emails Only
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('with_listing_status')}>
+                Export with Listing Status
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('full')}>
+                Export Full Data
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="text-sm text-muted-foreground">
             Total Sellers: {sellers?.length || 0}
           </div>
