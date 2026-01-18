@@ -1,10 +1,14 @@
 import { useState, useMemo } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { SellerList } from "@/components/admin/seller-management/SellerList";
 import { DeleteSellerDialog } from "@/components/admin/seller-management/DeleteSellerDialog";
 import { SellerPagination } from "@/components/admin/seller-management/SellerPagination";
 import { SellerSearch } from "@/components/admin/seller-management/SellerSearch";
 import { useSellerManagement } from "@/hooks/useSellerManagement";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { exportSellersToCSV } from "@/utils/exportSellers";
 
 const SellerManagement = () => {
   const {
@@ -54,6 +58,21 @@ const SellerManagement = () => {
     setCurrentPage(1); // Reset to first page when searching
   };
 
+  const handleExportEmails = () => {
+    if (paginatedSellers.length === 0) {
+      toast.error("No sellers on current page to export");
+      return;
+    }
+
+    try {
+      exportSellersToCSV(paginatedSellers, 'emails_only');
+      toast.success(`Exported ${paginatedSellers.length} seller email(s)`);
+    } catch (error) {
+      console.error('Error exporting sellers:', error);
+      toast.error('Failed to export seller emails');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -67,10 +86,24 @@ const SellerManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Seller Management</h1>
-          <p className="text-gray-600">Manage and monitor seller accounts</p>
+          <p className="text-muted-foreground">Manage and monitor seller accounts</p>
         </div>
-        <div className="text-sm text-gray-500">
-          Total Sellers: {sellers?.length || 0}
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2" 
+            onClick={handleExportEmails}
+            disabled={paginatedSellers.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Export Emails
+            {paginatedSellers.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{paginatedSellers.length}</Badge>
+            )}
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            Total Sellers: {sellers?.length || 0}
+          </div>
         </div>
       </div>
 
