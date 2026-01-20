@@ -156,6 +156,15 @@ export const ManualValuationDialog = ({
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="first_registration_date">Date of First Registration</Label>
+                <Input
+                  id="first_registration_date"
+                  type="date"
+                  value={editData.first_registration_date !== undefined ? editData.first_registration_date : (selectedValuation.first_registration_date || "")}
+                  onChange={(e) => handleUpdateField("first_registration_date", e.target.value || null)}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="transmission">Transmission</Label>
                 <Select
                   value={editData.transmission !== undefined ? editData.transmission : (selectedValuation.transmission || "")}
