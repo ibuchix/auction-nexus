@@ -22,6 +22,7 @@ export interface ManualValuationData {
   transmission: string | null;
   mileage: number | null;
   registration_number: string | null;
+  first_registration_date: string | null;
   features: any;
   contact_email: string | null;
   contact_phone: string | null;
