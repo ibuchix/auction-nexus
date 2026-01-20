@@ -97,7 +97,10 @@ export const ManualValuationDialog = ({
             <TabsTrigger value="details">Vehicle Details</TabsTrigger>
             <TabsTrigger value="financial">Financial & Docs</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
-            <TabsTrigger value="images">Images ({selectedValuation.images?.length || 0})</TabsTrigger>
+            <TabsTrigger value="images">
+              Images ({selectedValuation.images?.length || 0})
+              {(selectedValuation.videos?.length || 0) > 0 && ` / Videos (${selectedValuation.videos.length})`}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="space-y-6">
@@ -451,7 +454,10 @@ export const ManualValuationDialog = ({
           </TabsContent>
 
           <TabsContent value="images">
-            <ManualValuationImages images={selectedValuation.images || []} />
+            <ManualValuationImages 
+              images={selectedValuation.images || []} 
+              videos={selectedValuation.videos || []}
+            />
           </TabsContent>
         </Tabs>
 

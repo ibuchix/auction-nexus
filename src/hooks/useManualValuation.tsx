@@ -12,6 +12,15 @@ export interface ManualValuationImage {
   created_at: string;
 }
 
+export interface ManualValuationVideo {
+  id: string;
+  file_path: string;
+  file_type: string;
+  category: string | null;
+  display_order: number;
+  created_at: string;
+}
+
 export interface ManualValuationData {
   id: string;
   user_id: string;
@@ -56,6 +65,7 @@ export interface ManualValuationData {
   updated_at: string | null;
   fuel_type: string | null;
   images: ManualValuationImage[];
+  videos: ManualValuationVideo[];
   // Condition questions
   ac_working: boolean | null;
   windows_working: boolean | null;
