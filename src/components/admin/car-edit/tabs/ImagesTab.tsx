@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Upload, Trash2, GripVertical, Video } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import type { CarImage, CarVideo } from "../types";
 
 interface ImagesTabProps {
@@ -12,7 +13,7 @@ interface ImagesTabProps {
   isLoading: boolean;
   isLoadingVideos: boolean;
   isUploading: boolean;
-  uploadFile: (file: File, category: string, fileType: 'image') => Promise<boolean>;
+  uploadFile: (file: File, category: string, fileType: 'image' | 'video') => Promise<boolean>;
   deleteFile: (fileId: string, filePath: string, source: 'car' | 'manual') => Promise<boolean>;
   reorderFiles: (images: CarImage[]) => Promise<boolean>;
 }
@@ -20,6 +21,7 @@ interface ImagesTabProps {
 export function ImagesTab({ images, videos, isLoading, isLoadingVideos, isUploading, uploadFile, deleteFile, reorderFiles }: ImagesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState('exterior_front');
   const [deleteImageId, setDeleteImageId] = useState<{ id: string; path: string; type: 'image' | 'video' } | null>(null);
+  const { toast } = useToast();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -29,6 +31,28 @@ export function ImagesTab({ images, videos, isLoading, isLoadingVideos, isUpload
       await uploadFile(file, selectedCategory, 'image');
     }
 
+    e.target.value = '';
+  };
+
+  const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    
+    // File size validation (100MB limit for videos)
+    const maxSizeMB = 100;
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: `Video must be less than ${maxSizeMB}MB`,
+        variant: "destructive"
+      });
+      e.target.value = '';
+      return;
+    }
+    
+    await uploadFile(file, 'walkaround_video', 'video');
     e.target.value = '';
   };
 
@@ -64,47 +88,67 @@ export function ImagesTab({ images, videos, isLoading, isLoadingVideos, isUpload
 
   return (
     <div className="space-y-6">
-      {/* Videos Section */}
-      {(videos.length > 0 || isLoadingVideos) && (
-        <div className="space-y-4">
+      {/* Walkaround Video Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Video className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Videos ({videos.length})</h3>
+            <h3 className="text-lg font-semibold">Walkaround Video</h3>
           </div>
           
-          {isLoadingVideos ? (
-            <div className="flex items-center justify-center py-4">Loading videos...</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {videos.map((video) => (
-                <div key={video.id} className="relative group border rounded-lg overflow-hidden bg-muted">
-                  <video
-                    src={video.url}
-                    controls
-                    className="w-full h-64 object-contain bg-black"
-                    preload="metadata"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => setDeleteImageId({ id: video.id, path: video.file_path, type: 'video' })}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="p-2 bg-background">
-                    <p className="text-sm font-medium">{formatCategory(video.category)}</p>
-                    <p className="text-xs text-muted-foreground">{video.file_type}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Upload Video Button */}
+          <Button asChild disabled={isUploading} variant="outline">
+            <label className="cursor-pointer">
+              <Upload className="h-4 w-4 mr-2" />
+              {isUploading ? 'Uploading...' : videos.length > 0 ? 'Replace Video' : 'Upload Video'}
+              <input
+                type="file"
+                accept="video/mp4,video/quicktime,video/webm,video/x-msvideo,.mp4,.mov,.webm,.avi"
+                className="hidden"
+                onChange={handleVideoSelect}
+              />
+            </label>
+          </Button>
         </div>
-      )}
+
+        {isLoadingVideos ? (
+          <div className="flex items-center justify-center py-4">Loading videos...</div>
+        ) : videos.length === 0 ? (
+          <div className="text-center py-8 border-2 border-dashed rounded-lg">
+            <Video className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">No walkaround video uploaded</p>
+            <p className="text-sm text-muted-foreground mt-1">Upload a video to showcase the vehicle</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {videos.map((video) => (
+              <div key={video.id} className="relative group border rounded-lg overflow-hidden bg-muted">
+                <video
+                  src={video.url}
+                  controls
+                  className="w-full h-64 object-contain bg-black"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setDeleteImageId({ id: video.id, path: video.file_path, type: 'video' })}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="p-2 bg-background">
+                  <p className="text-sm font-medium">{formatCategory(video.category)}</p>
+                  <p className="text-xs text-muted-foreground">{video.file_type}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Images Section */}
       <div className="space-y-4">

@@ -176,10 +176,11 @@ export function useFileManagement(carId: string, sellerId: string) {
     }
   };
 
-  const uploadFile = async (file: File, category: string, fileType: 'image' | 'document') => {
+  const uploadFile = async (file: File, category: string, fileType: 'image' | 'document' | 'video') => {
     setIsUploading(true);
     try {
       const timestamp = Date.now();
+      // Videos go to car-images bucket like images
       const bucket = fileType === 'document' ? 'car-files' : 'car-images';
       const filePath = `${carId}/${category}/${timestamp}-${file.name}`;
 
@@ -194,7 +195,7 @@ export function useFileManagement(carId: string, sellerId: string) {
       if (uploadError) throw uploadError;
 
       // Calculate next display order
-      const currentFiles = fileType === 'image' ? images : documents;
+      const currentFiles = fileType === 'image' ? images : fileType === 'video' ? videos : documents;
       const nextOrder = Math.max(0, ...currentFiles.map(f => f.display_order)) + 1;
       
       // Use RPC function to bypass RLS
@@ -210,8 +211,9 @@ export function useFileManagement(carId: string, sellerId: string) {
 
       if (dbError) throw dbError;
 
+      const fileTypeLabel = fileType === 'image' ? 'Image' : fileType === 'video' ? 'Video' : 'Document';
       toast({
-        title: `${fileType === 'image' ? 'Image' : 'Document'} uploaded`,
+        title: `${fileTypeLabel} uploaded`,
         description: "File added successfully"
       });
 
