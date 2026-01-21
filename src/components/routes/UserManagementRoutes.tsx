@@ -1,4 +1,3 @@
-
 import { Route } from "react-router-dom";
 import { AdminProtectedRoute } from "./AdminProtectedRoute";
 import DealerVerification from "@/pages/admin/DealerVerification";
@@ -6,6 +5,7 @@ import DealerManagement from "@/pages/admin/DealerManagement";
 import UserManagement from "@/pages/admin/UserManagement";
 import SellerManagement from "@/pages/admin/SellerManagement";
 import ManualValuation from "@/pages/admin/ManualValuation";
+import ValuationStats from "@/pages/admin/ValuationStats";
 
 export const UserManagementRoutes = (
   <>
@@ -46,6 +46,14 @@ export const UserManagementRoutes = (
       element={
         <AdminProtectedRoute>
           <ManualValuation />
+        </AdminProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/admin/valuation-stats" 
+      element={
+        <AdminProtectedRoute>
+          <ValuationStats />
         </AdminProtectedRoute>
       } 
     />

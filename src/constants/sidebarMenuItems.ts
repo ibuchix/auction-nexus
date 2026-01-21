@@ -80,6 +80,10 @@ export const menuItems: SidebarMenuItem[] = [
         title: "Dealer Verification",
         path: "/admin/dealers/verification",
       },
+      {
+        title: "Valuation Stats",
+        path: "/admin/valuation-stats",
+      },
     ],
   },
   {
