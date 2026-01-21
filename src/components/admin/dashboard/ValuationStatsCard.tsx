@@ -68,7 +68,7 @@ export const ValuationStatsCard = () => {
             </div>
 
             {/* Bar Chart */}
-            <div className="h-[140px] w-full">
+            <div className="h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                   <XAxis
