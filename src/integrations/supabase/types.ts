@@ -3338,6 +3338,13 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Json
       }
+      get_valuation_stats_last_7_days: {
+        Args: never
+        Returns: {
+          check_count: number
+          valuation_date: string
+        }[]
+      }
       get_vin_valuation_cache: {
         Args: { p_log_id?: string; p_mileage: number; p_vin: string }
         Returns: Json

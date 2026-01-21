@@ -1,10 +1,10 @@
-
 import { DashboardHeader } from "@/components/admin/dashboard/DashboardHeader";
 import { AdminCardGrid } from "@/components/admin/dashboard/AdminCardGrid";
 import { AdminActions } from "@/components/admin/dashboard/AdminActions";
 import { AuctionSystemStatus } from "@/components/admin/dashboard/AuctionSystemStatus";
 import { ActiveAuctionsMonitor } from "@/components/admin/dashboard/ActiveAuctionsMonitor";
 import { AuctionOperationsLogView } from "@/components/admin/audit-logs/AuctionOperationsLogView";
+import { ValuationStatsCard } from "@/components/admin/dashboard/ValuationStatsCard";
 
 const AdminDashboard = () => {
   return (
@@ -14,7 +14,12 @@ const AdminDashboard = () => {
         <AdminActions />
       </div>
 
-      <AuctionSystemStatus />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <AuctionSystemStatus />
+        </div>
+        <ValuationStatsCard />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActiveAuctionsMonitor />
