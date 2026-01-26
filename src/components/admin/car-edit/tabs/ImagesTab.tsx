@@ -168,8 +168,18 @@ export function ImagesTab({ images, videos, isLoading, isLoadingVideos, isUpload
                 <SelectItem value="interior_rear">Interior - Rear</SelectItem>
                 <SelectItem value="engine_bay">Engine Bay</SelectItem>
                 <SelectItem value="dashboard">Dashboard</SelectItem>
-                <SelectItem value="damage">Damage</SelectItem>
-                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="rim_front_left">Rim - Front Left</SelectItem>
+                <SelectItem value="rim_front_right">Rim - Front Right</SelectItem>
+                <SelectItem value="rim_rear_left">Rim - Rear Left</SelectItem>
+                <SelectItem value="rim_rear_right">Rim - Rear Right</SelectItem>
+                <SelectItem value="additional_1">Additional 1</SelectItem>
+                <SelectItem value="additional_2">Additional 2</SelectItem>
+                <SelectItem value="additional_3">Additional 3</SelectItem>
+                <SelectItem value="additional_4">Additional 4</SelectItem>
+                <SelectItem value="additional_5">Additional 5</SelectItem>
+                <SelectItem value="additional_6">Additional 6</SelectItem>
+                <SelectItem value="additional_7">Additional 7</SelectItem>
+                <SelectItem value="additional_8">Additional 8</SelectItem>
               </SelectContent>
             </Select>
           </div>

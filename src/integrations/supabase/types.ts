@@ -2668,7 +2668,10 @@ export type Database = {
         Returns: Json
       }
       cleanup_old_logs: { Args: never; Returns: Json }
-      cleanup_old_vehicle_data: { Args: { dry_run?: boolean }; Returns: Json }
+      cleanup_old_vehicle_data: {
+        Args: { batch_size?: number; dry_run?: boolean }
+        Returns: Json
+      }
       cleanup_vin_valuation_cache: { Args: never; Returns: undefined }
       close_ended_auctions: { Args: never; Returns: Json }
       create_admin_notification: {
@@ -3611,6 +3614,7 @@ export type Database = {
         | "system_health_check"
         | "system_alert"
         | "extend_auction"
+        | "vehicle_data_cleanup"
       car_transmission_type: "automatic" | "manual"
       damage_severity: "minor" | "moderate" | "severe"
       dispute_status: "open" | "investigating" | "resolved" | "closed"
@@ -3799,6 +3803,7 @@ export const Constants = {
         "system_health_check",
         "system_alert",
         "extend_auction",
+        "vehicle_data_cleanup",
       ],
       car_transmission_type: ["automatic", "manual"],
       damage_severity: ["minor", "moderate", "severe"],

@@ -147,10 +147,16 @@ function formatImageCategory(category: string): string {
     'rim_front_right': 'Front Right Rim',
     'rim_rear_left': 'Rear Left Rim',
     'rim_rear_right': 'Rear Right Rim',
-    'additional_1': 'Additional',
-    'additional_2': 'Additional',
-    'additional_3': 'Additional',
-    'additional_4': 'Additional'
+    'additional_1': 'Additional 1',
+    'additional_2': 'Additional 2',
+    'additional_3': 'Additional 3',
+    'additional_4': 'Additional 4',
+    'additional_5': 'Additional 5',
+    'additional_6': 'Additional 6',
+    'additional_7': 'Additional 7',
+    'additional_8': 'Additional 8',
+    'walkaround_video': 'Walkaround Video',
+    'oil_cap_underneath': 'Oil Cap Underneath'
   };
 
   return categoryMap[category] || category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
