@@ -188,6 +188,7 @@ export function AdminAuctionCard({
               auction.auctionStatus === 'active' ||
               auction.auction_status === 'active'
             }
+            sellerAcceptablePrice={auction.sellerAcceptablePrice ?? auction.seller_acceptable_price}
           />
         </div>
       </CardContent>
