@@ -1,56 +1,107 @@
 
 
-## Fix Image Upload Categories to Match Database
+## Plan: Display Seller Preferred Price with Top Bids
 
-### Problem Summary
-The admin image upload is failing because the frontend dropdown includes `damage` and `general` category options that are **not allowed** by the database's `validate_image_category()` constraint.
-
-### Database Allowed Categories (from `validate_image_category` function)
-
-| Category Group | Allowed Values |
-|----------------|----------------|
-| **Exterior Photos** | `exterior_front`, `exterior_rear`, `exterior_left`, `exterior_right` |
-| **Interior Photos** | `interior_front`, `interior_rear` |
-| **Mechanical** | `engine_bay`, `dashboard` |
-| **Rim Photos** | `rim_front_left`, `rim_front_right`, `rim_rear_left`, `rim_rear_right` |
-| **Video** | `walkaround_video` |
-| **Additional** | `additional_1`, `additional_2`, `additional_3`, `additional_4`, `additional_5`, `additional_6`, `additional_7`, `additional_8` |
-| **Legacy** | `oil_cap_underneath` (no longer required but valid for existing data) |
+### Overview
+Add the seller's preferred/acceptable price to the `CurrentBidDisplay` component so admins can easily compare incoming bids against what the seller expects to receive.
 
 ---
 
-### Solution: Update Frontend to Match Backend
+### Current State
 
-#### File 1: `src/components/admin/car-edit/tabs/ImagesTab.tsx`
-
-**Current dropdown (lines 162-173):**
-```
-exterior_front, exterior_rear, exterior_left, exterior_right,
-interior_front, interior_rear, engine_bay, dashboard,
-damage (INVALID), general (INVALID)
-```
-
-**Updated dropdown:**
-```
-exterior_front, exterior_rear, exterior_left, exterior_right,
-interior_front, interior_rear, engine_bay, dashboard,
-rim_front_left, rim_front_right, rim_rear_left, rim_rear_right,
-additional_1, additional_2, additional_3, additional_4,
-additional_5, additional_6, additional_7, additional_8
-```
-
-This provides admins with all 20 valid image categories (excluding `walkaround_video` which has its own uploader, and `oil_cap_underneath` which is legacy).
+The `CurrentBidDisplay` component (in `src/components/admin/auction-card/CurrentBidDisplay.tsx`) shows the top 3 bids for active auctions in an expandable accordion. It currently receives:
+- `carId` - for fetching bids
+- `currentBid` - the highest bid amount
+- `isActive` - whether the auction is active
 
 ---
 
-#### File 2: `src/utils/imageUtils.ts`
+### Proposed Design
 
-Update the `categoryMap` to include all backend categories for proper display formatting:
+```text
+┌─────────────────────────────────────────────────────────┐
+│  [Accordion Header: Top Bids (3)]            [●]       │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Seller's Preferred Price           95 000 zł   │   │
+│  │  (muted text, subtle background)               │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  [1st]                              92 000 zł   │   │  ← Compare: below preferred
+│  │         by ABC Dealership                       │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  [2nd]                              88 500 zł   │   │
+│  │         by XYZ Motors                           │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  [3rd]                              85 000 zł   │   │
+│  │         by Quick Cars                           │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
 
-**Add missing categories:**
-- `additional_5` through `additional_8`
-- `walkaround_video`
-- `oil_cap_underneath` (legacy support)
+**Visual Comparison Indicator:**
+- If highest bid ≥ seller's preferred price: Show green check/highlight
+- If highest bid < seller's preferred price: Show amber/warning indicator with the gap amount
+
+---
+
+### Changes Required
+
+#### File 1: `src/components/admin/auction-card/CurrentBidDisplay.tsx`
+
+**Updates:**
+1. Add `sellerAcceptablePrice` to the component props
+2. Display the seller's preferred price in a distinct row above the bid list
+3. Add a visual comparison indicator to help admins quickly see if bids are meeting seller expectations
+4. Show the difference/gap between top bid and seller price when relevant
+
+```typescript
+interface CurrentBidDisplayProps {
+  carId: string;
+  currentBid: number | null | undefined;
+  isActive?: boolean;
+  sellerAcceptablePrice?: number | null;  // NEW PROP
+}
+```
+
+**New UI element (inside AccordionContent, before the bids list):**
+- A highlighted row showing "Seller's Preferred Price: XX zł"
+- Visual indicator showing if top bid meets/exceeds this price
+
+---
+
+#### File 2: `src/components/admin/AdminAuctionCard.tsx`
+
+**Updates:**
+Pass the `sellerAcceptablePrice` to the `CurrentBidDisplay` component:
+
+```typescript
+<CurrentBidDisplay 
+  carId={auction.id}
+  currentBid={auction.currentBid ?? auction.current_bid}
+  isActive={...}
+  sellerAcceptablePrice={auction.sellerAcceptablePrice}  // NEW PROP
+/>
+```
+
+---
+
+### Visual Design Details
+
+| Element | Style |
+|---------|-------|
+| Seller Price Row | Blue-tinted background (`bg-blue-50`), blue border, positioned at top of accordion content |
+| Price Label | "Seller's Preferred Price" in muted text |
+| Price Value | Bold, blue color for distinction from bids |
+| Met Indicator | Green checkmark if top bid ≥ preferred price |
+| Gap Indicator | Amber text showing "X zł below" if not met |
 
 ---
 
@@ -58,26 +109,8 @@ Update the `categoryMap` to include all backend categories for proper display fo
 
 | File | Change |
 |------|--------|
-| `src/components/admin/car-edit/tabs/ImagesTab.tsx` | Replace `damage`/`general` with rim photos and all 8 additional slots |
-| `src/utils/imageUtils.ts` | Add `additional_5`-`additional_8`, `walkaround_video`, `oil_cap_underneath` to categoryMap |
+| `src/components/admin/auction-card/CurrentBidDisplay.tsx` | Add `sellerAcceptablePrice` prop, display seller price with comparison indicator |
+| `src/components/admin/AdminAuctionCard.tsx` | Pass `auction.sellerAcceptablePrice` to `CurrentBidDisplay` |
 
----
-
-### Technical Details
-
-The database constraint `check_valid_category` uses the `validate_image_category()` function which only accepts these specific 21 values:
-
-```sql
-RETURN category_value IN (
-  'exterior_front', 'exterior_rear', 'exterior_left', 'exterior_right',
-  'interior_front', 'interior_rear', 'engine_bay', 'dashboard',
-  'rim_front_left', 'rim_front_right', 'rim_rear_left', 'rim_rear_right',
-  'walkaround_video',
-  'oil_cap_underneath',
-  'additional_1', 'additional_2', 'additional_3', 'additional_4',
-  'additional_5', 'additional_6', 'additional_7', 'additional_8'
-);
-```
-
-Any other value will trigger the constraint violation error you experienced.
+This is a 2-file change that will give admins immediate visibility into how bids compare against seller expectations.
 
