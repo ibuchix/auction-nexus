@@ -241,6 +241,7 @@ serve(async (req) => {
         // Use RPC function for efficient single-query retrieval
         const { data: sellersWithEmails, error: sellersError } = await supabase
           .rpc('get_sellers_with_emails')
+          .limit(5000)  // Override default 1000 row limit to fetch all sellers
 
         if (sellersError) {
           console.error('Sellers RPC error:', sellersError)
