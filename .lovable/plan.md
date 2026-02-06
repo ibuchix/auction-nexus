@@ -1,174 +1,62 @@
 
-## Fix: Restore Working Transfer Function with seller_acceptable_price
+
+## Fix: Remove 1,000 Row Limit on Seller Data Fetch
 
 ### Problem Identified
 
-The recent migration broke the `admin_transfer_manual_valuation_to_cars_enhanced` function by:
+The database has **2,329 sellers**, but only **1,000** are being returned due to Supabase's default row limit on RPC function calls. This is why you only see sellers up to January 18, 2026.
 
-1. **Calling a non-existent function** - `public.is_admin()` doesn't exist in your database
-2. **Missing important fields** - The new function dropped `title`, `valuation_data`, `has_service_history`
-3. **Different status handling** - Changed from `'completed'` to `'transferred'`
+The pagination UI is working correctly - the issue is the data source itself is truncated.
 
-The transfer fails immediately because PostgreSQL throws: `function public.is_admin() does not exist`
+---
+
+### Root Cause
+
+The `get_sellers_with_emails` RPC function in the edge function is called without specifying a higher row limit:
+
+```typescript
+// Current code in admin-api/index.ts (line 242-243)
+const { data: sellersWithEmails, error: sellersError } = await supabase
+  .rpc('get_sellers_with_emails')
+```
+
+Supabase applies a default limit of 1,000 rows to all queries, including RPC calls.
 
 ---
 
 ### Solution
 
-Create a new migration that:
-1. Restores the original function structure (based on migration `20251111213446`)
-2. Adds `seller_acceptable_price` to the transfer
-3. Removes the broken `is_admin()` call
-4. Keeps all existing field mappings intact
+Update the edge function to explicitly request more rows by adding a `.limit()` modifier to the RPC call. For 4,000 sellers (100 per page x 40 pages), we need to set a limit of at least 4,000.
 
 ---
 
-### Database Migration
+### Implementation
 
-```sql
--- Fix: Restore working transfer function with seller_acceptable_price
-DROP FUNCTION IF EXISTS admin_transfer_manual_valuation_to_cars_enhanced(uuid, numeric);
+**File:** `supabase/functions/admin-api/index.ts`
 
-CREATE FUNCTION admin_transfer_manual_valuation_to_cars_enhanced(
-  p_manual_valuation_id UUID,
-  p_reserve_price NUMERIC DEFAULT NULL
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_valuation manual_valuations%ROWTYPE;
-  v_new_car_id UUID;
-  v_image_record RECORD;
-  v_transferred_count INTEGER := 0;
-  v_mapped_category TEXT;
-  v_additional_counter INTEGER := 1;
-  v_generated_title TEXT;
-BEGIN
-  -- Fetch the manual valuation record
-  SELECT * INTO v_valuation
-  FROM manual_valuations
-  WHERE id = p_manual_valuation_id;
+**Change:** Modify the `getAllSellers` case (around line 242) to add `.limit(5000)` to ensure we fetch all sellers (with some buffer for growth):
 
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Valuation not found';
-  END IF;
+```typescript
+// Before
+const { data: sellersWithEmails, error: sellersError } = await supabase
+  .rpc('get_sellers_with_emails')
 
-  -- Check for duplicate VIN
-  IF v_valuation.vin IS NOT NULL AND EXISTS (
-    SELECT 1 FROM cars WHERE vin = v_valuation.vin
-  ) THEN
-    RAISE EXCEPTION 'VIN already exists in cars table';
-  END IF;
-
-  -- Generate title from make, model, and year
-  IF v_valuation.make IS NOT NULL AND v_valuation.model IS NOT NULL 
-     AND v_valuation.year IS NOT NULL THEN
-    v_generated_title := v_valuation.year || ' ' || UPPER(v_valuation.make) 
-                         || ' ' || UPPER(v_valuation.model);
-  ELSE
-    v_generated_title := 'Car Listing';
-  END IF;
-
-  -- Insert into cars table with ALL fields including seller_acceptable_price
-  INSERT INTO cars (
-    seller_id, make, model, year, mileage, vin, transmission, fuel_type,
-    seat_material, reserve_price, seller_acceptable_price, seller_name, 
-    mobile_number, contact_email, street_address, town, postcode, county, 
-    service_history_type, number_of_keys, seller_notes, features, 
-    valuation_data, is_damaged, has_full_registration_document,
-    is_registered_in_poland, has_service_history, has_outstanding_finance,
-    is_selling_on_behalf, title, finance_amount, finance_document_url, 
-    finance_document_name, finance_document_uploaded_at,
-    status, created_at, updated_at
-  )
-  VALUES (
-    v_valuation.user_id, v_valuation.make, v_valuation.model, v_valuation.year,
-    v_valuation.mileage, v_valuation.vin, v_valuation.transmission, 
-    v_valuation.fuel_type, v_valuation.seat_material, 
-    COALESCE(p_reserve_price, v_valuation.reserve_price),
-    v_valuation.seller_acceptable_price,  -- NEW FIELD
-    v_valuation.name, COALESCE(v_valuation.mobile_number, v_valuation.contact_phone),
-    v_valuation.contact_email, v_valuation.street_address, v_valuation.town,
-    v_valuation.postcode, v_valuation.county, v_valuation.service_history_type,
-    v_valuation.number_of_keys, v_valuation.seller_notes, v_valuation.features,
-    v_valuation.valuation_result, v_valuation.is_damaged,
-    v_valuation.has_full_registration_document, v_valuation.is_registered_in_poland,
-    (v_valuation.service_history_type IS NOT NULL 
-     AND v_valuation.service_history_type != 'none'),
-    v_valuation.has_outstanding_finance, v_valuation.is_selling_on_behalf,
-    v_generated_title, v_valuation.finance_amount, v_valuation.finance_document_url, 
-    v_valuation.finance_document_name, v_valuation.finance_document_uploaded_at,
-    'available', now(), now()
-  )
-  RETURNING id INTO v_new_car_id;
-
-  -- Transfer images from manual_file_uploads to car_file_uploads
-  FOR v_image_record IN
-    SELECT * FROM manual_file_uploads
-    WHERE manual_valuation_id = p_manual_valuation_id 
-      AND upload_status = 'completed'
-    ORDER BY display_order
-  LOOP
-    -- Map category (handle 'additional' category specially)
-    IF v_image_record.category = 'additional' THEN
-      v_mapped_category := 'additional_' || v_additional_counter;
-      v_additional_counter := v_additional_counter + 1;
-      IF v_additional_counter > 4 THEN
-        v_additional_counter := 4;
-      END IF;
-    ELSE
-      v_mapped_category := v_image_record.category;
-    END IF;
-    
-    INSERT INTO car_file_uploads (
-      car_id, file_path, file_type, upload_status, image_metadata,
-      category, display_order, seller_id, created_at, updated_at
-    )
-    VALUES (
-      v_new_car_id, v_image_record.file_path, v_image_record.file_type, 
-      'completed', v_image_record.image_metadata, v_mapped_category, 
-      v_image_record.display_order, v_image_record.user_id, now(), now()
-    );
-    
-    v_transferred_count := v_transferred_count + 1;
-  END LOOP;
-
-  -- Mark manual valuation as completed
-  UPDATE manual_valuations
-  SET status = 'completed', updated_at = now()
-  WHERE id = p_manual_valuation_id;
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'car_id', v_new_car_id,
-    'images_transferred', v_transferred_count,
-    'message', 'Transfer completed successfully'
-  );
-
-EXCEPTION
-  WHEN OTHERS THEN
-    RAISE EXCEPTION 'Transfer failed: %', SQLERRM;
-END;
-$$;
+// After
+const { data: sellersWithEmails, error: sellersError } = await supabase
+  .rpc('get_sellers_with_emails')
+  .limit(5000)  // Override default 1000 row limit
 ```
 
 ---
 
-### What This Fixes
+### Why 5,000?
 
-| Issue | Fix |
-|-------|-----|
-| `is_admin()` doesn't exist | Removed the admin check (function uses SECURITY DEFINER + RLS) |
-| Missing `title` field | Restored title generation logic |
-| Missing `valuation_data` | Restored mapping from `valuation_result` |
-| Missing `has_service_history` | Restored derived field calculation |
-| Return type `JSON` vs `jsonb` | Changed back to `jsonb` |
-| Status set to `'transferred'` | Changed back to `'completed'` |
-| No exception handling | Added `EXCEPTION WHEN OTHERS` block |
-| **New:** Missing `seller_acceptable_price` | Added to both column list and values |
+| Calculation | Value |
+|-------------|-------|
+| Current sellers | 2,329 |
+| 40 pages x 100 per page | 4,000 max display |
+| Buffer for growth | +1,000 |
+| **Limit to set** | **5,000** |
 
 ---
 
@@ -176,6 +64,11 @@ $$;
 
 | File | Change |
 |------|--------|
-| New migration | Restore original function structure + add `seller_acceptable_price` |
+| `supabase/functions/admin-api/index.ts` | Add `.limit(5000)` to `get_sellers_with_emails` RPC call |
 
-No frontend changes needed - the existing code will work once the database function is fixed.
+After this change:
+- All 2,329 sellers will be fetched
+- At 100 per page, you'll see 24 pages
+- At 25 per page, you'll see 94 pages
+- Pagination will work correctly to show all data including sellers after January 18, 2026
+
