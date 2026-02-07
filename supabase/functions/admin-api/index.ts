@@ -235,21 +235,39 @@ serve(async (req) => {
         result = usersData
         break
 
-      case 'getAllSellers':
-        console.log('Fetching all sellers with emails using RPC...')
+      case 'getAllSellers': {
+        console.log('Fetching all sellers with emails using paginated RPC...')
         
-        // Use RPC function for efficient single-query retrieval
-        const { data: sellersWithEmails, error: sellersError } = await supabase
-          .rpc('get_sellers_with_emails')
-          .limit(5000)  // Override default 1000 row limit to fetch all sellers
+        // PostgREST enforces a max-rows limit of 1000 per request.
+        // We must paginate through results to get all sellers.
+        let allSellersData: any[] = [];
+        let sellerOffset = 0;
+        const sellerBatchSize = 1000;
+        let hasMoreSellers = true;
 
-        if (sellersError) {
-          console.error('Sellers RPC error:', sellersError)
-          throw new Error(`Failed to fetch sellers: ${sellersError.message}`)
+        while (hasMoreSellers) {
+          const { data: batch, error: batchError } = await supabase
+            .rpc('get_sellers_with_emails')
+            .range(sellerOffset, sellerOffset + sellerBatchSize - 1)
+            .order('created_at', { ascending: false });
+
+          if (batchError) {
+            console.error('Sellers RPC batch error:', batchError);
+            throw new Error(`Failed to fetch sellers: ${batchError.message}`);
+          }
+
+          if (batch && batch.length > 0) {
+            allSellersData = allSellersData.concat(batch);
+            console.log(`Fetched seller batch: offset=${sellerOffset}, rows=${batch.length}, total so far=${allSellersData.length}`);
+            sellerOffset += sellerBatchSize;
+            hasMoreSellers = batch.length === sellerBatchSize;
+          } else {
+            hasMoreSellers = false;
+          }
         }
 
         // Transform to match expected format
-        const formattedSellers = (sellersWithEmails || []).map((seller: any) => ({
+        const formattedSellers = allSellersData.map((seller: any) => ({
           id: seller.id,
           user_id: seller.user_id,
           role: 'seller',
@@ -262,11 +280,12 @@ serve(async (req) => {
           is_verified: seller.is_verified,
           total_listings: seller.total_listings,
           active_listings: seller.active_listings
-        }))
+        }));
 
-        console.log(`Successfully fetched ${formattedSellers.length} sellers with emails (1 query instead of 155)`)
-        result = formattedSellers
-        break
+        console.log(`Successfully fetched ALL ${formattedSellers.length} sellers via pagination`);
+        result = formattedSellers;
+        break;
+      }
 
       case 'getAllDealers':
         console.log('Fetching dealers with pagination...', params)
