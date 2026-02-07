@@ -1,97 +1,121 @@
 
 
-## Problem Analysis
+## Root Cause: PostgREST `max-rows` Limit
 
-The code change to add `.limit(5000)` to the edge function was made correctly, but **the edge function cannot be deployed** due to a Supabase internal server error. This is why you're still seeing only 1,000 sellers.
+The real bottleneck is **not** the database function or the edge function code -- it's **PostgREST's server-side `max-rows` configuration**, which Supabase sets to **1,000** by default.
 
-**Evidence:**
-- Database has **2,335 sellers** total
-- Edge function logs show: "Successfully fetched **1000** sellers" (still capped)
-- Deployment attempts fail with: `SUPABASE_INTERNAL_ERROR - Function deploy failed due to an internal error`
+Here's what happens:
 
----
-
-## Solution Options
-
-### Option A: Wait and Retry Deployment (Recommended First)
-The Supabase deployment infrastructure appears to be experiencing issues. This is typically temporary.
-
-**Action:** Try refreshing the preview in a few minutes, which will trigger a fresh deployment attempt.
-
----
-
-### Option B: Modify the Database Function (Immediate Fix)
-Instead of relying on the edge function's `.limit()`, we can modify the PostgreSQL function itself to explicitly return more rows.
-
-**SQL Migration:**
-```sql
-CREATE OR REPLACE FUNCTION get_sellers_with_emails()
-RETURNS TABLE (
-  id uuid,
-  user_id uuid,
-  full_name text,
-  email varchar(255),
-  address text,
-  verification_status text,
-  is_verified boolean,
-  created_at timestamp with time zone,
-  total_listings bigint,
-  active_listings bigint
-)
-LANGUAGE sql
-SECURITY DEFINER
-SET statement_timeout = '30s'
-AS $$
-  SELECT 
-    s.id,
-    s.user_id,
-    s.full_name,
-    au.email,
-    s.address,
-    s.verification_status,
-    s.is_verified,
-    s.created_at,
-    COUNT(DISTINCT c.id) as total_listings,
-    COUNT(DISTINCT CASE WHEN c.status = 'available' THEN c.id END) as active_listings
-  FROM sellers s
-  LEFT JOIN auth.users au ON au.id = s.user_id
-  LEFT JOIN cars c ON c.seller_id = s.user_id
-  GROUP BY s.id, s.user_id, s.full_name, au.email, s.address, 
-           s.verification_status, s.is_verified, s.created_at
-  ORDER BY s.created_at DESC
-  LIMIT 5000;
-$$;
+```text
+Database Function (get_sellers_with_emails)
+  --> Returns 2,341 rows (confirmed working)
+      |
+PostgREST (intermediary between Supabase client and database)
+  --> Enforces max-rows = 1000
+  --> Ignores .limit(5000) because max-rows caps it
+      |
+Edge Function receives only 1,000 rows
+      |
+Frontend displays 1,000 rows
 ```
 
-This embeds the limit directly in the database function, which doesn't rely on the edge function deployment.
+The `.limit(5000)` in the Supabase JS client sends a `Range` header to PostgREST, but PostgREST applies `min(requested_limit, max_rows)`, which results in `min(5000, 1000) = 1000`.
+
+This is why both the database function `LIMIT 5000` change AND the edge function `.limit(5000)` change had no effect -- the cap is enforced at the PostgREST layer.
 
 ---
 
-### Option C: Implement Server-Side Pagination (Best Long-Term)
-Similar to how dealers are paginated, implement true server-side pagination for sellers:
+## Solution: Paginate Inside the Edge Function
 
-1. Modify edge function to accept `page` and `pageSize` parameters
-2. Update the RPC function or use a direct query with `OFFSET` and `LIMIT`
-3. Update the frontend hook to fetch only the current page
-
-This is the most scalable solution but requires more changes.
+Fetch sellers in batches of 1,000 using `.range()`, then combine all results before returning to the frontend. This works around the PostgREST cap without requiring any Supabase configuration changes.
 
 ---
 
-## Recommended Approach
+## Implementation
 
-1. **First**, try Option A - wait a few minutes and refresh to trigger redeployment
-2. **If still failing**, proceed with Option B - modify the database function to have a built-in 5000 limit
-3. **For future scalability**, consider Option C for server-side pagination
+**File:** `supabase/functions/admin-api/index.ts`
+
+**Change the `getAllSellers` case (lines 238-268)** from a single `.rpc()` call to a paginated loop:
+
+```typescript
+case 'getAllSellers':
+  console.log('Fetching all sellers with emails using paginated RPC...')
+  
+  // PostgREST enforces a max-rows limit of 1000 per request.
+  // We must paginate through results to get all sellers.
+  let allSellersData: any[] = [];
+  let offset = 0;
+  const batchSize = 1000;
+  let hasMoreSellers = true;
+
+  while (hasMoreSellers) {
+    const { data: batch, error: batchError } = await supabase
+      .rpc('get_sellers_with_emails')
+      .range(offset, offset + batchSize - 1)
+      .order('created_at', { ascending: false });
+
+    if (batchError) {
+      console.error('Sellers RPC batch error:', batchError);
+      throw new Error(`Failed to fetch sellers: ${batchError.message}`);
+    }
+
+    if (batch && batch.length > 0) {
+      allSellersData = allSellersData.concat(batch);
+      console.log(`Fetched batch: offset=${offset}, rows=${batch.length}, total so far=${allSellersData.length}`);
+      offset += batchSize;
+      hasMoreSellers = batch.length === batchSize;
+    } else {
+      hasMoreSellers = false;
+    }
+  }
+
+  // Transform to match expected format
+  const formattedSellers = allSellersData.map((seller: any) => ({
+    id: seller.id,
+    user_id: seller.user_id,
+    role: 'seller',
+    created_at: seller.created_at,
+    name: seller.full_name,
+    email: seller.email,
+    mobile_number: null,
+    address: seller.address,
+    verification_status: seller.verification_status,
+    is_verified: seller.is_verified,
+    total_listings: seller.total_listings,
+    active_listings: seller.active_listings
+  }));
+
+  console.log(`Successfully fetched ALL ${formattedSellers.length} sellers via pagination`);
+  result = formattedSellers;
+  break;
+```
 
 ---
 
-## Technical Details
+## How It Works
 
-| Item | Current State | After Fix |
-|------|---------------|-----------|
-| Database sellers | 2,335 | 2,335 |
-| Sellers fetched | 1,000 (capped) | Up to 5,000 |
-| Pages at 100/page | 10 | 24 |
-| Edge function status | Failed to deploy | Working (after fix) |
+```text
+Request 1: .range(0, 999)    --> Returns rows 1-1000
+Request 2: .range(1000, 1999) --> Returns rows 1001-2000
+Request 3: .range(2000, 2999) --> Returns rows 2001-2341
+                                  (only 341 rows, loop stops)
+
+Combined result: 2,341 sellers returned to frontend
+```
+
+---
+
+## Summary of Changes
+
+| File | Change |
+|------|--------|
+| `supabase/functions/admin-api/index.ts` | Replace single `.rpc()` call with paginated loop using `.range()` in the `getAllSellers` case |
+
+No frontend changes needed -- the frontend already handles arrays of any size with client-side pagination.
+
+After this change:
+- All 2,341 sellers will be fetched (in 3 batches)
+- The existing frontend pagination (25 or 100 per page) will display all of them
+- Sellers after January 18, 2026 will appear
+- Scales to up to ~5,000 sellers with only 5 batch requests
 
