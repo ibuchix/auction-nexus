@@ -50,39 +50,12 @@ export default function ReviewManagement() {
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ["admin-reviews"],
     queryFn: async () => {
-      const [sellerRes, dealerRes] = await Promise.all([
-        supabase.from("seller_reviews").select("*").order("created_at", { ascending: false }),
-        supabase.from("dealer_reviews").select("*").order("created_at", { ascending: false }),
-      ]);
-
-      if (sellerRes.error) throw sellerRes.error;
-      if (dealerRes.error) throw dealerRes.error;
-
-      const sellerReviews: UnifiedReview[] = (sellerRes.data || []).map((r: any) => ({
-        id: r.id,
-        reviewType: "seller" as const,
-        reviewerName: r.seller_name,
-        carTitle: r.car_title,
-        rating: r.rating,
-        reviewText: r.review_text,
-        status: r.status,
-        createdAt: r.created_at,
-      }));
-
-      const dealerReviews: UnifiedReview[] = (dealerRes.data || []).map((r: any) => ({
-        id: r.id,
-        reviewType: "dealer" as const,
-        reviewerName: r.dealer_name,
-        carTitle: r.car_title,
-        rating: r.rating,
-        reviewText: r.review_text,
-        status: r.status,
-        createdAt: r.created_at,
-      }));
-
-      return [...sellerReviews, ...dealerReviews].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      const { data, error } = await supabase.functions.invoke("admin-api", {
+        body: { action: "getReviews", params: {} },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Failed to fetch reviews");
+      return (data.data || []) as UnifiedReview[];
     },
   });
 
