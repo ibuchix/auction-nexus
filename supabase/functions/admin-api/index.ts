@@ -462,27 +462,120 @@ serve(async (req) => {
         result = rejectData
         break
 
-      case 'deleteSeller':
-        console.log('Deleting seller...')
-        // Delete cars first
-        const { error: deleteCarError } = await supabase.from('cars').delete().eq('seller_id', params.sellerId)
-        if (deleteCarError) {
-          console.error('Error deleting seller cars:', deleteCarError)
-        }
+      case 'deleteSeller': {
+        console.log('Deleting seller with ID:', params.sellerId)
         
-        // Delete seller
-        const { data: deleteData, error: deleteError } = await supabase
+        // Step 1: Resolve user_id from sellers table (params.sellerId is sellers.id, NOT user_id)
+        const { data: sellerRecord, error: sellerLookupError } = await supabase
+          .from('sellers')
+          .select('user_id')
+          .eq('id', params.sellerId)
+          .single()
+
+        if (sellerLookupError || !sellerRecord) {
+          console.error('Seller lookup error:', sellerLookupError)
+          throw new Error(`Seller not found: ${sellerLookupError?.message || 'No record'}`)
+        }
+
+        const sellerUserId = sellerRecord.user_id
+        console.log('Resolved seller user_id:', sellerUserId)
+
+        // Step 2: Get all car IDs belonging to this seller
+        const { data: sellerCars } = await supabase
+          .from('cars')
+          .select('id')
+          .eq('seller_id', sellerUserId)
+
+        const carIds = sellerCars?.map((c: { id: string }) => c.id) || []
+        console.log(`Found ${carIds.length} cars to clean up`)
+
+        // Step 3: Delete related data in dependency order
+        const deletionSummary: Record<string, number> = {}
+
+        // Delete file uploads by seller
+        const { count: fileCount } = await supabase
+          .from('car_file_uploads')
+          .delete({ count: 'exact' })
+          .eq('seller_id', sellerUserId)
+        deletionSummary.car_file_uploads = fileCount || 0
+
+        // Delete cars history by seller
+        const { count: historyCount } = await supabase
+          .from('cars_history')
+          .delete({ count: 'exact' })
+          .eq('seller_id', sellerUserId)
+        deletionSummary.cars_history = historyCount || 0
+
+        // Delete notifications for this user
+        const { count: notifCount } = await supabase
+          .from('notifications')
+          .delete({ count: 'exact' })
+          .eq('user_id', sellerUserId)
+        deletionSummary.notifications = notifCount || 0
+
+        // Delete car-dependent records if there are cars
+        if (carIds.length > 0) {
+          const { count: bidCount } = await supabase
+            .from('bids')
+            .delete({ count: 'exact' })
+            .in('car_id', carIds)
+          deletionSummary.bids = bidCount || 0
+
+          const { count: scheduleCount } = await supabase
+            .from('auction_schedules')
+            .delete({ count: 'exact' })
+            .in('car_id', carIds)
+          deletionSummary.auction_schedules = scheduleCount || 0
+
+          const { count: resultCount } = await supabase
+            .from('auction_results')
+            .delete({ count: 'exact' })
+            .in('car_id', carIds)
+          deletionSummary.auction_results = resultCount || 0
+
+          const { count: metricsCount } = await supabase
+            .from('auction_metrics')
+            .delete({ count: 'exact' })
+            .in('car_id', carIds)
+          deletionSummary.auction_metrics = metricsCount || 0
+        }
+
+        // Delete cars
+        const { count: carsCount } = await supabase
+          .from('cars')
+          .delete({ count: 'exact' })
+          .eq('seller_id', sellerUserId)
+        deletionSummary.cars = carsCount || 0
+
+        // Delete seller record
+        const { error: deleteSellerError } = await supabase
           .from('sellers')
           .delete()
-          .eq('user_id', params.sellerId)
-
-        if (deleteError) {
-          console.error('Seller deletion error:', deleteError)
-          throw new Error(`Seller deletion failed: ${deleteError.message}`)
+          .eq('id', params.sellerId)
+        if (deleteSellerError) {
+          console.error('Seller deletion error:', deleteSellerError)
+          throw new Error(`Seller deletion failed: ${deleteSellerError.message}`)
         }
+        deletionSummary.sellers = 1
 
-        result = { success: true, message: 'Seller deleted successfully' }
+        // Delete user role
+        const { count: roleCount } = await supabase
+          .from('user_roles')
+          .delete({ count: 'exact' })
+          .eq('user_id', sellerUserId)
+        deletionSummary.user_roles = roleCount || 0
+
+        // Delete profile
+        const { count: profileCount } = await supabase
+          .from('profiles')
+          .delete({ count: 'exact' })
+          .eq('id', sellerUserId)
+        deletionSummary.profiles = profileCount || 0
+
+        console.log('Deletion summary:', deletionSummary)
+        result = { success: true, message: 'Seller and all related data deleted successfully', summary: deletionSummary }
         break
+      }
 
       case 'pauseAuction':
         console.log('Pausing auction...')
