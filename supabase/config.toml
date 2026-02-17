@@ -1,31 +1,28 @@
 project_id = "sdvakfhmoaoucmhbhwvy"
-[build]
-  engine = "deno"
 
 [functions.admin-api]
   verify_jwt = false
-  import_map = "./import_map.json"
-  
+
 [functions.start-scheduled-auctions]
   verify_jwt = false
-  import_map = "./import_map.json"
-  
-[functions.process-proxy-bids]
-  verify_jwt = false
-  import_map = "./import_map.json"
-  
-[functions.proxy-bid-scheduler]
-  verify_jwt = false
-  import_map = "./import_map.json"
 
 [functions.send-notifications]
   verify_jwt = false
-  import_map = "./import_map.json"
 
 [functions.cleanup-old-vehicle-files]
   verify_jwt = false
-  import_map = "./import_map.json"
 
 [functions.cleanup-cars-history]
   verify_jwt = false
-  import_map = "./import_map.json"
+
+[functions.close-ended-auctions]
+  verify_jwt = false
+
+[functions.generate-audit-report]
+  verify_jwt = false
+
+[functions.recover-auction]
+  verify_jwt = false
+
+[functions.reset-auction-system]
+  verify_jwt = false
