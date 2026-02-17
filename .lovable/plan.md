@@ -1,121 +1,56 @@
 
 
-## Root Cause: PostgREST `max-rows` Limit
+## Enhanced Delete Seller - Using Existing Code
 
-The real bottleneck is **not** the database function or the edge function code -- it's **PostgREST's server-side `max-rows` configuration**, which Supabase sets to **1,000** by default.
+There is already a `deleteSeller` case in `supabase/functions/admin-api/index.ts` (lines 465-485). Instead of creating a new database function, we will enhance this existing case to perform the full cascading deletion.
 
-Here's what happens:
+### Current Code (Broken)
 
-```text
-Database Function (get_sellers_with_emails)
-  --> Returns 2,341 rows (confirmed working)
-      |
-PostgREST (intermediary between Supabase client and database)
-  --> Enforces max-rows = 1000
-  --> Ignores .limit(5000) because max-rows caps it
-      |
-Edge Function receives only 1,000 rows
-      |
-Frontend displays 1,000 rows
-```
+The existing `deleteSeller` case has two problems:
+- It uses `params.sellerId` directly as both `seller_id` on `cars` AND `user_id` on `sellers` -- but the frontend passes the `sellers.id` (primary key), not the `user_id`. These are different UUIDs.
+- It only deletes from `cars` and `sellers`, leaving orphaned records in many other tables.
 
-The `.limit(5000)` in the Supabase JS client sends a `Range` header to PostgREST, but PostgREST applies `min(requested_limit, max_rows)`, which results in `min(5000, 1000) = 1000`.
+### What We'll Change
 
-This is why both the database function `LIMIT 5000` change AND the edge function `.limit(5000)` change had no effect -- the cap is enforced at the PostgREST layer.
+**File: `supabase/functions/admin-api/index.ts`** (lines 465-485)
 
----
+Replace the existing `deleteSeller` case with an enhanced version that:
 
-## Solution: Paginate Inside the Edge Function
+1. First looks up the seller's `user_id` from the `sellers` table using `params.sellerId` (which is `sellers.id`)
+2. Gets all car IDs belonging to that seller
+3. Deletes related data in the correct dependency order:
+   - `car_file_uploads` (by seller's user_id)
+   - `cars_history` (by seller's user_id)
+   - `notifications` (by seller's user_id)
+   - `bids` on the seller's cars (by car_id)
+   - `auction_schedules` for the seller's cars (by car_id)
+   - `auction_results` for the seller's cars (by car_id)
+   - `auction_metrics` for the seller's cars (by car_id)
+   - `cars` (by seller's user_id)
+   - `sellers` record (by sellers.id)
+   - `user_roles` (by seller's user_id)
+   - `profiles` (by seller's user_id)
+4. Returns a summary of what was deleted
 
-Fetch sellers in batches of 1,000 using `.range()`, then combine all results before returning to the frontend. This works around the PostgREST cap without requiring any Supabase configuration changes.
+**File: `src/components/admin/seller-management/DeleteSellerDialog.tsx`**
 
----
+Update the confirmation dialog to show the seller's name, email, and listing count so the admin knows exactly who they're deleting.
 
-## Implementation
+**File: `src/hooks/useSellerManagement.tsx`**
 
-**File:** `supabase/functions/admin-api/index.ts`
+No changes needed -- it already passes `selectedSeller.id` correctly.
 
-**Change the `getAllSellers` case (lines 238-268)** from a single `.rpc()` call to a paginated loop:
+**File: `src/pages/admin/SellerManagement.tsx`**
 
-```typescript
-case 'getAllSellers':
-  console.log('Fetching all sellers with emails using paginated RPC...')
-  
-  // PostgREST enforces a max-rows limit of 1000 per request.
-  // We must paginate through results to get all sellers.
-  let allSellersData: any[] = [];
-  let offset = 0;
-  const batchSize = 1000;
-  let hasMoreSellers = true;
+Pass the `selectedSeller` object to `DeleteSellerDialog`.
 
-  while (hasMoreSellers) {
-    const { data: batch, error: batchError } = await supabase
-      .rpc('get_sellers_with_emails')
-      .range(offset, offset + batchSize - 1)
-      .order('created_at', { ascending: false });
-
-    if (batchError) {
-      console.error('Sellers RPC batch error:', batchError);
-      throw new Error(`Failed to fetch sellers: ${batchError.message}`);
-    }
-
-    if (batch && batch.length > 0) {
-      allSellersData = allSellersData.concat(batch);
-      console.log(`Fetched batch: offset=${offset}, rows=${batch.length}, total so far=${allSellersData.length}`);
-      offset += batchSize;
-      hasMoreSellers = batch.length === batchSize;
-    } else {
-      hasMoreSellers = false;
-    }
-  }
-
-  // Transform to match expected format
-  const formattedSellers = allSellersData.map((seller: any) => ({
-    id: seller.id,
-    user_id: seller.user_id,
-    role: 'seller',
-    created_at: seller.created_at,
-    name: seller.full_name,
-    email: seller.email,
-    mobile_number: null,
-    address: seller.address,
-    verification_status: seller.verification_status,
-    is_verified: seller.is_verified,
-    total_listings: seller.total_listings,
-    active_listings: seller.active_listings
-  }));
-
-  console.log(`Successfully fetched ALL ${formattedSellers.length} sellers via pagination`);
-  result = formattedSellers;
-  break;
-```
-
----
-
-## How It Works
-
-```text
-Request 1: .range(0, 999)    --> Returns rows 1-1000
-Request 2: .range(1000, 1999) --> Returns rows 1001-2000
-Request 3: .range(2000, 2999) --> Returns rows 2001-2341
-                                  (only 341 rows, loop stops)
-
-Combined result: 2,341 sellers returned to frontend
-```
-
----
-
-## Summary of Changes
+### Summary
 
 | File | Change |
 |------|--------|
-| `supabase/functions/admin-api/index.ts` | Replace single `.rpc()` call with paginated loop using `.range()` in the `getAllSellers` case |
+| `supabase/functions/admin-api/index.ts` | Enhance existing `deleteSeller` case (lines 465-485) with full cascade logic and ID resolution |
+| `src/components/admin/seller-management/DeleteSellerDialog.tsx` | Show seller details in confirmation |
+| `src/pages/admin/SellerManagement.tsx` | Pass `selectedSeller` to dialog |
 
-No frontend changes needed -- the frontend already handles arrays of any size with client-side pagination.
-
-After this change:
-- All 2,341 sellers will be fetched (in 3 batches)
-- The existing frontend pagination (25 or 100 per page) will display all of them
-- Sellers after January 18, 2026 will appear
-- Scales to up to ~5,000 sellers with only 5 batch requests
+No new database functions. No new files. Just enhancing what already exists.
 
