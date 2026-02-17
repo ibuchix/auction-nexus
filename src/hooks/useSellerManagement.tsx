@@ -50,14 +50,16 @@ export const useSellerManagement = () => {
   };
 
   const handleDeleteSeller = async () => {
-    if (!selectedSeller || !userId) return;
+    if (!selectedSeller) {
+      toast.error('No seller selected for deletion');
+      return;
+    }
 
     try {
       console.log('Deleting seller:', selectedSeller.id);
-      // Use admin operations to delete the seller
       const result = await operations.deleteSeller(selectedSeller.id);
       
-      if (result && (result as any).success) {
+      if (result) {
         toast.success('Seller account removed successfully');
         setIsDeleteDialogOpen(false);
         setSelectedSeller(null);
@@ -67,7 +69,7 @@ export const useSellerManagement = () => {
       }
     } catch (error) {
       console.error('Error deleting seller:', error);
-      throw error; // Let the dialog component handle the error
+      throw error;
     }
   };
 
