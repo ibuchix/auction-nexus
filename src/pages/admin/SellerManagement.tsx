@@ -20,6 +20,7 @@ const SellerManagement = () => {
   const {
     sellers,
     isLoading,
+    selectedSeller,
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,
     handleDeleteClick,
@@ -159,6 +160,7 @@ const SellerManagement = () => {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onDeleteSeller={handleDeleteSeller}
+        seller={selectedSeller}
       />
     </div>
   );

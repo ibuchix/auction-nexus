@@ -972,6 +972,64 @@ export type Database = {
           },
         ]
       }
+      dealer_reviews: {
+        Row: {
+          car_id: string
+          car_title: string | null
+          created_at: string
+          dealer_id: string
+          dealer_name: string | null
+          id: string
+          rating: number
+          review_text: string
+          status: string
+        }
+        Insert: {
+          car_id: string
+          car_title?: string | null
+          created_at?: string
+          dealer_id: string
+          dealer_name?: string | null
+          id?: string
+          rating: number
+          review_text: string
+          status?: string
+        }
+        Update: {
+          car_id?: string
+          car_title?: string | null
+          created_at?: string
+          dealer_id?: string
+          dealer_name?: string | null
+          id?: string
+          rating?: number
+          review_text?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dealer_reviews_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_reviews_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_reviews_dealer_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "dealers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealer_verifications: {
         Row: {
           admin_id: string | null
@@ -1942,6 +2000,57 @@ export type Database = {
           },
           {
             foreignKeyName: "seller_bid_decisions_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_reviews: {
+        Row: {
+          car_id: string
+          car_title: string
+          created_at: string
+          id: string
+          rating: number
+          review_text: string
+          seller_id: string
+          seller_name: string
+          status: string
+        }
+        Insert: {
+          car_id: string
+          car_title: string
+          created_at?: string
+          id?: string
+          rating: number
+          review_text: string
+          seller_id: string
+          seller_name: string
+          status?: string
+        }
+        Update: {
+          car_id?: string
+          car_title?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          review_text?: string
+          seller_id?: string
+          seller_name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_reviews_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_reviews_car_id_fkey"
             columns: ["car_id"]
             isOneToOne: false
             referencedRelation: "cars_public_view"
