@@ -888,6 +888,31 @@ Deno.serve(async (req) => {
         break
       }
 
+      case 'getReviews': {
+        console.log('Fetching all reviews...');
+        const [sellerRes, dealerRes] = await Promise.all([
+          supabase.from('seller_reviews').select('*').order('created_at', { ascending: false }),
+          supabase.from('dealer_reviews').select('*').order('created_at', { ascending: false }),
+        ]);
+        if (sellerRes.error) throw new Error(`seller_reviews query failed: ${sellerRes.error.message}`);
+        if (dealerRes.error) throw new Error(`dealer_reviews query failed: ${dealerRes.error.message}`);
+
+        const sellerReviews = (sellerRes.data || []).map((r: any) => ({
+          id: r.id, reviewType: 'seller', reviewerName: r.seller_name, carTitle: r.car_title,
+          rating: r.rating, reviewText: r.review_text, status: r.status, createdAt: r.created_at,
+        }));
+        const dealerReviews = (dealerRes.data || []).map((r: any) => ({
+          id: r.id, reviewType: 'dealer', reviewerName: r.dealer_name, carTitle: r.car_title,
+          rating: r.rating, reviewText: r.review_text, status: r.status, createdAt: r.created_at,
+        }));
+
+        result = [...sellerReviews, ...dealerReviews].sort(
+          (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        console.log(`Fetched ${result.length} total reviews`);
+        break;
+      }
+
       case 'manageReview': {
         const { reviewId, reviewType, newStatus } = params;
         if (!reviewId || !reviewType || !newStatus) {
