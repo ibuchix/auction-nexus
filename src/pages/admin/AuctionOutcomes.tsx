@@ -7,7 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Clock, Mail, CheckCircle, XCircle, User, Building2, Search, Phone, MapPin } from "lucide-react";
+import { Clock, Mail, CheckCircle, XCircle, User, Building2, Search, Phone, MapPin, Gavel } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 // Types from generated Database
 import type { Database } from "@/integrations/supabase/types";
@@ -245,6 +256,82 @@ const AuctionOutcomeCard = ({
           </div>
         </section>
         <div className="md:col-span-2 flex flex-wrap gap-2 mt-2">
+          {!decision && (
+            <>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                    <Gavel className="w-4 h-4 mr-1" /> Accept Bid for Seller
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Accept bid on behalf of seller?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to ACCEPT the bid of {formatPLN(item.winning_bid_amount)} for {car?.year} {car?.make} {car?.model} on behalf of the seller? This will trigger all downstream processes (notifications, payment readiness, etc.).
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      onClick={async () => {
+                        try {
+                          const { data, error } = await supabase.functions.invoke("admin-api", {
+                            body: { action: "adminAcceptBidForSeller", params: { carId: item.car_id, decision: "accepted" } },
+                          });
+                          if (error) throw error;
+                          if (data && !data.success) throw new Error(data.error || "Failed");
+                          toast.success("Bid accepted on behalf of seller");
+                          onEmailSent();
+                        } catch (e: any) {
+                          toast.error(e.message || "Failed to accept bid");
+                        }
+                      }}
+                    >
+                      Accept Bid
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive">
+                    <Gavel className="w-4 h-4 mr-1" /> Decline Bid for Seller
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Decline bid on behalf of seller?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to DECLINE the bid of {formatPLN(item.winning_bid_amount)} for {car?.year} {car?.make} {car?.model} on behalf of the seller? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive hover:bg-destructive/90"
+                      onClick={async () => {
+                        try {
+                          const { data, error } = await supabase.functions.invoke("admin-api", {
+                            body: { action: "adminAcceptBidForSeller", params: { carId: item.car_id, decision: "declined" } },
+                          });
+                          if (error) throw error;
+                          if (data && !data.success) throw new Error(data.error || "Failed");
+                          toast.success("Bid declined on behalf of seller");
+                          onEmailSent();
+                        } catch (e: any) {
+                          toast.error(e.message || "Failed to decline bid");
+                        }
+                      }}
+                    >
+                      Decline Bid
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
           <Button
             size="sm"
             onClick={async () => {
