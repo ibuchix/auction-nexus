@@ -514,6 +514,40 @@ Deno.serve(async (req) => {
 
         // Delete car-dependent records if there are cars
         if (carIds.length > 0) {
+          // NEW: Delete disputes and their comments for seller's cars
+          const { data: carDisputes } = await supabase
+            .from('disputes')
+            .select('id')
+            .in('car_id', carIds)
+          const disputeIds = (carDisputes || []).map((d: { id: string }) => d.id)
+
+          if (disputeIds.length > 0) {
+            const { count: commentCount } = await supabase
+              .from('dispute_comments')
+              .delete({ count: 'exact' })
+              .in('dispute_id', disputeIds)
+            deletionSummary.dispute_comments_by_car = commentCount || 0
+          }
+
+          const { count: disputeCount } = await supabase
+            .from('disputes')
+            .delete({ count: 'exact' })
+            .in('car_id', carIds)
+          deletionSummary.disputes_by_car = disputeCount || 0
+
+          // NEW: Delete reviews referencing seller's cars
+          const { count: sellerReviewCount } = await supabase
+            .from('seller_reviews')
+            .delete({ count: 'exact' })
+            .in('car_id', carIds)
+          deletionSummary.seller_reviews = sellerReviewCount || 0
+
+          const { count: dealerReviewCount } = await supabase
+            .from('dealer_reviews')
+            .delete({ count: 'exact' })
+            .in('car_id', carIds)
+          deletionSummary.dealer_reviews = dealerReviewCount || 0
+
           const { count: bidCount } = await supabase
             .from('bids')
             .delete({ count: 'exact' })
@@ -556,6 +590,34 @@ Deno.serve(async (req) => {
           throw new Error(`Seller deletion failed: ${deleteSellerError.message}`)
         }
         deletionSummary.sellers = 1
+
+        // NEW: Delete manual valuations by this user
+        const { count: manualValCount } = await supabase
+          .from('manual_valuations')
+          .delete({ count: 'exact' })
+          .eq('user_id', sellerUserId)
+        deletionSummary.manual_valuations = manualValCount || 0
+
+        // NEW: Delete audit logs by this user
+        const { count: auditCount } = await supabase
+          .from('audit_logs')
+          .delete({ count: 'exact' })
+          .eq('user_id', sellerUserId)
+        deletionSummary.audit_logs = auditCount || 0
+
+        // NEW: Delete dispute comments authored by this user
+        const { count: userCommentCount } = await supabase
+          .from('dispute_comments')
+          .delete({ count: 'exact' })
+          .eq('author_id', sellerUserId)
+        deletionSummary.dispute_comments_by_user = userCommentCount || 0
+
+        // NEW: Delete disputes submitted by this user
+        const { count: userDisputeCount } = await supabase
+          .from('disputes')
+          .delete({ count: 'exact' })
+          .eq('submitted_by', sellerUserId)
+        deletionSummary.disputes_by_user = userDisputeCount || 0
 
         // Delete user role
         const { count: roleCount } = await supabase
