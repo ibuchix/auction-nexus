@@ -62,7 +62,7 @@ export const DeleteSellerDialog = ({
           <div className="rounded-md border p-3 space-y-2 text-sm">
             <div><span className="font-medium">Name:</span> {seller.name || 'N/A'}</div>
             <div><span className="font-medium">Email:</span> {seller.email || 'N/A'}</div>
-            <div><span className="font-medium">Listings:</span> {seller.total_listings} total ({seller.active_listings} active)</div>
+            <div><span className="font-medium">Car Listings:</span> {seller.total_listings} total ({seller.active_listings} active)</div>
           </div>
         )}
 
