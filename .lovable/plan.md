@@ -1,60 +1,96 @@
 
-## Fix Delete Seller + Deploy Issues
 
-### Problem 1: Edge function deployment failing
+## Fix Edge Function Deployment (Safe, Targeted Approach)
 
-The `admin-api` edge function consistently fails to deploy with `SUPABASE_INTERNAL_ERROR`. The root cause is likely conflicting import maps and/or a stale `deno.lock`:
+### Problem
+The `admin-api` edge function fails to deploy. Other functions (notably `send-notifications`) work fine and should NOT be touched.
 
-- `supabase/import_map.json` references `@supabase/supabase-js@2.38.4`
-- `supabase/functions/import_map.json` references `@supabase/supabase-js@2.36.0`
-- The function itself uses a direct URL import: `https://esm.sh/@supabase/supabase-js@2`
+### Root Causes (admin-api specific)
+1. **`config.toml` references `import_map.json`** for every function, which maps `"supabase"` to `esm.sh/@2.38.4`. But `admin-api` doesn't use the `"supabase"` alias -- it uses a direct URL import. The import map adds unnecessary resolution overhead and can cause bundler conflicts.
+2. **`admin-api` uses the deprecated `serve()` pattern** from `std@0.168.0`, while every other working function uses the modern `Deno.serve()`. This old pattern may not be supported by newer edge-runtime versions.
+3. **`config.toml` has phantom entries** (`process-proxy-bids`, `proxy-bid-scheduler`) pointing to functions that don't exist, and is missing entries for real functions (`close-ended-auctions`, `recover-auction`, etc.).
 
-**Fix**: Standardize the imports and remove the conflicting `supabase/functions/import_map.json`. Also remove the `deno.lock` file if it exists, and update the direct URL import in the function to use a pinned version.
+### What We Will Change
 
-### Problem 2: Delete button does nothing
+| File | Change | Risk |
+|------|--------|------|
+| `supabase/functions/admin-api/index.ts` | Replace `serve()` import with `Deno.serve()` pattern (matching `send-notifications` which works) | Low -- same API, just modern syntax |
+| `supabase/config.toml` | Remove `import_map` references, remove phantom functions, add missing real functions | Low -- import map wasn't being used by the functions anyway |
+| `supabase/import_map.json` | Delete (no function uses its aliases) | Low -- functions use direct URL imports |
 
-The enhanced cascading delete code exists in the local file (lines 465-577) but was never successfully deployed. The currently running edge function still has the old broken code. Once the deployment issue (Problem 1) is fixed, the delete will work.
+### What We Will NOT Change
 
-Additionally, there is a defensive check to add: if the edge function call fails silently (returns null), the dialog currently does nothing because `handleDeleteSeller` checks `if (result)` and null is falsy. We should show an error toast when the result is null/falsy.
-
-### Problem 3: Listing count shows 0 for Kamil Swiatek
-
-The `get_sellers_with_emails` database function only counts records in the `cars` table. Kamil Swiatek has a record in `manual_valuations` but NOT in `cars`, so his listing count is correctly 0 from the `cars` table perspective.
-
-Manual valuations are submissions requesting a valuation -- they are not the same as car listings. The count label should be clarified to say "Car Listings" instead of just "Listings" to avoid confusion. Alternatively, if you want to also show manual valuation count, we can add that.
-
----
-
-### Implementation
-
-| File | Change |
-|------|--------|
-| `supabase/functions/admin-api/index.ts` | Pin the import URL to a specific version (`@2.38.4`) to match the root import map |
-| `supabase/functions/import_map.json` | Update version to `@2.38.4` to match the root import map and eliminate conflicts |
-| `src/hooks/useSellerManagement.tsx` | Add explicit error handling when `operations.deleteSeller()` returns null |
-| `src/components/admin/seller-management/DeleteSellerDialog.tsx` | Clarify "Listings" label to "Car Listings" to distinguish from manual valuations |
-
-After these changes, we will attempt to redeploy the edge function. If the Supabase infrastructure error persists, you will need to manually paste the updated code into the Supabase dashboard (Functions > admin-api > Edit).
+- `send-notifications` -- it works, don't touch it
+- `start-scheduled-auctions` -- leave its imports as-is
+- `close-ended-auctions`, `recover-auction`, etc. -- leave as-is
+- No switching to `npm:` specifiers -- unnecessary risk when `esm.sh` works for other functions
 
 ### Technical Details
 
-**Import standardization** (line 2 of `admin-api/index.ts`):
+**1. `admin-api/index.ts` (line 1 and line 9)**
+
+Replace the old `serve` import and usage:
 ```typescript
 // Before
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-// After
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+// ...
+serve(async (req) => {
 ```
 
-**Error handling improvement** (`useSellerManagement.tsx` line 60):
+With the modern pattern (same as working `send-notifications`):
 ```typescript
-// Before
-if (result) {
-  toast.success('Seller account removed successfully');
-// After  
-if (result && result.success) {
-  toast.success('Seller account removed successfully');
-} else {
-  toast.error('Failed to remove seller - operation returned no result');
-}
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+// ...
+Deno.serve(async (req) => {
 ```
+
+**2. `config.toml`**
+
+Clean version with no import_map references and correct function list:
+```toml
+project_id = "sdvakfhmoaoucmhbhwvy"
+
+[functions.admin-api]
+  verify_jwt = false
+
+[functions.start-scheduled-auctions]
+  verify_jwt = false
+
+[functions.send-notifications]
+  verify_jwt = false
+
+[functions.cleanup-old-vehicle-files]
+  verify_jwt = false
+
+[functions.cleanup-cars-history]
+  verify_jwt = false
+
+[functions.close-ended-auctions]
+  verify_jwt = false
+
+[functions.generate-audit-report]
+  verify_jwt = false
+
+[functions.recover-auction]
+  verify_jwt = false
+
+[functions.reset-auction-system]
+  verify_jwt = false
+```
+
+**3. Delete `supabase/import_map.json`**
+
+No function imports using the `"supabase"` or `"std/"` aliases defined in this file. They all use direct URLs. This file only adds confusion.
+
+### Why This is Safe
+
+- We only modify `admin-api` (which is already broken -- can't get worse)
+- We clean up `config.toml` (removing incorrect references, not changing working function behavior)
+- We delete an unused import map file
+- Every working function remains untouched
+
+### After Deployment
+
+Once `admin-api` deploys successfully, the delete seller feature will work because the cascading delete logic is already in the code (lines 465-577).
+
