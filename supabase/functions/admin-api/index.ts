@@ -798,6 +798,96 @@ Deno.serve(async (req) => {
         }
         break
 
+      case 'adminAcceptBidForSeller': {
+        const { carId, decision } = params
+        console.log('Admin accepting bid for seller:', { carId, decision })
+
+        if (!carId || !['accepted', 'declined'].includes(decision)) {
+          throw new Error('carId and decision ("accepted" or "declined") are required')
+        }
+
+        // 1. Get car details
+        const { data: carData, error: carError } = await supabase
+          .from('cars')
+          .select('id, seller_id, current_bid, awaiting_seller_decision, auction_status')
+          .eq('id', carId)
+          .single()
+
+        if (carError || !carData) {
+          throw new Error(`Car not found: ${carError?.message || 'No record'}`)
+        }
+
+        if (!carData.seller_id) {
+          throw new Error('Car has no seller_id')
+        }
+
+        // 2. Check no decision already exists
+        const { data: existingDecision } = await supabase
+          .from('seller_bid_decisions')
+          .select('id, decision')
+          .eq('car_id', carId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (existingDecision) {
+          throw new Error(`A decision already exists for this car: ${existingDecision.decision}`)
+        }
+
+        // 3. Get dealer_won_vehicles record for highest_bid_dealer_id
+        const { data: wonVehicle, error: wonError } = await supabase
+          .from('dealer_won_vehicles')
+          .select('dealer_id, winning_bid_amount')
+          .eq('car_id', carId)
+          .single()
+
+        if (wonError || !wonVehicle) {
+          throw new Error(`No winning bid record found: ${wonError?.message || 'No dealer_won_vehicles record'}`)
+        }
+
+        // 4. Get auction_results record for linking
+        const { data: auctionResult } = await supabase
+          .from('auction_results')
+          .select('id')
+          .eq('car_id', carId)
+          .maybeSingle()
+
+        // 5. Insert into seller_bid_decisions (triggers downstream automation)
+        const { error: insertError } = await supabase
+          .from('seller_bid_decisions')
+          .insert({
+            car_id: carId,
+            seller_id: carData.seller_id,
+            decision: decision,
+            highest_bid: wonVehicle.winning_bid_amount,
+            highest_bid_dealer_id: wonVehicle.dealer_id,
+            auction_result_id: auctionResult?.id || null,
+          })
+
+        if (insertError) {
+          throw new Error(`Failed to insert seller decision: ${insertError.message}`)
+        }
+
+        // 6. Update cars.awaiting_seller_decision = false
+        await supabase
+          .from('cars')
+          .update({ awaiting_seller_decision: false })
+          .eq('id', carId)
+
+        console.log(`Admin ${decision} bid for car ${carId} on behalf of seller ${carData.seller_id}`)
+
+        result = {
+          success: true,
+          message: `Bid ${decision} on behalf of seller`,
+          carId,
+          decision,
+          sellerId: carData.seller_id,
+          dealerId: wonVehicle.dealer_id,
+          amount: wonVehicle.winning_bid_amount,
+        }
+        break
+      }
+
       default:
         throw new Error(`Unknown action: ${action}`)
     }
