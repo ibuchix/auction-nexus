@@ -57,13 +57,13 @@ export const useSellerManagement = () => {
       // Use admin operations to delete the seller
       const result = await operations.deleteSeller(selectedSeller.id);
       
-      if (result) {
+      if (result && (result as any).success) {
         toast.success('Seller account removed successfully');
         setIsDeleteDialogOpen(false);
         setSelectedSeller(null);
         refetch();
       } else {
-        throw new Error('Failed to delete seller');
+        toast.error('Failed to remove seller - the operation did not complete successfully');
       }
     } catch (error) {
       console.error('Error deleting seller:', error);
