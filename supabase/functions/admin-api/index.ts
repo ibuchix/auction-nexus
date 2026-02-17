@@ -888,6 +888,30 @@ Deno.serve(async (req) => {
         break
       }
 
+      case 'manageReview': {
+        const { reviewId, reviewType, newStatus } = params;
+        if (!reviewId || !reviewType || !newStatus) {
+          throw new Error('Missing required parameters: reviewId, reviewType, newStatus');
+        }
+        if (!['seller', 'dealer'].includes(reviewType)) {
+          throw new Error('reviewType must be "seller" or "dealer"');
+        }
+        if (!['approved', 'rejected'].includes(newStatus)) {
+          throw new Error('newStatus must be "approved" or "rejected"');
+        }
+        const reviewTable = reviewType === 'seller' ? 'seller_reviews' : 'dealer_reviews';
+        const { error: reviewError } = await supabase
+          .from(reviewTable)
+          .update({ status: newStatus })
+          .eq('id', reviewId);
+        if (reviewError) {
+          throw new Error(`Failed to update review: ${reviewError.message}`);
+        }
+        console.log(`Review ${reviewId} in ${reviewTable} updated to ${newStatus}`);
+        result = { success: true, reviewId, reviewType, newStatus };
+        break;
+      }
+
       default:
         throw new Error(`Unknown action: ${action}`)
     }

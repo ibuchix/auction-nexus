@@ -84,6 +84,10 @@ export const menuItems: SidebarMenuItem[] = [
         title: "Valuation Stats",
         path: "/admin/valuation-stats",
       },
+      {
+        title: "Reviews",
+        path: "/admin/reviews",
+      },
     ],
   },
   {
