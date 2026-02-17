@@ -1,56 +1,60 @@
 
+## Fix Delete Seller + Deploy Issues
 
-## Enhanced Delete Seller - Using Existing Code
+### Problem 1: Edge function deployment failing
 
-There is already a `deleteSeller` case in `supabase/functions/admin-api/index.ts` (lines 465-485). Instead of creating a new database function, we will enhance this existing case to perform the full cascading deletion.
+The `admin-api` edge function consistently fails to deploy with `SUPABASE_INTERNAL_ERROR`. The root cause is likely conflicting import maps and/or a stale `deno.lock`:
 
-### Current Code (Broken)
+- `supabase/import_map.json` references `@supabase/supabase-js@2.38.4`
+- `supabase/functions/import_map.json` references `@supabase/supabase-js@2.36.0`
+- The function itself uses a direct URL import: `https://esm.sh/@supabase/supabase-js@2`
 
-The existing `deleteSeller` case has two problems:
-- It uses `params.sellerId` directly as both `seller_id` on `cars` AND `user_id` on `sellers` -- but the frontend passes the `sellers.id` (primary key), not the `user_id`. These are different UUIDs.
-- It only deletes from `cars` and `sellers`, leaving orphaned records in many other tables.
+**Fix**: Standardize the imports and remove the conflicting `supabase/functions/import_map.json`. Also remove the `deno.lock` file if it exists, and update the direct URL import in the function to use a pinned version.
 
-### What We'll Change
+### Problem 2: Delete button does nothing
 
-**File: `supabase/functions/admin-api/index.ts`** (lines 465-485)
+The enhanced cascading delete code exists in the local file (lines 465-577) but was never successfully deployed. The currently running edge function still has the old broken code. Once the deployment issue (Problem 1) is fixed, the delete will work.
 
-Replace the existing `deleteSeller` case with an enhanced version that:
+Additionally, there is a defensive check to add: if the edge function call fails silently (returns null), the dialog currently does nothing because `handleDeleteSeller` checks `if (result)` and null is falsy. We should show an error toast when the result is null/falsy.
 
-1. First looks up the seller's `user_id` from the `sellers` table using `params.sellerId` (which is `sellers.id`)
-2. Gets all car IDs belonging to that seller
-3. Deletes related data in the correct dependency order:
-   - `car_file_uploads` (by seller's user_id)
-   - `cars_history` (by seller's user_id)
-   - `notifications` (by seller's user_id)
-   - `bids` on the seller's cars (by car_id)
-   - `auction_schedules` for the seller's cars (by car_id)
-   - `auction_results` for the seller's cars (by car_id)
-   - `auction_metrics` for the seller's cars (by car_id)
-   - `cars` (by seller's user_id)
-   - `sellers` record (by sellers.id)
-   - `user_roles` (by seller's user_id)
-   - `profiles` (by seller's user_id)
-4. Returns a summary of what was deleted
+### Problem 3: Listing count shows 0 for Kamil Swiatek
 
-**File: `src/components/admin/seller-management/DeleteSellerDialog.tsx`**
+The `get_sellers_with_emails` database function only counts records in the `cars` table. Kamil Swiatek has a record in `manual_valuations` but NOT in `cars`, so his listing count is correctly 0 from the `cars` table perspective.
 
-Update the confirmation dialog to show the seller's name, email, and listing count so the admin knows exactly who they're deleting.
+Manual valuations are submissions requesting a valuation -- they are not the same as car listings. The count label should be clarified to say "Car Listings" instead of just "Listings" to avoid confusion. Alternatively, if you want to also show manual valuation count, we can add that.
 
-**File: `src/hooks/useSellerManagement.tsx`**
+---
 
-No changes needed -- it already passes `selectedSeller.id` correctly.
-
-**File: `src/pages/admin/SellerManagement.tsx`**
-
-Pass the `selectedSeller` object to `DeleteSellerDialog`.
-
-### Summary
+### Implementation
 
 | File | Change |
 |------|--------|
-| `supabase/functions/admin-api/index.ts` | Enhance existing `deleteSeller` case (lines 465-485) with full cascade logic and ID resolution |
-| `src/components/admin/seller-management/DeleteSellerDialog.tsx` | Show seller details in confirmation |
-| `src/pages/admin/SellerManagement.tsx` | Pass `selectedSeller` to dialog |
+| `supabase/functions/admin-api/index.ts` | Pin the import URL to a specific version (`@2.38.4`) to match the root import map |
+| `supabase/functions/import_map.json` | Update version to `@2.38.4` to match the root import map and eliminate conflicts |
+| `src/hooks/useSellerManagement.tsx` | Add explicit error handling when `operations.deleteSeller()` returns null |
+| `src/components/admin/seller-management/DeleteSellerDialog.tsx` | Clarify "Listings" label to "Car Listings" to distinguish from manual valuations |
 
-No new database functions. No new files. Just enhancing what already exists.
+After these changes, we will attempt to redeploy the edge function. If the Supabase infrastructure error persists, you will need to manually paste the updated code into the Supabase dashboard (Functions > admin-api > Edit).
 
+### Technical Details
+
+**Import standardization** (line 2 of `admin-api/index.ts`):
+```typescript
+// Before
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// After
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+```
+
+**Error handling improvement** (`useSellerManagement.tsx` line 60):
+```typescript
+// Before
+if (result) {
+  toast.success('Seller account removed successfully');
+// After  
+if (result && result.success) {
+  toast.success('Seller account removed successfully');
+} else {
+  toast.error('Failed to remove seller - operation returned no result');
+}
+```
