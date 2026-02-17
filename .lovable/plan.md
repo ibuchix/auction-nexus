@@ -1,68 +1,100 @@
 
+## Admin Accept Bid on Behalf of Seller
 
-## Fix Seller Deletion -- Silent Failure Bug
+### How the Current Flow Works
 
-### Root Cause
+When a seller accepts or declines a bid, a row is inserted into the `seller_bid_decisions` table:
 
-The delete button click never sends a request to the edge function. The edge function logs confirm zero `deleteSeller` calls were made.
-
-The bug is in `src/hooks/useSellerManagement.tsx` line 53:
-
-```typescript
-const handleDeleteSeller = async () => {
-    if (!selectedSeller || !userId) return;  // <-- SILENT RETURN when userId is null
+```text
+seller_bid_decisions
+  - car_id
+  - seller_id (the seller's user_id)
+  - decision ("accepted" or "declined")
+  - highest_bid (the bid amount)
+  - highest_bid_dealer_id (the winning dealer)
+  - auction_result_id (link to auction_results)
 ```
 
-`userId` comes from `useAdminAuth()` via `AdminContext`. If the RPC admin check hasn't resolved yet, or if there's a timing/state issue, `userId` is `null` and the function silently returns -- no error toast, no request, nothing happens. The user clicks "Remove Account" and the dialog just sits there.
+This INSERT triggers the following chain:
 
-Critically, `userId` is never actually used in the delete operation. Only `selectedSeller.id` is passed to `operations.deleteSeller()`. The `!userId` check is an unnecessary guard that causes the silent failure.
+1. **DB trigger** `trigger_notify_seller_accepted_bid` -- creates an admin notification ("Seller Accepted Bid")
+2. **Cron job** `sync_auction_results_with_seller_decisions` -- updates `auction_results.seller_decision` and sets `admin_review_status` to "reviewed"
+3. **AuctionOutcomes page** reads from `seller_bid_decisions` to show the decision badge, and enables/disables email buttons based on the decision
 
-### What We Will Change
+So the entire downstream system is driven by **one INSERT into `seller_bid_decisions`**. If we insert the same row from the admin side, everything works identically.
 
-**File: `src/hooks/useSellerManagement.tsx`**
+### What We Will Build
 
-1. Remove the unnecessary `!userId` guard that blocks the delete
-2. Add proper error feedback if `selectedSeller` is missing
-3. Improve error handling so failures are always visible to the user
+**1. New edge function action: `adminAcceptBidForSeller`** (in `admin-api/index.ts`)
+
+This action will:
+- Look up the car and verify the auction has ended with a winning bid
+- Look up the highest bid and dealer from `dealer_won_vehicles` or `bids`
+- Look up the `auction_results` record for linking
+- Insert a row into `seller_bid_decisions` with the seller's `seller_id`, `car_id`, `decision`, `highest_bid`, and `highest_bid_dealer_id`
+- Update `cars.awaiting_seller_decision = false` to mark it as resolved
+- The existing DB trigger will automatically create the admin notification
+- The existing cron job will automatically sync `auction_results.seller_decision`
+
+Parameters: `{ carId: string, decision: "accepted" | "declined" }`
+
+**2. UI: Add "Accept Bid" and "Decline Bid" buttons to the AuctionOutcomeCard** (in `AuctionOutcomes.tsx`)
+
+- Only visible when `decision` is null (awaiting seller decision)
+- Includes a confirmation dialog before executing
+- Calls the new edge function action
+- Refreshes the data after success
+
+### Technical Details
+
+**Edge function addition** (`supabase/functions/admin-api/index.ts`):
+
+New case `adminAcceptBidForSeller` added to the switch block:
 
 ```typescript
-// Before (broken -- silently returns)
-const handleDeleteSeller = async () => {
-    if (!selectedSeller || !userId) return;
-    ...
-};
-
-// After (works -- only checks what's actually needed)
-const handleDeleteSeller = async () => {
-    if (!selectedSeller) {
-      toast.error('No seller selected for deletion');
-      return;
-    }
-    ...
-};
+case 'adminAcceptBidForSeller': {
+  const { carId, decision } = params
+  // 1. Validate inputs
+  // 2. Get car details (seller_id, current_bid, awaiting_seller_decision)
+  // 3. Get dealer_won_vehicles record (for highest_bid_dealer_id)
+  // 4. Get auction_results record (for auction_result_id)
+  // 5. Check no decision already exists
+  // 6. Insert into seller_bid_decisions
+  // 7. Update cars.awaiting_seller_decision = false
+  // 8. Return success with summary
+}
 ```
 
-4. Fix the success check to handle both response formats from the edge function. The edge function returns `{ success: true, data: { success: true, message: "...", summary: {...} } }`. After `performAdminOperation` unwraps it, the result could be the inner object (with `.success`) or just the data. We should handle both:
+**UI addition** (`src/pages/admin/AuctionOutcomes.tsx`):
 
-```typescript
-// Before
-if (result && (result as any).success) {
+Add two buttons to the `AuctionOutcomeCard` component, shown only when `decision` is null:
 
-// After -- accept any truthy result as success
-if (result) {
+```text
+[Accept Bid for Seller]  [Decline Bid for Seller]
 ```
 
-The edge function already handles errors by throwing (which causes `performAdminOperation` to return `null`), so a non-null result means success.
+Each button shows a confirmation dialog:
+- "Are you sure you want to ACCEPT the bid of PLN X,XXX for this vehicle on behalf of the seller?"
+- On confirm, calls `supabase.functions.invoke('admin-api', { body: { action: 'adminAcceptBidForSeller', params: { carId, decision: 'accepted' } } })`
+- Shows success/error toast
+- Refetches data
 
 ### Files to Change
 
 | File | Change |
 |------|--------|
-| `src/hooks/useSellerManagement.tsx` | Remove `!userId` guard, add error toast for missing seller, simplify success check |
+| `supabase/functions/admin-api/index.ts` | Add `adminAcceptBidForSeller` case to the switch block |
+| `src/pages/admin/AuctionOutcomes.tsx` | Add Accept/Decline buttons with confirmation dialog to AuctionOutcomeCard |
 
-### Why This is Safe
+### What Happens After Admin Accepts
 
-- `userId` was never used in the actual delete call -- removing the check doesn't change the operation
-- The edge function already verifies admin access server-side via the JWT token
-- Error cases (null result from edge function) are already handled with a toast
+1. Row inserted into `seller_bid_decisions` with decision = "accepted"
+2. `trigger_notify_seller_accepted_bid` fires automatically (creates notification)
+3. `cars.awaiting_seller_decision` set to `false`
+4. Next cron run of `sync_auction_results_with_seller_decisions` updates `auction_results.seller_decision = "accepted"` and `admin_review_status = "reviewed"`
+5. AuctionOutcomes page shows "Accepted" badge
+6. "Email dealer: bid accepted" button becomes enabled
+7. Admin can then notify the dealer about the accepted bid
+8. Dealer can proceed to payment
 
+This approach reuses the exact same data path as the seller's own acceptance, so all triggers, cron jobs, and downstream logic work identically.
