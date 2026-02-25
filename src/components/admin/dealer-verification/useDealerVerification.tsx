@@ -14,6 +14,7 @@ export const useDealerVerification = () => {
   const [activeTab, setActiveTab] = useState<VerificationStatus | "all">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(40);
   
@@ -33,17 +34,36 @@ export const useDealerVerification = () => {
   const dealers = dealerData?.dealers || [];
   const pagination = dealerData?.pagination;
 
-  // Client-side search filtering (only for current page)
-  const filteredDealers = useMemo(() => {
-    if (!searchQuery.trim()) return dealers;
-    
-    const query = searchQuery.toLowerCase().trim();
-    return dealers.filter(dealer => 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Second query: fetch ALL dealers when searching
+  const { data: allDealerData, isLoading: isSearchLoading } = useQuery({
+    queryKey: ['dealersSearch', activeTab, debouncedSearch],
+    queryFn: () => fetchDealers(activeTab, 1, 500),
+    enabled: debouncedSearch.trim().length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Client-side filter on the full dataset when searching
+  const searchFilteredDealers = useMemo(() => {
+    if (!debouncedSearch.trim()) return null;
+    const source = allDealerData?.dealers || [];
+    const query = debouncedSearch.toLowerCase().trim();
+    return source.filter(dealer =>
       dealer.email?.toLowerCase().includes(query) ||
       dealer.dealershipName?.toLowerCase().includes(query) ||
       dealer.supervisorName?.toLowerCase().includes(query)
     );
-  }, [dealers, searchQuery]);
+  }, [allDealerData, debouncedSearch]);
+
+  // Use search results when searching, otherwise paginated results
+  const isSearching = debouncedSearch.trim().length > 0;
+  const displayDealers = isSearching ? (searchFilteredDealers || []) : dealers;
+  const displayPagination = isSearching ? null : pagination;
 
   const invalidateDealersCache = async () => {
     // Invalidate queries for all tabs to ensure consistency
@@ -193,14 +213,14 @@ export const useDealerVerification = () => {
   }, [activeTab]);
 
   const handleExportCSV = () => {
-    if (filteredDealers.length === 0) {
+    if (displayDealers.length === 0) {
       toast.error("No dealers to export");
       return;
     }
 
     try {
-      exportDealerVerificationsToCSV(filteredDealers, activeTab);
-      toast.success(`Successfully exported ${filteredDealers.length} dealer${filteredDealers.length !== 1 ? 's' : ''}`);
+      exportDealerVerificationsToCSV(displayDealers, activeTab);
+      toast.success(`Successfully exported ${displayDealers.length} dealer${displayDealers.length !== 1 ? 's' : ''}`);
     } catch (error) {
       console.error('Error exporting dealers:', error);
       toast.error('Failed to export dealers');
@@ -208,8 +228,8 @@ export const useDealerVerification = () => {
   };
 
   return {
-    dealers: filteredDealers,
-    isLoading,
+    dealers: displayDealers,
+    isLoading: isLoading || (isSearching && isSearchLoading),
     refetch,
     selectedDealer,
     setSelectedDealer,
@@ -226,7 +246,7 @@ export const useDealerVerification = () => {
     setSearchQuery,
     currentPage,
     pageSize,
-    pagination,
+    pagination: displayPagination,
     handlePageChange,
     handlePageSizeChange,
     handleApproveDealer,
