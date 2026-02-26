@@ -71,13 +71,14 @@ export function useDashboardData() {
   });
 
   const { data: activeAuctions } = useQuery({
-    queryKey: ['activeAuctions'],
+    queryKey: ['activeAuctionsCount'],
     queryFn: async () => {
       const { count } = await supabase
         .from('cars')
         .select('*', { count: 'exact', head: true })
         .eq('is_auction', true)
-        .eq('auction_status', 'active');
+        .eq('auction_status', 'active')
+        .gt('auction_end_time', new Date().toISOString());
       return count || 0;
     }
   });

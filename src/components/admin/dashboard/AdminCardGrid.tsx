@@ -2,8 +2,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  ShieldCheck, Gavel, Activity, MessageSquare, TrendingUp,
-  Megaphone, FileText, ArrowRight, History 
+  ShieldCheck, Gavel, Activity, TrendingUp,
+  FileText, ArrowRight, History 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -95,25 +95,11 @@ export function AdminCardGrid() {
       iconColor: "text-primary"
     },
     {
-      title: "Dispute Resolution",
-      description: "Handle user disputes and claims",
-      icon: MessageSquare,
-      path: "/admin/disputes",
-      iconColor: "text-yellow-500"
-    },
-    {
       title: "Analytics",
       description: "View auction performance metrics",
       icon: TrendingUp,
       path: "/admin/analytics",
       iconColor: "text-green-500"
-    },
-    {
-      title: "Announcements",
-      description: "Manage system-wide announcements",
-      icon: Megaphone,
-      path: "/admin/announcements",
-      iconColor: "text-blue-500"
     },
     {
       title: "Fraud Detection",
