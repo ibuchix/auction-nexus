@@ -1,71 +1,83 @@
 
 
-## Client-Side Search Across All Dealers
+## Dashboard Cleanup and Bug Fixes
 
-### Approach
+### Problem Summary
+There are 4 issues to address:
 
-Keep the existing client-side filtering logic but ensure it has access to ALL dealers when searching -- not just the current page. The trick: when the user types a search query, fire a separate query that fetches all dealers (with a large page size) and filter those client-side. When the search is cleared, revert to the normal paginated view.
+1. **Announcements card/route** - needs to be removed entirely (not used)
+2. **Dispute Resolution card/route** - needs to be removed (obsolete)
+3. **Active Auctions shows 566 instead of 126** - the dashboard query counts ALL cars with `auction_status=active` without filtering by `auction_end_time`, so it includes stale/ended auctions that haven't been cleaned up
+4. **Crash when navigating back to dashboard** - the dashboard's `useDashboardData` hook uses query key `['activeAuctions']` which collides with `useAuctionMonitoring` hook (same key). The monitoring page caches an array of full car objects under that key. When the dashboard reads the cache, it gets an array of objects instead of a number, and React crashes trying to render an object as a child
 
-No edge function or backend changes needed.
+### Plan
 
-### Changes
+**1. Fix the query key collision and active auction count** (`src/hooks/useDashboardData.tsx`)
+- Rename the query key from `['activeAuctions']` to `['activeAuctionsCount']` to avoid collision with the monitoring hook
+- Add a filter `.gt('auction_end_time', new Date().toISOString())` to only count auctions that haven't ended yet -- matching the monitoring page logic
 
-**File: `src/components/admin/dealer-verification/useDealerVerification.tsx`**
+**2. Remove Announcements from everywhere**
+- `src/components/dashboard/AdminCardGrid.tsx` -- remove Announcements card entry and `Megaphone` import
+- `src/components/admin/dashboard/AdminCardGrid.tsx` -- remove Announcements card entry and `Megaphone` import
+- `src/constants/sidebarMenuItems.ts` -- remove the "Communications" menu item
+- `src/components/routes/SystemRoutes.tsx` -- remove Announcements route and import
+- `src/pages/admin/Announcements.tsx` -- delete the file
+- `src/components/admin/announcements/AnnouncementForm.tsx` -- delete the file
+- `src/components/admin/announcements/AnnouncementList.tsx` -- delete the file
 
-1. Add a second React Query that activates only when `searchQuery` is non-empty (debounced at 300ms). This query calls the same `fetchDealers` but with a large `pageSize` (e.g. 500) and page 1, effectively fetching all dealers for that tab.
+**3. Remove Dispute Resolution from everywhere**
+- `src/components/dashboard/AdminCardGrid.tsx` -- remove Dispute Resolution card entry
+- `src/components/admin/dashboard/AdminCardGrid.tsx` -- remove Dispute Resolution card entry and `MessageSquare` import
+- `src/constants/sidebarMenuItems.ts` -- remove "Disputes" from Risk Management submenu
+- `src/components/routes/RiskManagementRoutes.tsx` -- remove DisputeResolution route and import
+- `src/pages/admin/DisputeResolution.tsx` -- delete the file
+- `src/components/admin/disputes/` -- delete the entire disputes folder (DisputeList, DisputeStats, DisputeFilters, DisputeDetailDialog, DisputeResolutionForm, DisputeComments, and all sub-components)
+- `src/types/disputes.ts` -- delete the file
+- `src/components/DashboardLayout.tsx` -- remove the keyboard shortcut `Alt+D` that navigates to disputes
 
-2. When the debounced search is active, use the "all dealers" query result and apply the existing client-side filter on it. Hide the pagination controls since we're showing filtered results.
+### Technical Details
 
-3. When search is cleared, the second query is disabled and the normal paginated query takes over again.
-
-### Technical Detail
-
+**Query key fix** (the critical bug):
 ```
-// New debounced search state
-const [debouncedSearch, setDebouncedSearch] = useState("");
+// Before (collides with useAuctionMonitoring)
+queryKey: ['activeAuctions']
 
-useEffect(() => {
-  const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-  return () => clearTimeout(timer);
-}, [searchQuery]);
-
-// Second query: fetch ALL dealers when searching
-const { data: allDealerData, isLoading: isSearchLoading } = useQuery({
-  queryKey: ['dealersSearch', activeTab, debouncedSearch],
-  queryFn: () => fetchDealers(activeTab, 1, 500),
-  enabled: debouncedSearch.trim().length > 0,
-  staleTime: 5 * 60 * 1000,
-});
-
-// Client-side filter on the full dataset
-const searchFilteredDealers = useMemo(() => {
-  if (!debouncedSearch.trim()) return null;
-  const source = allDealerData?.dealers || [];
-  const query = debouncedSearch.toLowerCase().trim();
-  return source.filter(dealer =>
-    dealer.email?.toLowerCase().includes(query) ||
-    dealer.dealershipName?.toLowerCase().includes(query) ||
-    dealer.supervisorName?.toLowerCase().includes(query)
-  );
-}, [allDealerData, debouncedSearch]);
-
-// Use search results when searching, otherwise paginated results
-const isSearching = debouncedSearch.trim().length > 0;
-const displayDealers = isSearching ? (searchFilteredDealers || []) : filteredDealers;
-const displayPagination = isSearching ? null : pagination;
+// After (unique key)
+queryKey: ['activeAuctionsCount']
 ```
 
-The return values change so the page hides pagination during search and shows all matching results.
+**Active auction count fix**:
+```
+// Before (counts stale auctions too)
+.eq('is_auction', true)
+.eq('auction_status', 'active')
 
-**File: `src/pages/admin/DealerVerification.tsx`**
+// After (only truly active auctions)
+.eq('is_auction', true)
+.eq('auction_status', 'active')
+.gt('auction_end_time', new Date().toISOString())
+```
 
-- Minor update: only render `DealerPagination` when `pagination` is non-null (already the case with the `&&` check, so this should work automatically).
-- Update the loading state to account for `isSearchLoading`.
-
-### Files to Change
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/admin/dealer-verification/useDealerVerification.tsx` | Add second "search all" query with debounce, switch between paginated and full-search results |
-| `src/pages/admin/DealerVerification.tsx` | Pass search loading state for better UX feedback |
+| `src/hooks/useDashboardData.tsx` | Fix query key collision and add end_time filter |
+| `src/components/dashboard/AdminCardGrid.tsx` | Remove Announcements and Dispute Resolution cards |
+| `src/components/admin/dashboard/AdminCardGrid.tsx` | Remove Announcements and Dispute Resolution cards |
+| `src/constants/sidebarMenuItems.ts` | Remove Communications and Disputes menu items |
+| `src/components/routes/SystemRoutes.tsx` | Remove Announcements route |
+| `src/components/routes/RiskManagementRoutes.tsx` | Remove DisputeResolution route |
+| `src/components/DashboardLayout.tsx` | Remove Alt+D shortcut for disputes |
+
+### Files to Delete
+
+| File | Reason |
+|------|--------|
+| `src/pages/admin/Announcements.tsx` | Feature removed |
+| `src/components/admin/announcements/AnnouncementForm.tsx` | Feature removed |
+| `src/components/admin/announcements/AnnouncementList.tsx` | Feature removed |
+| `src/pages/admin/DisputeResolution.tsx` | Feature removed |
+| `src/components/admin/disputes/*` (all files) | Feature removed |
+| `src/types/disputes.ts` | Feature removed |
 
