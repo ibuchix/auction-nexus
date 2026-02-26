@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Gavel, TrendingUp,
-  FileText, ArrowRight, Users
+  FileText, ArrowRight, Users, BarChart3
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -80,6 +80,13 @@ export function AdminCardGrid() {
       icon: Users,
       path: "/admin/dealers/verification",
       iconColor: "text-amber-500"
+    },
+    {
+      title: "Metrics",
+      description: "View platform metrics and performance data",
+      icon: BarChart3,
+      path: "/admin/metrics",
+      iconColor: "text-blue-500"
     }
   ];
 

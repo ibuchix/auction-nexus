@@ -5,6 +5,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import Analytics from "@/pages/admin/Analytics";
 import AuditLogs from "@/pages/admin/AuditLogs";
 import SystemSettings from "@/pages/admin/SystemSettings";
+import Metrics from "@/pages/admin/Metrics";
 
 export const SystemRoutes = (
   <>
@@ -37,6 +38,14 @@ export const SystemRoutes = (
       element={
         <AdminProtectedRoute>
           <SystemSettings />
+        </AdminProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/admin/metrics"
+      element={
+        <AdminProtectedRoute>
+          <Metrics />
         </AdminProtectedRoute>
       } 
     />
