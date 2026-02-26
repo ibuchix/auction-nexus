@@ -1,43 +1,39 @@
 
 
-## Dashboard Card Removal + Calendar Fix
+## Add Metrics Card and Placeholder Page
 
-### 1. Remove 5 cards from the dashboard grid
+### What's changing
 
-**File: `src/components/dashboard/AdminCardGrid.tsx`**
+1. **New "Metrics" card** on the dashboard grid, placed after Dealer Verification
+2. **New placeholder page** at `/admin/metrics` with a basic layout ready to be filled in later
+3. **New route** registered in SystemRoutes
 
-Remove these cards from the `adminCards` array:
-- Auction Scheduling
-- Proxy Bid Management
-- Purchase Records
-- Audit Logs
-- Fraud Detection
+### Files to create
 
-Clean up unused icon imports: `ShieldCheck`, `CalendarClock`, `History`, `Wallet`, `CircleDollarSign`
+| File | Purpose |
+|------|---------|
+| `src/pages/admin/Metrics.tsx` | Placeholder metrics page with title, subtitle, and empty state message |
 
-This leaves 5 cards: Auction Monitoring, Analytics, User Management, Compliance, Dealer Verification.
-
-### 2. Fix broken calendars across the app
-
-**File: `src/components/ui/calendar.tsx`**
-
-The Calendar component is missing `pointer-events-auto` in its className. When calendars render inside a Dialog or Popover (like the auction scheduling dialog and the car edit dialog), pointer events get blocked. Adding `pointer-events-auto` to the DayPicker className fixes date selection everywhere in the app.
-
-Change:
-```
-className={cn("p-3", className)}
-```
-To:
-```
-className={cn("p-3 pointer-events-auto", className)}
-```
-
-This single fix resolves the broken calendars in both the auction scheduling dialog and the car details editing section.
-
-### Files to Change
+### Files to modify
 
 | File | Change |
 |------|--------|
-| `src/components/dashboard/AdminCardGrid.tsx` | Remove 5 cards, clean up imports |
-| `src/components/ui/calendar.tsx` | Add `pointer-events-auto` to fix date selection |
+| `src/components/dashboard/AdminCardGrid.tsx` | Add Metrics card entry with `BarChart3` icon after Dealer Verification |
+| `src/components/routes/SystemRoutes.tsx` | Add `/admin/metrics` route pointing to the new page |
 
+### Technical detail
+
+**AdminCardGrid.tsx** -- add to `adminCards` array and import `BarChart3` icon:
+```typescript
+{
+  title: "Metrics",
+  description: "View platform metrics and performance data",
+  icon: BarChart3,
+  path: "/admin/metrics",
+  iconColor: "text-blue-500"
+}
+```
+
+**Metrics.tsx** -- simple placeholder page following existing page patterns (card with icon, title, description, and "Coming soon" message).
+
+**SystemRoutes.tsx** -- add the route wrapped in `AdminProtectedRoute`.
