@@ -2,9 +2,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  ShieldCheck, Gavel, Activity, TrendingUp,
-  FileText, ArrowRight, CalendarClock, Users, 
-  CircleDollarSign, History, Wallet
+  Gavel, TrendingUp,
+  FileText, ArrowRight, Users
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -69,13 +68,6 @@ export function AdminCardGrid() {
       iconColor: "text-indigo-500"
     },
     {
-      title: "Fraud Detection",
-      description: "Monitor and manage suspicious activities",
-      icon: ShieldCheck,
-      path: "/admin/fraud",
-      iconColor: "text-red-500"
-    },
-    {
       title: "Compliance",
       description: "Access compliance reports and tools",
       icon: FileText,
@@ -83,39 +75,11 @@ export function AdminCardGrid() {
       iconColor: "text-purple-500"
     },
     {
-      title: "Audit Logs",
-      description: "View system activity and user actions",
-      icon: History,
-      path: "/admin/audit-logs",
-      iconColor: "text-gray-500"
-    },
-    {
       title: "Dealer Verification",
       description: "Review and approve dealer registrations",
       icon: Users,
       path: "/admin/dealers/verification",
       iconColor: "text-amber-500"
-    },
-    {
-      title: "Auction Scheduling",
-      description: "Schedule and manage upcoming auctions",
-      icon: CalendarClock,
-      path: "/admin/auction-scheduling",
-      iconColor: "text-teal-500"
-    },
-    {
-      title: "Proxy Bid Management",
-      description: "Review and manage proxy bids",
-      icon: Wallet,
-      path: "/admin/proxy-bids",
-      iconColor: "text-emerald-500"
-    },
-    {
-      title: "Purchase Records",
-      description: "View and manage purchase transactions",
-      icon: CircleDollarSign,
-      path: "/admin/purchases",
-      iconColor: "text-cyan-500"
     }
   ];
 
