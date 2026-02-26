@@ -20,11 +20,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Keyboard shortcuts
   useHotkeys('alt+h', () => navigate('/'), { description: 'Go to Dashboard' });
   useHotkeys('alt+a', () => navigate('/admin/auctions/monitor'), { description: 'Go to Auctions' });
-  useHotkeys('alt+d', () => navigate('/admin/disputes'), { description: 'Go to Disputes' });
   useHotkeys('alt+r', () => navigate('/admin/analytics'), { description: 'Go to Reports' });
   useHotkeys('alt+/', () => {
     toast('Keyboard Shortcuts', {
-      description: 'Alt + H: Home\nAlt + A: Auctions\nAlt + D: Disputes\nAlt + R: Reports',
+      description: 'Alt + H: Home\nAlt + A: Auctions\nAlt + R: Reports',
     });
   }, { description: 'Show Keyboard Shortcuts' });
 

@@ -4,7 +4,6 @@ import {
   Gavel,
   AlertTriangle,
   LineChart,
-  Bell,
   ScrollText,
   Users,
   FileCheck,
@@ -106,10 +105,6 @@ export const menuItems: SidebarMenuItem[] = [
     shortcut: "Alt+R",
     submenu: [
       {
-        title: "Disputes",
-        path: "/admin/disputes",
-      },
-      {
         title: "Fraud Detection",
         path: "/admin/fraud",
       },
@@ -123,11 +118,6 @@ export const menuItems: SidebarMenuItem[] = [
     title: "Insights",
     icon: LineChart,
     path: "/admin/analytics",
-  },
-  {
-    title: "Communications",
-    icon: Bell,
-    path: "/admin/announcements",
   },
   {
     title: "System",
