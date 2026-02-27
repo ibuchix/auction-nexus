@@ -1,23 +1,35 @@
 
 
-## Restore 109 Auctions via Edge Function Call
+## Clean Up Auction Outcome Records for Restored Cars
 
-### What will happen
-I will call the already-deployed `bulkRestoreAuctions` action on the `admin-api` edge function directly. This is the same method used previously -- no browser console needed.
+### Problem
+18 of the 109 restored cars still have entries in the `dealer_won_vehicles` table from when they briefly ended. This causes them to appear in the Auction Outcomes view as if they need seller decisions. Additionally, 1 car has `awaiting_seller_decision` set to `true`.
 
-### The call
-A single POST request to the `admin-api` edge function with:
-- **Action**: `bulkRestoreAuctions`
-- **Car IDs**: All 109 cars whose `auction_end_time` was `2026-02-27 14:00:00+00`
-- **New end time**: `2026-03-07T13:00:00Z` (Friday 7 March 2026 at 14:00 Polish time / CET)
+### Solution
+Run two data cleanup operations (using the insert/update tool, not migrations):
 
-### What it does (server-side, using service role)
-1. Updates `cars` table: sets `auction_status = 'active'`, `status = 'available'`, `auction_end_time` to new date, `is_auction = true`
-2. Updates `auction_schedules` table: sets `status = 'active'`, `end_time` to new date
-3. Does NOT touch bids, `current_bid`, or proxy bids -- everything is preserved
+1. **Delete `dealer_won_vehicles` records** for the 109 restored cars (18 records found)
+   ```sql
+   DELETE FROM dealer_won_vehicles 
+   WHERE car_id IN (
+     SELECT id FROM cars 
+     WHERE auction_status = 'active' 
+     AND auction_end_time = '2026-03-07T13:00:00Z'
+   );
+   ```
 
-### No code changes needed
-This is purely a data operation using the existing edge function. No files will be created or modified.
+2. **Reset `awaiting_seller_decision`** to `false` on the restored cars (1 record found)
+   ```sql
+   UPDATE cars 
+   SET awaiting_seller_decision = false 
+   WHERE auction_status = 'active' 
+   AND auction_end_time = '2026-03-07T13:00:00Z' 
+   AND awaiting_seller_decision = true;
+   ```
 
-### After execution
-Active auctions should go from ~23 to ~132 (23 existing + 109 restored).
+### Impact
+- The 18 cars will no longer appear in the Auction Outcomes page
+- No seller decision prompts will show for these active auctions
+- All bids and proxy bids remain untouched
+- No code changes needed -- this is purely a data cleanup
+
