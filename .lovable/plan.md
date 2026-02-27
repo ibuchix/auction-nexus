@@ -1,39 +1,29 @@
 
 
-## Add Metrics Card and Placeholder Page
+## Restore 109 Auctions That Ended Today at 14:00
 
-### What's changing
+### What happened
+109 cars had their auctions end at 14:00 on 27 February 2026. 90 still show as "active" (expired but not yet processed) and 19 have already been marked as "ended". All need to be restored to live auction status.
 
-1. **New "Metrics" card** on the dashboard grid, placed after Dealer Verification
-2. **New placeholder page** at `/admin/metrics` with a basic layout ready to be filled in later
-3. **New route** registered in SystemRoutes
+### Approach
+Use the existing `bulkRestoreAuctions` edge function (already deployed in admin-api) which:
+- Sets `auction_status` back to `active`
+- Updates `auction_end_time` to the new date
+- Updates corresponding `auction_schedules` to `active` with new end time
+- Preserves all existing bids and `current_bid` values (does not touch them)
 
-### Files to create
+### New auction end time
+**Friday 7 March 2026 at 14:00 Polish time** (CET, UTC+1) = `2026-03-07T13:00:00Z`
 
-| File | Purpose |
-|------|---------|
-| `src/pages/admin/Metrics.tsx` | Placeholder metrics page with title, subtitle, and empty state message |
+### File to update
 
-### Files to modify
+**`src/utils/restoreAuctions.ts`** -- Replace the old car IDs with all 109 car IDs from today's batch, update the end time to `2026-03-07T13:00:00Z`, and update the comments.
 
-| File | Change |
-|------|--------|
-| `src/components/dashboard/AdminCardGrid.tsx` | Add Metrics card entry with `BarChart3` icon after Dealer Verification |
-| `src/components/routes/SystemRoutes.tsx` | Add `/admin/metrics` route pointing to the new page |
+### How to run it
+After the file is updated, you can run `restoreAuctionsToLive()` from the browser console (it's exposed on `window`), or navigate to a page that imports it. The function calls the existing `bulkRestoreAuctions` admin-api action which handles everything server-side using the service role key.
 
-### Technical detail
-
-**AdminCardGrid.tsx** -- add to `adminCards` array and import `BarChart3` icon:
-```typescript
-{
-  title: "Metrics",
-  description: "View platform metrics and performance data",
-  icon: BarChart3,
-  path: "/admin/metrics",
-  iconColor: "text-blue-500"
-}
-```
-
-**Metrics.tsx** -- simple placeholder page following existing page patterns (card with icon, title, description, and "Coming soon" message).
-
-**SystemRoutes.tsx** -- add the route wrapped in `AdminProtectedRoute`.
+### What gets preserved
+- All existing bids remain untouched
+- `current_bid` values stay as they are
+- Proxy bids remain active
+- Dealers can continue bidding as normal
