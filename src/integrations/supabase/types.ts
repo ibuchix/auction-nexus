@@ -1748,6 +1748,51 @@ export type Database = {
         }
         Relationships: []
       }
+      metrics_weekly_snapshots: {
+        Row: {
+          active_dealers_7d: number
+          avg_bids_per_listing: number
+          created_at: string
+          dealer_activation_rate: number
+          id: string
+          pct_listings_2plus_bids: number
+          sell_through_rate: number
+          seller_acceptance_rate: number
+          snapshot_date: string
+          total_approved_dealers: number
+          total_bids: number
+          total_listings: number
+        }
+        Insert: {
+          active_dealers_7d?: number
+          avg_bids_per_listing?: number
+          created_at?: string
+          dealer_activation_rate?: number
+          id?: string
+          pct_listings_2plus_bids?: number
+          sell_through_rate?: number
+          seller_acceptance_rate?: number
+          snapshot_date?: string
+          total_approved_dealers?: number
+          total_bids?: number
+          total_listings?: number
+        }
+        Update: {
+          active_dealers_7d?: number
+          avg_bids_per_listing?: number
+          created_at?: string
+          dealer_activation_rate?: number
+          id?: string
+          pct_listings_2plus_bids?: number
+          sell_through_rate?: number
+          seller_acceptance_rate?: number
+          snapshot_date?: string
+          total_approved_dealers?: number
+          total_bids?: number
+          total_listings?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           action_url: string | null
@@ -2783,6 +2828,7 @@ export type Database = {
       }
       cleanup_vin_valuation_cache: { Args: never; Returns: undefined }
       close_ended_auctions: { Args: never; Returns: Json }
+      compute_platform_metrics: { Args: never; Returns: Json }
       create_admin_notification: {
         Args: {
           p_action_url?: string
