@@ -1,39 +1,39 @@
 
 
-## Add Total Bids Card to Auction Management Page
+## Fix Total Bids Card Accuracy
 
-### What we're building
-A new card component placed next to the "Online Dealers" card showing:
-- **Total bids** across all currently active auctions
-- **Bids in the last 24 hours** as a secondary metric
+### Problem
+The current query filters by `cars.auction_status = 'active'`, but 442 cars have this field set to `'active'` without actually having an active auction schedule. The correct source of truth is the `auction_schedules` table where `status = 'active'`. This causes the count to fluctuate between 25 and 32 depending on timing/caching.
 
-### Implementation
+- Correct total bids (verified via DB): **25**
+- Incorrect count from `cars.auction_status`: **32**
 
-**1. Create `TotalBidsCard` component** (`src/components/admin/dashboard/TotalBidsCard.tsx`)
-- Uses `useQuery` to fetch two counts from the `bids` table:
-  - Total bids where `car_id` is in active auctions (`cars.auction_status = 'active'`)
-  - Bids created in the last 24 hours (filtered by `created_at`)
-- Since RLS may block direct client queries, we'll use the `admin-api` edge function or a direct Supabase query (the admin user has `admin_bids_access` RLS policy)
-- Card design will mirror the `OnlineDealersCard` style: gradient background, icon, primary large number, secondary stat below a divider
-- Icon: `Banknote` or `TrendingUp` from lucide-react
-- Shows a green pulse dot or activity indicator when there are recent bids
+### Solution
 
-**2. Update `AuctionManagementOptimized.tsx`**
-- Change the `<div className="max-w-sm">` wrapper to a flex/grid row holding both cards side by side
-- Import and render `TotalBidsCard` next to `OnlineDealersCard`
+**1. Create an RPC function** (new migration) that returns accurate bid counts using `auction_schedules` as the source of truth:
 
-### Data fetching approach
-Query the `bids` table joined with `cars` where `cars.auction_status = 'active'`:
-- Count all bids → total bids
-- Count bids where `created_at > now() - interval '24 hours'` → recent bids
-- Auto-refresh every 30 seconds to stay current
-- Real-time subscription on `bids` table INSERT events to update counts immediately
-
-### Layout change
-```text
-Before:  [Online Dealers]
-After:   [Online Dealers] [Total Bids]
+```sql
+CREATE OR REPLACE FUNCTION get_active_auction_bid_counts()
+RETURNS TABLE(total_bids bigint, recent_bids bigint)
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    (SELECT count(*) FROM bids b 
+     WHERE EXISTS (SELECT 1 FROM auction_schedules s WHERE s.car_id = b.car_id AND s.status = 'active')) AS total_bids,
+    (SELECT count(*) FROM bids b 
+     WHERE EXISTS (SELECT 1 FROM auction_schedules s WHERE s.car_id = b.car_id AND s.status = 'active')
+     AND b.created_at >= now() - interval '24 hours') AS recent_bids;
+$$;
 ```
 
-Both cards in a responsive grid: `grid-cols-1 sm:grid-cols-2 max-w-2xl`
+Using `SECURITY DEFINER` bypasses RLS so the count is always consistent regardless of the calling user's permissions.
+
+**2. Update `TotalBidsCard.tsx`** to call `supabase.rpc('get_active_auction_bid_counts')` instead of the two separate PostgREST queries with joins. This gives a single, fast, accurate call that always returns the correct numbers.
+
+### Why this fixes the inconsistency
+- Eliminates dependency on the stale `cars.auction_status` field
+- Uses `auction_schedules.status = 'active'` as the single source of truth (matching how the rest of the system identifies active auctions)
+- `SECURITY DEFINER` ensures consistent results regardless of RLS policies
+- Single RPC call instead of two separate queries reduces race conditions
 
