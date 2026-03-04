@@ -2906,6 +2906,13 @@ export type Database = {
         Args: { p_seller_id?: string }
         Returns: Json
       }
+      get_active_auction_bid_counts: {
+        Args: never
+        Returns: {
+          recent_bids: number
+          total_bids: number
+        }[]
+      }
       get_activity_logs: {
         Args: {
           p_action_filter?: string
