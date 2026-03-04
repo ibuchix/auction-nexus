@@ -1,35 +1,39 @@
 
 
-## Clean Up Auction Outcome Records for Restored Cars
+## Add Total Bids Card to Auction Management Page
 
-### Problem
-18 of the 109 restored cars still have entries in the `dealer_won_vehicles` table from when they briefly ended. This causes them to appear in the Auction Outcomes view as if they need seller decisions. Additionally, 1 car has `awaiting_seller_decision` set to `true`.
+### What we're building
+A new card component placed next to the "Online Dealers" card showing:
+- **Total bids** across all currently active auctions
+- **Bids in the last 24 hours** as a secondary metric
 
-### Solution
-Run two data cleanup operations (using the insert/update tool, not migrations):
+### Implementation
 
-1. **Delete `dealer_won_vehicles` records** for the 109 restored cars (18 records found)
-   ```sql
-   DELETE FROM dealer_won_vehicles 
-   WHERE car_id IN (
-     SELECT id FROM cars 
-     WHERE auction_status = 'active' 
-     AND auction_end_time = '2026-03-07T13:00:00Z'
-   );
-   ```
+**1. Create `TotalBidsCard` component** (`src/components/admin/dashboard/TotalBidsCard.tsx`)
+- Uses `useQuery` to fetch two counts from the `bids` table:
+  - Total bids where `car_id` is in active auctions (`cars.auction_status = 'active'`)
+  - Bids created in the last 24 hours (filtered by `created_at`)
+- Since RLS may block direct client queries, we'll use the `admin-api` edge function or a direct Supabase query (the admin user has `admin_bids_access` RLS policy)
+- Card design will mirror the `OnlineDealersCard` style: gradient background, icon, primary large number, secondary stat below a divider
+- Icon: `Banknote` or `TrendingUp` from lucide-react
+- Shows a green pulse dot or activity indicator when there are recent bids
 
-2. **Reset `awaiting_seller_decision`** to `false` on the restored cars (1 record found)
-   ```sql
-   UPDATE cars 
-   SET awaiting_seller_decision = false 
-   WHERE auction_status = 'active' 
-   AND auction_end_time = '2026-03-07T13:00:00Z' 
-   AND awaiting_seller_decision = true;
-   ```
+**2. Update `AuctionManagementOptimized.tsx`**
+- Change the `<div className="max-w-sm">` wrapper to a flex/grid row holding both cards side by side
+- Import and render `TotalBidsCard` next to `OnlineDealersCard`
 
-### Impact
-- The 18 cars will no longer appear in the Auction Outcomes page
-- No seller decision prompts will show for these active auctions
-- All bids and proxy bids remain untouched
-- No code changes needed -- this is purely a data cleanup
+### Data fetching approach
+Query the `bids` table joined with `cars` where `cars.auction_status = 'active'`:
+- Count all bids → total bids
+- Count bids where `created_at > now() - interval '24 hours'` → recent bids
+- Auto-refresh every 30 seconds to stay current
+- Real-time subscription on `bids` table INSERT events to update counts immediately
+
+### Layout change
+```text
+Before:  [Online Dealers]
+After:   [Online Dealers] [Total Bids]
+```
+
+Both cards in a responsive grid: `grid-cols-1 sm:grid-cols-2 max-w-2xl`
 
