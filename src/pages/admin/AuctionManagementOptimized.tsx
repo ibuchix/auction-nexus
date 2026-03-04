@@ -9,6 +9,7 @@ import { AuctionPagination } from "@/components/admin/auction-management/Auction
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { OnlineDealersCard } from "@/components/admin/dashboard/OnlineDealersCard";
+import { TotalBidsCard } from "@/components/admin/dashboard/TotalBidsCard";
 
 const AuctionManagementOptimized = () => {
   const {
@@ -69,9 +70,10 @@ const AuctionManagementOptimized = () => {
         Auction Management
       </h1>
 
-      {/* Online Dealers Card */}
-      <div className="max-w-sm">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 max-w-2xl gap-4">
         <OnlineDealersCard />
+        <TotalBidsCard />
       </div>
 
       <div className="space-y-4">

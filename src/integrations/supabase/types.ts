@@ -2419,7 +2419,7 @@ export type Database = {
           monthly_failed_runs: number | null
           monthly_is_active: boolean | null
           monthly_job_name: string | null
-          monthly_last_run_duration: unknown
+          monthly_last_run_duration: string | null
           monthly_last_run_ended: string | null
           monthly_last_run_started: string | null
           monthly_last_run_status: string | null
@@ -2432,7 +2432,7 @@ export type Database = {
           weekly_failed_runs: number | null
           weekly_is_active: boolean | null
           weekly_job_name: string | null
-          weekly_last_run_duration: unknown
+          weekly_last_run_duration: string | null
           weekly_last_run_ended: string | null
           weekly_last_run_started: string | null
           weekly_last_run_status: string | null
@@ -3062,7 +3062,7 @@ export type Database = {
           failed_runs: number
           is_active: boolean
           job_name: string
-          last_run_duration: unknown
+          last_run_duration: string
           last_run_status: string
           last_run_time: string
           next_scheduled_run: string
