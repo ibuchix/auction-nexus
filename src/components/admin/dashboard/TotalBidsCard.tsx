@@ -11,28 +11,17 @@ function useTotalBids() {
   const { data, isLoading } = useQuery({
     queryKey: ['totalBidsCard'],
     queryFn: async () => {
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase.rpc('get_active_auction_bid_counts');
 
-      // Total bids on active auctions
-      const { count: totalBids, error: e1 } = await supabase
-        .from('bids')
-        .select('id, cars!inner(auction_status)', { count: 'exact', head: true })
-        .eq('cars.auction_status', 'active');
+      if (error) {
+        console.error('Total bids RPC error:', error);
+        return { totalBids: 0, recentBids: 0 };
+      }
 
-      if (e1) console.error('Total bids error:', e1);
-
-      // Bids in last 24h on active auctions
-      const { count: recentBids, error: e2 } = await supabase
-        .from('bids')
-        .select('id, cars!inner(auction_status)', { count: 'exact', head: true })
-        .eq('cars.auction_status', 'active')
-        .gte('created_at', twentyFourHoursAgo);
-
-      if (e2) console.error('Recent bids error:', e2);
-
+      const row = data?.[0] ?? { total_bids: 0, recent_bids: 0 };
       return {
-        totalBids: totalBids ?? 0,
-        recentBids: recentBids ?? 0,
+        totalBids: Number(row.total_bids) || 0,
+        recentBids: Number(row.recent_bids) || 0,
       };
     },
     refetchInterval: 30000,
