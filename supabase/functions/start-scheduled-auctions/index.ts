@@ -13,12 +13,29 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    // --- Admin Auth Guard (Variant A) ---
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+    const token = authHeader.replace('Bearer ', '')
+    const userClient = createClient(supabaseUrl, supabaseAnonKey)
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token)
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+    const supabaseClient = createClient(supabaseUrl, serviceRoleKey)
+    const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'admin' })
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+    // --- End Auth Guard ---
     
-    console.log('Starting scheduled auctions...')
+    console.log('Starting scheduled auctions... triggered by admin:', user.id)
     
     // Log the operation start
     const { data: logEntry, error: logError } = await supabaseClient
@@ -27,6 +44,7 @@ Deno.serve(async (req) => {
         action: 'start_scheduled_auctions',
         entity_type: 'system',
         entity_id: '00000000-0000-0000-0000-000000000000',
+        user_id: user.id,
         details: {
           operation_start: new Date().toISOString(),
           status: 'in_progress'
@@ -60,7 +78,6 @@ Deno.serve(async (req) => {
       .lte('start_time', new Date().toISOString())
     
     if (schedulesError) {
-      // Update log entry with error
       if (logId) {
         await supabaseClient
           .from('audit_logs')
@@ -78,7 +95,6 @@ Deno.serve(async (req) => {
     }
     
     if (!schedulesToStart?.length) {
-      // Update log entry with success but no auctions to start
       if (logId) {
         await supabaseClient
           .from('audit_logs')
@@ -116,7 +132,6 @@ Deno.serve(async (req) => {
       try {
         console.log(`Starting auction for car ${schedule.car_id} (${schedule.cars.title || 'Untitled'})`)
         
-        // Update auction schedule status
         const { error: updateScheduleError } = await supabaseClient
           .from('auction_schedules')
           .update({
@@ -130,7 +145,6 @@ Deno.serve(async (req) => {
           throw updateScheduleError
         }
         
-        // Update car status
         const { error: updateCarError } = await supabaseClient
           .from('cars')
           .update({
@@ -144,13 +158,13 @@ Deno.serve(async (req) => {
           throw updateCarError
         }
         
-        // Log individual auction start
         await supabaseClient
           .from('audit_logs')
           .insert({
             action: 'auction_started',
             entity_type: 'auction',
             entity_id: schedule.car_id,
+            user_id: user.id,
             details: {
               schedule_id: schedule.id,
               title: schedule.cars.title,
@@ -168,13 +182,13 @@ Deno.serve(async (req) => {
       } catch (scheduleError) {
         console.error(`Error starting auction for schedule ${schedule.id}:`, scheduleError)
         
-        // Log the error
         await supabaseClient
           .from('audit_logs')
           .insert({
             action: 'auction_start_failed',
             entity_type: 'auction_schedule',
             entity_id: schedule.id,
+            user_id: user.id,
             details: {
               car_id: schedule.car_id,
               error: scheduleError.message
@@ -190,7 +204,6 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Update the main log entry with final results
     if (logId) {
       await supabaseClient
         .from('audit_logs')
@@ -224,27 +237,6 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     console.error('Error starting scheduled auctions:', error)
-    
-    // Try to log the error
-    try {
-      const supabaseErrorLog = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
-      
-      await supabaseErrorLog
-        .from('audit_logs')
-        .insert({
-          action: 'auction_start_system_error',
-          entity_type: 'system',
-          entity_id: '00000000-0000-0000-0000-000000000000',
-          details: {
-            error: error.message
-          }
-        })
-    } catch (logError) {
-      console.error('Failed to log error:', logError)
-    }
     
     return new Response(
       JSON.stringify({ 

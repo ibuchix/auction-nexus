@@ -43,13 +43,11 @@ async function runCleanupLoop() {
 
       console.log(`[cleanup-cars-history] Iteration ${iteration}: Deleted ${result.deleted_count}, Total: ${totalDeleted}, More: ${moreToDelete}`)
 
-      // Log progress every 50 iterations
       if (iteration % 50 === 0) {
         const elapsed = Math.round((Date.now() - startTime) / 1000)
         console.log(`[cleanup-cars-history] Progress: ${iteration} iterations, ${totalDeleted} total deleted, ${elapsed}s elapsed`)
       }
 
-      // Small delay to prevent database overload
       if (moreToDelete) {
         await new Promise(resolve => setTimeout(resolve, 500))
       }
@@ -71,20 +69,53 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  console.log('[cleanup-cars-history] Request received, starting background cleanup...')
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-  // Start cleanup in background
-  EdgeRuntime.waitUntil(runCleanupLoop())
-
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: 'Cleanup started in background. Check edge function logs for progress.',
-      logsUrl: 'https://supabase.com/dashboard/project/sdvakfhmoaoucmhbhwvy/functions/cleanup-cars-history/logs'
-    }),
-    {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200
+    // --- Admin Auth Guard (Variant A) ---
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-  )
+    const token = authHeader.replace('Bearer ', '')
+    const userClient = createClient(supabaseUrl, supabaseAnonKey)
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token)
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+    const supabaseClient = createClient(supabaseUrl, serviceRoleKey)
+    const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'admin' })
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+    // --- End Auth Guard ---
+
+    console.log('[cleanup-cars-history] Request received from admin:', user.id)
+
+    // Start cleanup in background
+    EdgeRuntime.waitUntil(runCleanupLoop())
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Cleanup started in background. Check edge function logs for progress.',
+        logsUrl: 'https://supabase.com/dashboard/project/sdvakfhmoaoucmhbhwvy/functions/cleanup-cars-history/logs'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    )
+  } catch (error) {
+    console.error('[cleanup-cars-history] Auth error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
+      }
+    )
+  }
 })

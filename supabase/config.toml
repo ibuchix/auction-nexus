@@ -18,9 +18,6 @@ project_id = "sdvakfhmoaoucmhbhwvy"
 [functions.close-ended-auctions]
   verify_jwt = false
 
-[functions.generate-audit-report]
-  verify_jwt = false
-
 [functions.recover-auction]
   verify_jwt = false
 

@@ -36,12 +36,44 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log('🧹 Starting monthly vehicle cleanup job...');
-
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
+    // --- Admin OR Cron Auth Guard (Variant B) ---
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const token = authHeader.replace('Bearer ', '');
+
+    // Check if the token is the service role key (cron job)
+    let isAuthorized = false;
+    if (token === supabaseServiceKey) {
+      isAuthorized = true;
+      console.log('🧹 Cleanup authorized via service role key (cron job)');
+    } else {
+      // Try JWT auth for admin users
+      const userClient = createClient(supabaseUrl, supabaseAnonKey);
+      const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+      if (!authError && user) {
+        const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+        const { data: isAdmin } = await adminClient.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+        if (isAdmin) {
+          isAuthorized = true;
+          console.log('🧹 Cleanup authorized via admin JWT, user:', user.id);
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    // --- End Auth Guard ---
+
+    console.log('🧹 Starting monthly vehicle cleanup job...');
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse request body for dry_run option
@@ -95,17 +127,13 @@ Deno.serve(async (req) => {
 
       console.log(`🗂️ Deleting ${carFilePaths.length} car files and ${manualFilePaths.length} manual valuation files...`);
 
-      // Delete car files (from car-images and car-files buckets)
       for (const filePath of carFilePaths) {
         try {
-          // Determine bucket based on file path pattern
           let bucket = 'car-images';
           if (filePath.includes('/documents/') || filePath.endsWith('.pdf')) {
             bucket = 'car-files';
           }
-
           const { error } = await supabase.storage.from(bucket).remove([filePath]);
-          
           if (error) {
             console.warn(`⚠️ Failed to delete car file ${filePath}:`, error.message);
             storageStats.car_files_failed++;
@@ -118,13 +146,11 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Delete manual valuation files
       for (const filePath of manualFilePaths) {
         try {
           const { error } = await supabase.storage
             .from('manual-valuation-photos')
             .remove([filePath]);
-          
           if (error) {
             console.warn(`⚠️ Failed to delete manual file ${filePath}:`, error.message);
             storageStats.manual_files_failed++;
@@ -140,7 +166,6 @@ Deno.serve(async (req) => {
       console.log(`🗑️ Storage cleanup: ${storageStats.car_files_deleted} car files, ${storageStats.manual_files_deleted} manual files deleted`);
     }
 
-    // Build final response
     const response = {
       success: true,
       dry_run: dryRun,
@@ -154,7 +179,6 @@ Deno.serve(async (req) => {
     };
 
     console.log('🎉 Monthly vehicle cleanup completed successfully!');
-    console.log(JSON.stringify(response, null, 2));
 
     return new Response(
       JSON.stringify(response),

@@ -726,15 +726,150 @@ Deno.serve(async (req) => {
         }
         break
 
-      case 'recoverAuction':
-        console.log('Recovering auction...')
-        result = { 
+      case 'recoverAuction': {
+        console.log('Recovering auction...', params)
+        const { auctionId, action: recoveryAction } = params
+        
+        if (!auctionId) {
+          throw new Error('Auction ID is required')
+        }
+        if (!['reset', 'force_complete', 'force_start', 'reset_bids'].includes(recoveryAction)) {
+          throw new Error('Invalid recovery action')
+        }
+
+        // Get current auction state
+        const { data: auctionData, error: auctionFetchError } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('id', auctionId)
+          .single()
+        
+        if (auctionFetchError) throw auctionFetchError
+        if (!auctionData) throw new Error('Auction not found')
+
+        // Log recovery attempt
+        await supabase
+          .from('audit_logs')
+          .insert({
+            action: 'recovery_attempt',
+            entity_type: 'auction',
+            entity_id: auctionId,
+            user_id: user.id,
+            details: {
+              recovery_action: recoveryAction,
+              previous_state: {
+                status: auctionData.auction_status,
+                current_bid: auctionData.current_bid,
+                end_time: auctionData.auction_end_time
+              }
+            }
+          })
+
+        let recoveryResult;
+
+        switch (recoveryAction) {
+          case 'reset':
+            recoveryResult = await supabase
+              .from('cars')
+              .update({
+                auction_status: 'ready',
+                is_manually_controlled: true,
+                current_bid: 0,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', auctionId)
+            break
+
+          case 'force_complete': {
+            const reserveMet = auctionData.current_bid >= auctionData.reserve_price
+            recoveryResult = await supabase
+              .from('cars')
+              .update({
+                auction_status: reserveMet ? 'sold' : 'reserve_not_met',
+                status: reserveMet ? 'sold' : 'available',
+                is_manually_controlled: true,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', auctionId)
+            break
+          }
+
+          case 'force_start': {
+            const newEndTime = new Date()
+            newEndTime.setHours(newEndTime.getHours() + 24)
+            recoveryResult = await supabase
+              .from('cars')
+              .update({
+                auction_status: 'active',
+                auction_start_time: new Date().toISOString(),
+                auction_end_time: newEndTime.toISOString(),
+                is_manually_controlled: true,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', auctionId)
+            break
+          }
+
+          case 'reset_bids': {
+            // Archive current bids before deleting
+            const { data: existingBids } = await supabase
+              .from('bids')
+              .select('*')
+              .eq('car_id', auctionId)
+
+            if (existingBids && existingBids.length > 0) {
+              await supabase
+                .from('audit_logs')
+                .insert({
+                  action: 'bids_archived',
+                  entity_type: 'auction',
+                  entity_id: auctionId,
+                  user_id: user.id,
+                  details: { archived_bids: existingBids }
+                })
+
+              await supabase
+                .from('bids')
+                .delete()
+                .eq('car_id', auctionId)
+            }
+
+            // Clear proxy bids
+            await supabase
+              .from('proxy_bids')
+              .delete()
+              .eq('car_id', auctionId)
+
+            recoveryResult = await supabase
+              .from('cars')
+              .update({
+                current_bid: 0,
+                is_manually_controlled: true,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', auctionId)
+            break
+          }
+        }
+
+        // Log success
+        await supabase
+          .from('audit_logs')
+          .insert({
+            action: 'recovery_completed',
+            entity_type: 'auction',
+            entity_id: auctionId,
+            user_id: user.id,
+            details: { recovery_action: recoveryAction, success: true }
+          })
+
+        result = {
           success: true,
-          message: 'Recovery initiated',
-          auctionId: params.auctionId,
-          action: params.action
+          message: `Auction ${auctionId} recovered successfully with action: ${recoveryAction}`,
+          recoveryResult
         }
         break
+      }
 
       case 'bulkRestoreAuctions':
         console.log('Bulk restoring auctions...')
