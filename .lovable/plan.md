@@ -1,37 +1,53 @@
 
 
-## Security Analysis: `sellers` Table — FALSE POSITIVE
+## Security Fix: Make Storage Buckets Private — Risk Analysis
 
-### Current State
+### Verification Result: SAFE TO PROCEED
 
-The `sellers` table has:
-- **RLS enabled**: Yes (`relrowsecurity = true`)
-- **Table-level grants**: Both `anon` and `authenticated` have SELECT (this is the standard Supabase default for all public schema tables)
+I searched the entire codebase exhaustively:
 
-**Columns**: id, user_id, full_name, company_name, tax_id, address, verification_status, is_verified, created_at, updated_at
+- **`getPublicUrl()`** — 0 uses across all files
+- **`/storage/v1/object/public/`** hardcoded URLs — 0 uses
+- **`createSignedUrl()`** — 30 uses across 5 files (this is the only access pattern)
+- **`upload()` / `remove()`** — used for writes, unaffected by public/private setting
 
-### RLS Policies in Place
+Every file access path in the app — dealer side, seller side, admin side — goes through signed URLs which work identically on both public and private buckets. The `public` flag on a bucket only controls whether the `/object/public/` endpoint works; it has zero effect on signed URLs, uploads, or deletions.
 
-| Policy | Command | Condition |
-|--------|---------|-----------|
-| Sellers can view their own profile | SELECT | `user_id = auth.uid()` |
-| Sellers can update their own profile | UPDATE | `user_id = auth.uid()` |
-| Users can create seller profile | INSERT | `user_id = auth.uid()` |
-| admin_sellers_access | ALL | hardcoded UUID check |
+### What Changes
 
-All policies are **PERMISSIVE**. For any user who is not the seller themselves (or the hardcoded admin), **zero rows are returned**. Anonymous users get `auth.uid() = NULL`, which matches nothing.
+| Bucket | Current | After | Impact |
+|--------|---------|-------|--------|
+| `car-images` | public | **private** | None — all 30 `createSignedUrl` calls unaffected |
+| `car-files` | public | **private** | None — accessed via signed URLs in `useFileManagement` |
+| `manual-valuation-photos` | public | **private** | None — accessed via signed URLs in `ManualValuationImages` |
+| `avatars` | public | **stays public** | No change — low-sensitivity profile pictures |
+| `dealer-documents` | private | **stays private** | Already correct |
 
-### Verdict: This is a false positive
+### What Won't Break
 
-The security scanner flagged the table-level `SELECT` grant to `anon`/`authenticated`, but it did not account for the fact that RLS is enabled and all policies correctly restrict access to only the row owner and admin. No unauthorized user — anonymous or authenticated — can read any seller data.
+- **Dealer viewing auction car images** — uses `createSignedUrl` via `VehicleImages` component
+- **Seller uploading/viewing their car photos** — uses `upload()` and `createSignedUrl`
+- **Admin editing car images/documents** — uses `createSignedUrl` in `useFileManagement`
+- **Manual valuation photo viewing** — uses `createSignedUrl` in `ManualValuationImages`
+- **Document downloads** — uses `createSignedUrl` in `useDealerDocuments`
+- **Image exports to ZIP** — fetches from signed URLs
+- **Cleanup edge function** — uses `remove()` with service role key
 
-**Proof**: An anonymous API call like `supabase.from('sellers').select('*')` returns 0 rows because no RLS policy grants access to anonymous users.
+### Migration
 
-### The only real issue (separate finding)
+```sql
+UPDATE storage.buckets SET public = false 
+WHERE name IN ('car-images', 'car-files', 'manual-valuation-photos');
+```
 
-The `admin_sellers_access` policy uses a hardcoded UUID instead of `has_role()`. This is already flagged as a separate security finding and should be addressed in a dedicated migration to replace all 8 hardcoded UUID policies across the codebase.
+One statement, immediately effective, no downtime. Existing signed URLs that were already generated continue to work until their 1-hour expiry.
 
-### Recommendation
+### Overly Permissive Storage Policies to Remove
 
-No action needed for this specific finding — dismiss it as a false positive. The seller phone numbers are stored in the `cars` table (as `mobile_number`), not in the `sellers` table, and dealer access to car data is already gated by auction status through RLS policies on the `cars` table.
+These policies allow unauthenticated public reads and are redundant once buckets are private:
+
+- `"Public can read car images"` on `storage.objects`
+- `"Allow public to view photos"` on `storage.objects`
+
+Other policies (authenticated user access, car owner access, dealer access) remain unchanged.
 
