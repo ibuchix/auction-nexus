@@ -1,53 +1,82 @@
 
 
-## Security Fix: Make Storage Buckets Private — Risk Analysis
+## Revised Analysis: Edge Functions Proposed for Deletion
 
-### Verification Result: SAFE TO PROCEED
+### 1. `recover-auction` — DO NOT DELETE, but it's redundant as a standalone function
 
-I searched the entire codebase exhaustively:
+**What I found**: The AuctionRecovery page calls `recoverAuction()` → `edgeFunctionAdminOperations.recoverAuction()` → `admin-api` (action: `recoverAuction`). However, the `admin-api` handler at line 729 is just a **stub** — it returns `{ success: true, message: 'Recovery initiated' }` without actually performing any recovery logic.
 
-- **`getPublicUrl()`** — 0 uses across all files
-- **`/storage/v1/object/public/`** hardcoded URLs — 0 uses
-- **`createSignedUrl()`** — 30 uses across 5 files (this is the only access pattern)
-- **`upload()` / `remove()`** — used for writes, unaffected by public/private setting
+The real recovery logic lives in the standalone `recover-auction` edge function, but **nothing in the frontend calls it directly**. This means the recovery UI currently gives a false success message.
 
-Every file access path in the app — dealer side, seller side, admin side — goes through signed URLs which work identically on both public and private buckets. The `public` flag on a bucket only controls whether the `/object/public/` endpoint works; it has zero effect on signed URLs, uploads, or deletions.
+**Recommendation**: Don't delete the standalone function yet. Instead, **copy the recovery logic from `recover-auction/index.ts` into the `admin-api` handler** so the existing UI actually works. Then the standalone function becomes truly redundant and can be removed from `config.toml` (but keep the code for reference).
 
-### What Changes
+### 2. `reset-auction-system` — SAFE TO KEEP, never called directly
 
-| Bucket | Current | After | Impact |
-|--------|---------|-------|--------|
-| `car-images` | public | **private** | None — all 30 `createSignedUrl` calls unaffected |
-| `car-files` | public | **private** | None — accessed via signed URLs in `useFileManagement` |
-| `manual-valuation-photos` | public | **private** | None — accessed via signed URLs in `ManualValuationImages` |
-| `avatars` | public | **stays public** | No change — low-sensitivity profile pictures |
-| `dealer-documents` | private | **stays private** | Already correct |
+The frontend's `resetSystemState()` in `edgeFunctionAdminOperations.ts` does NOT call this edge function. It calls `checkSystemHealth` + loops through stuck auctions calling `recoverAuction` via `admin-api`. The standalone `reset-auction-system` edge function is never invoked from anywhere.
 
-### What Won't Break
+**Recommendation**: Don't delete yet — it's useful as emergency tooling callable via curl. But it must get an auth guard added. It's low priority.
 
-- **Dealer viewing auction car images** — uses `createSignedUrl` via `VehicleImages` component
-- **Seller uploading/viewing their car photos** — uses `upload()` and `createSignedUrl`
-- **Admin editing car images/documents** — uses `createSignedUrl` in `useFileManagement`
-- **Manual valuation photo viewing** — uses `createSignedUrl` in `ManualValuationImages`
-- **Document downloads** — uses `createSignedUrl` in `useDealerDocuments`
-- **Image exports to ZIP** — fetches from signed URLs
-- **Cleanup edge function** — uses `remove()` with service role key
+### 3. `generate-audit-report` — SAFE TO DELETE
 
-### Migration
+Zero references anywhere in the frontend. No cron job calls it. Truly unused.
 
-```sql
-UPDATE storage.buckets SET public = false 
-WHERE name IN ('car-images', 'car-files', 'manual-valuation-photos');
+**Recommendation**: Delete or add auth guard. Deletion is cleanest.
+
+### 4. `cleanup-cars-history` — DO NOT DELETE
+
+**Critical finding**: The cron job `daily-cars-history-cleanup` calls `SELECT public.cleanup_cars_history_daily()` — this is the **database function**, not the edge function. They are different things:
+- DB function `cleanup_cars_history_daily()` — called by cron at 4 AM UTC daily. This will keep working regardless.
+- Edge function `cleanup-cars-history` — calls `cleanup_cars_history_backlog()` (the bulk version). This was used for the one-time massive backlog cleanup.
+
+Deleting the edge function won't break the daily cron. However, it's useful to keep for manual bulk cleanups if the backlog ever grows again.
+
+**Recommendation**: Keep it, add auth guard. It's a useful admin tool.
+
+### Revised Plan
+
+| Function | Previous Recommendation | Revised Recommendation | Reason |
+|----------|------------------------|----------------------|--------|
+| `recover-auction` | Delete | **Keep, add auth guard** | Recovery logic needs to be ported to admin-api; standalone function useful as fallback |
+| `reset-auction-system` | Delete | **Keep, add auth guard** | Useful emergency tool via curl; just needs protection |
+| `generate-audit-report` | Delete | **Delete** | Confirmed zero callers, zero cron jobs |
+| `cleanup-cars-history` | Delete | **Keep, add auth guard** | Daily cron calls DB function (safe), but edge function is useful for manual bulk cleanup |
+
+### Implementation
+
+**Phase 1: Add admin auth guards to all 8 edge functions** (no deletions)
+
+Each function gets this guard at the top:
+```typescript
+const authHeader = req.headers.get('Authorization');
+if (!authHeader?.startsWith('Bearer ')) {
+  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+}
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
+const { data: { user }, error: authError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
+if (authError || !user) {
+  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+}
+const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+if (!isAdmin) {
+  return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
+}
 ```
 
-One statement, immediately effective, no downtime. Existing signed URLs that were already generated continue to work until their 1-hour expiry.
+**Special handling for cron-called functions** (`send-notifications`, `cleanup-old-vehicle-files`):
+These are called by `pg_cron` via `net.http_post` with the anon key (not a user JWT). The auth guard would block them. Two options:
 
-### Overly Permissive Storage Policies to Remove
+- **Option A**: Add a shared secret as env var, check for it as a fallback when JWT auth fails
+- **Option B**: Update the cron jobs to call database functions directly instead of the edge functions (like `cleanup-cars-history` already does)
 
-These policies allow unauthenticated public reads and are redundant once buckets are private:
+For `send-notifications`: the cron calls it every 5 minutes. We need Option A (shared secret fallback) since the function does work that can't easily move to a DB function.
 
-- `"Public can read car images"` on `storage.objects`
-- `"Allow public to view photos"` on `storage.objects`
+For `cleanup-old-vehicle-files`: this does storage operations that require the Supabase client, so Option A (shared secret fallback) is also needed.
 
-Other policies (authenticated user access, car owner access, dealer access) remain unchanged.
+**Phase 2: Delete only `generate-audit-report`**
+
+Remove from `config.toml` and delete the function directory.
+
+**Phase 3 (separate): Fix the admin-api `recoverAuction` stub**
+
+Port the actual recovery logic from `recover-auction/index.ts` into the `admin-api` switch case so the AuctionRecovery UI actually works.
 
