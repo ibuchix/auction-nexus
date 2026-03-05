@@ -1,59 +1,25 @@
 
 
-## Revised Analysis: Edge Functions Proposed for Deletion
+## Edge Function Security Hardening — Implementation Plan
 
-### 1. `recover-auction` — DO NOT DELETE, but it's redundant as a standalone function
+### Corrected Approach (No Extra Secrets Needed)
 
-**What I found**: The AuctionRecovery page calls `recoverAuction()` → `edgeFunctionAdminOperations.recoverAuction()` → `admin-api` (action: `recoverAuction`). However, the `admin-api` handler at line 729 is just a **stub** — it returns `{ success: true, message: 'Recovery initiated' }` without actually performing any recovery logic.
+The `SUPABASE_SERVICE_ROLE_KEY` is already available as an env var in every edge function. For cron-called functions, we check if the bearer token matches the service role key. For admin-called functions, we validate the user JWT and check admin role via `has_role()` RPC — the same pattern already used in `admin-api`.
 
-The real recovery logic lives in the standalone `recover-auction` edge function, but **nothing in the frontend calls it directly**. This means the recovery UI currently gives a false success message.
+### Auth Guard Pattern
 
-**Recommendation**: Don't delete the standalone function yet. Instead, **copy the recovery logic from `recover-auction/index.ts` into the `admin-api` handler** so the existing UI actually works. Then the standalone function becomes truly redundant and can be removed from `config.toml` (but keep the code for reference).
+Two variants will be used:
 
-### 2. `reset-auction-system` — SAFE TO KEEP, never called directly
-
-The frontend's `resetSystemState()` in `edgeFunctionAdminOperations.ts` does NOT call this edge function. It calls `checkSystemHealth` + loops through stuck auctions calling `recoverAuction` via `admin-api`. The standalone `reset-auction-system` edge function is never invoked from anywhere.
-
-**Recommendation**: Don't delete yet — it's useful as emergency tooling callable via curl. But it must get an auth guard added. It's low priority.
-
-### 3. `generate-audit-report` — SAFE TO DELETE
-
-Zero references anywhere in the frontend. No cron job calls it. Truly unused.
-
-**Recommendation**: Delete or add auth guard. Deletion is cleanest.
-
-### 4. `cleanup-cars-history` — DO NOT DELETE
-
-**Critical finding**: The cron job `daily-cars-history-cleanup` calls `SELECT public.cleanup_cars_history_daily()` — this is the **database function**, not the edge function. They are different things:
-- DB function `cleanup_cars_history_daily()` — called by cron at 4 AM UTC daily. This will keep working regardless.
-- Edge function `cleanup-cars-history` — calls `cleanup_cars_history_backlog()` (the bulk version). This was used for the one-time massive backlog cleanup.
-
-Deleting the edge function won't break the daily cron. However, it's useful to keep for manual bulk cleanups if the backlog ever grows again.
-
-**Recommendation**: Keep it, add auth guard. It's a useful admin tool.
-
-### Revised Plan
-
-| Function | Previous Recommendation | Revised Recommendation | Reason |
-|----------|------------------------|----------------------|--------|
-| `recover-auction` | Delete | **Keep, add auth guard** | Recovery logic needs to be ported to admin-api; standalone function useful as fallback |
-| `reset-auction-system` | Delete | **Keep, add auth guard** | Useful emergency tool via curl; just needs protection |
-| `generate-audit-report` | Delete | **Delete** | Confirmed zero callers, zero cron jobs |
-| `cleanup-cars-history` | Delete | **Keep, add auth guard** | Daily cron calls DB function (safe), but edge function is useful for manual bulk cleanup |
-
-### Implementation
-
-**Phase 1: Add admin auth guards to all 8 edge functions** (no deletions)
-
-Each function gets this guard at the top:
+**Variant A — Admin-only functions** (called from admin UI via `supabase.functions.invoke()`):
 ```typescript
 const authHeader = req.headers.get('Authorization');
 if (!authHeader?.startsWith('Bearer ')) {
   return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
 }
-const supabaseClient = createClient(supabaseUrl, supabaseKey);
-const { data: { user }, error: authError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
-if (authError || !user) {
+const token = authHeader.replace('Bearer ', '');
+const userClient = createClient(supabaseUrl, supabaseAnonKey);
+const { data: { user }, error } = await userClient.auth.getUser(token);
+if (error || !user) {
   return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
 }
 const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'admin' });
@@ -62,21 +28,38 @@ if (!isAdmin) {
 }
 ```
 
-**Special handling for cron-called functions** (`send-notifications`, `cleanup-old-vehicle-files`):
-These are called by `pg_cron` via `net.http_post` with the anon key (not a user JWT). The auth guard would block them. Two options:
+**Variant B — Admin OR cron functions** (called from admin UI + pg_cron):
+Same as Variant A, but with a fallback: if the bearer token matches `SUPABASE_SERVICE_ROLE_KEY`, allow access (this is how cron jobs authenticate).
 
-- **Option A**: Add a shared secret as env var, check for it as a fallback when JWT auth fails
-- **Option B**: Update the cron jobs to call database functions directly instead of the edge functions (like `cleanup-cars-history` already does)
+### Changes Per Function
 
-For `send-notifications`: the cron calls it every 5 minutes. We need Option A (shared secret fallback) since the function does work that can't easily move to a DB function.
+| Function | Guard | Additional Changes |
+|----------|-------|--------------------|
+| `close-ended-auctions` | Variant A (admin only) | None |
+| `start-scheduled-auctions` | Variant A (admin only) | None |
+| `send-notifications` | Variant B (admin + cron) | None |
+| `recover-auction` | Variant A (admin only) | None |
+| `reset-auction-system` | Variant A (admin only) | None |
+| `cleanup-cars-history` | Variant A (admin only) | None |
+| `cleanup-old-vehicle-files` | Variant B (admin + cron) | None |
+| `generate-audit-report` | **Delete entirely** | Remove from config.toml, delete function dir |
 
-For `cleanup-old-vehicle-files`: this does storage operations that require the Supabase client, so Option A (shared secret fallback) is also needed.
+### Phase 3: Port Recovery Logic to admin-api
 
-**Phase 2: Delete only `generate-audit-report`**
+Replace the stub at line 729-737 of `admin-api/index.ts` with the actual recovery logic from `recover-auction/index.ts` (lines 40-178). This makes the AuctionRecovery UI actually functional instead of returning a fake success.
 
-Remove from `config.toml` and delete the function directory.
+### File Changes Summary
 
-**Phase 3 (separate): Fix the admin-api `recoverAuction` stub**
+1. **`supabase/functions/close-ended-auctions/index.ts`** — Add Variant A auth guard after CORS check
+2. **`supabase/functions/start-scheduled-auctions/index.ts`** — Add Variant A auth guard after CORS check
+3. **`supabase/functions/send-notifications/index.ts`** — Add Variant B auth guard after CORS check
+4. **`supabase/functions/recover-auction/index.ts`** — Add Variant A auth guard after CORS check
+5. **`supabase/functions/reset-auction-system/index.ts`** — Add Variant A auth guard after CORS check
+6. **`supabase/functions/cleanup-cars-history/index.ts`** — Add Variant A auth guard after CORS check
+7. **`supabase/functions/cleanup-old-vehicle-files/index.ts`** — Add Variant B auth guard after CORS check
+8. **`supabase/functions/generate-audit-report/index.ts`** — Delete file
+9. **`supabase/config.toml`** — Remove `generate-audit-report` entry
+10. **`supabase/functions/admin-api/index.ts`** — Replace recoverAuction stub with actual logic
 
-Port the actual recovery logic from `recover-auction/index.ts` into the `admin-api` switch case so the AuctionRecovery UI actually works.
+No new secrets, no new environment variables. All authentication uses existing Supabase infrastructure.
 
