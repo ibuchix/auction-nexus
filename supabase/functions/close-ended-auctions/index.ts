@@ -13,12 +13,29 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-    console.log('Manual auction close triggered by admin')
+    // --- Admin Auth Guard (Variant A) ---
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+    const token = authHeader.replace('Bearer ', '')
+    const userClient = createClient(supabaseUrl, supabaseAnonKey)
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token)
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+    const supabaseClient = createClient(supabaseUrl, serviceRoleKey)
+    const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'admin' })
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+    // --- End Auth Guard ---
+
+    console.log('Manual auction close triggered by admin:', user.id)
     
     // Log the manual trigger
     const { error: logError } = await supabaseClient
@@ -27,6 +44,7 @@ Deno.serve(async (req) => {
         action: 'manual_retry',
         entity_type: 'system',
         entity_id: '00000000-0000-0000-0000-000000000000',
+        user_id: user.id,
         details: {
           triggered_at: new Date().toISOString(),
           triggered_by: 'admin_button',
@@ -53,6 +71,7 @@ Deno.serve(async (req) => {
           action: 'auction_close_failed',
           entity_type: 'system',
           entity_id: '00000000-0000-0000-0000-000000000000',
+          user_id: user.id,
           details: {
             error: error.message,
             error_details: error.details,
@@ -72,6 +91,7 @@ Deno.serve(async (req) => {
         action: 'process_auctions',
         entity_type: 'system',
         entity_id: '00000000-0000-0000-0000-000000000000',
+        user_id: user.id,
         details: {
           result: data,
           triggered_by: 'admin_button',
@@ -92,27 +112,6 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     console.error('Error processing auction results:', error)
-    
-    // Try to log the error
-    try {
-      const supabaseErrorLog = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
-      
-      await supabaseErrorLog
-        .from('audit_logs')
-        .insert({
-          action: 'auction_close_system_error',
-          entity_type: 'system',
-          entity_id: '00000000-0000-0000-0000-000000000000',
-          details: {
-            error: error.message
-          }
-        })
-    } catch (logError) {
-      console.error('Failed to log error:', logError)
-    }
     
     return new Response(
       JSON.stringify({ error: error.message }),

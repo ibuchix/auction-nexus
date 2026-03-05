@@ -801,6 +801,37 @@ serve(async (req) => {
       );
     }
 
+    // --- Admin OR Cron Auth Guard (Variant B) ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    const token = authHeader.replace("Bearer ", "");
+
+    let isAuthorized = false;
+    // Check if the token is the service role key (cron job / internal call)
+    if (token === SERVICE_ROLE_KEY) {
+      isAuthorized = true;
+      console.log("[send-notifications] Authorized via service role key (cron/internal)");
+    } else {
+      // Try JWT auth for admin users
+      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      const userClient = createClient(SUPABASE_URL, supabaseAnonKey);
+      const { data: { user: authUser }, error: authError } = await userClient.auth.getUser(token);
+      if (!authError && authUser) {
+        const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" });
+        if (isAdmin) {
+          isAuthorized = true;
+          console.log("[send-notifications] Authorized via admin JWT, user:", authUser.id);
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    // --- End Auth Guard ---
+
     // Parse and log the request
     const { type, carId, dealerId, winningBid }: NotifyRequest = await req.json();
     console.log("[send-notifications] request_received", { type, carId, dealerId, winningBid, from: FROM_HEADER });
