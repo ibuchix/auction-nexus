@@ -1,65 +1,104 @@
 
 
-## Edge Function Security Hardening — Implementation Plan
+# Campaign Link Tracking — Integrated into Metrics Page
 
-### Corrected Approach (No Extra Secrets Needed)
+## Overview
 
-The `SUPABASE_SERVICE_ROLE_KEY` is already available as an env var in every edge function. For cron-called functions, we check if the bearer token matches the service role key. For admin-called functions, we validate the user JWT and check admin role via `has_role()` RPC — the same pattern already used in `admin-api`.
+Extend the existing `/admin/metrics` page with a tabbed layout: the current platform KPIs become the first tab, and a new "Campaign Tracking" tab provides link management, event tracking, and funnel analytics — all in one place.
 
-### Auth Guard Pattern
+## Architecture
 
-Two variants will be used:
-
-**Variant A — Admin-only functions** (called from admin UI via `supabase.functions.invoke()`):
-```typescript
-const authHeader = req.headers.get('Authorization');
-if (!authHeader?.startsWith('Bearer ')) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
-}
-const token = authHeader.replace('Bearer ', '');
-const userClient = createClient(supabaseUrl, supabaseAnonKey);
-const { data: { user }, error } = await userClient.auth.getUser(token);
-if (error || !user) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
-}
-const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'admin' });
-if (!isAdmin) {
-  return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
-}
+```text
+/admin/metrics
+├── Tab: Platform KPIs (existing content, unchanged)
+└── Tab: Campaign Tracking (new)
+    ├── Stat Cards: Total Clicks, Valuations, Registrations, Listings
+    ├── Link Management Table + Create Link Dialog
+    ├── Funnel Chart: Clicks → Valuations → Registrations → Listings
+    └── Per-link performance table with conversion rates
 ```
 
-**Variant B — Admin OR cron functions** (called from admin UI + pg_cron):
-Same as Variant A, but with a fallback: if the bearer token matches `SUPABASE_SERVICE_ROLE_KEY`, allow access (this is how cron jobs authenticate).
+The seller app is a separate project but shares the same Supabase database. The tracking hooks (`useTrackingCapture`, `useTrackEvent`) will be implemented in the seller app separately. This plan covers the **admin side**: database schema, the `track-event` edge function for receiving events, and the admin UI for managing links and viewing analytics.
 
-### Changes Per Function
+## Database (1 migration, 3 tables)
 
-| Function | Guard | Additional Changes |
-|----------|-------|--------------------|
-| `close-ended-auctions` | Variant A (admin only) | None |
-| `start-scheduled-auctions` | Variant A (admin only) | None |
-| `send-notifications` | Variant B (admin + cron) | None |
-| `recover-auction` | Variant A (admin only) | None |
-| `reset-auction-system` | Variant A (admin only) | None |
-| `cleanup-cars-history` | Variant A (admin only) | None |
-| `cleanup-old-vehicle-files` | Variant B (admin + cron) | None |
-| `generate-audit-report` | **Delete entirely** | Remove from config.toml, delete function dir |
+### `tracking_links`
+Stores each generated tracking link with UTM metadata.
+- `id` uuid PK, `code` text unique (short code like `fb-spring25`), `name` text, `platform` text (`facebook`/`tiktok`/`affiliate`/`influencer`/`other`), `utm_source`/`utm_medium`/`utm_campaign`/`utm_content`/`utm_term` (all text nullable), `destination_path` text default `/sell`, `affiliate_name` text nullable, `is_active` boolean default true, `click_count` integer default 0, `created_by` uuid, `created_at`/`updated_at` timestamptz.
 
-### Phase 3: Port Recovery Logic to admin-api
+### `tracking_events`
+Every seller interaction logged by the edge function.
+- `id` uuid PK, `link_id` uuid FK nullable, `event_type` text (`link_click`/`valuation_started`/`valuation_completed`/`registration`/`listing_submitted`), `session_id` text, `visitor_id` text, `user_id` uuid nullable, `ip_hash` text nullable, `user_agent` text nullable, `referrer` text nullable, `page_url` text nullable, `metadata` jsonb default `{}`, `created_at` timestamptz.
 
-Replace the stub at line 729-737 of `admin-api/index.ts` with the actual recovery logic from `recover-auction/index.ts` (lines 40-178). This makes the AuctionRecovery UI actually functional instead of returning a fake success.
+### `tracking_conversions`
+Materialized conversion events for fast analytics queries.
+- `id` uuid PK, `link_id` uuid FK, `event_id` uuid FK, `conversion_type` text, `user_id` uuid nullable, `created_at` timestamptz.
 
-### File Changes Summary
+### RLS
+- All three tables: admin read/write via `has_role(auth.uid(), 'admin')`.
+- `tracking_events` INSERT: open (the edge function uses service role, but we allow anonymous inserts for the event logging).
+- Indexes on `tracking_events(link_id, event_type)`, `tracking_events(visitor_id)`, `tracking_links(code)`.
 
-1. **`supabase/functions/close-ended-auctions/index.ts`** — Add Variant A auth guard after CORS check
-2. **`supabase/functions/start-scheduled-auctions/index.ts`** — Add Variant A auth guard after CORS check
-3. **`supabase/functions/send-notifications/index.ts`** — Add Variant B auth guard after CORS check
-4. **`supabase/functions/recover-auction/index.ts`** — Add Variant A auth guard after CORS check
-5. **`supabase/functions/reset-auction-system/index.ts`** — Add Variant A auth guard after CORS check
-6. **`supabase/functions/cleanup-cars-history/index.ts`** — Add Variant A auth guard after CORS check
-7. **`supabase/functions/cleanup-old-vehicle-files/index.ts`** — Add Variant B auth guard after CORS check
-8. **`supabase/functions/generate-audit-report/index.ts`** — Delete file
-9. **`supabase/config.toml`** — Remove `generate-audit-report` entry
-10. **`supabase/functions/admin-api/index.ts`** — Replace recoverAuction stub with actual logic
+### DB Function: `get_tracking_funnel_stats`
+A `SECURITY DEFINER` function that returns aggregated funnel data per link (click count, valuation count, registration count, listing count) with optional date range filtering — avoids complex client-side aggregation.
 
-No new secrets, no new environment variables. All authentication uses existing Supabase infrastructure.
+## Edge Function: `track-event`
+
+New function at `supabase/functions/track-event/index.ts`. Config: `verify_jwt = false` (must accept anonymous seller-side visitors).
+
+**Logic:**
+1. Accept POST with `{ code, event_type, session_id, visitor_id, user_id?, referrer?, page_url?, metadata? }`
+2. Resolve `code` → `link_id` from `tracking_links` (skip if no code / organic)
+3. For `link_click`: deduplicate by `visitor_id + link_id` within 1 hour, increment `click_count`
+4. Hash IP server-side (`Deno.env` has no client IP, use `request.headers.get('x-forwarded-for')` and SHA-256)
+5. Insert into `tracking_events`
+6. For conversion types (`valuation_started`, `valuation_completed`, `registration`, `listing_submitted`): also insert into `tracking_conversions`
+7. Return `{ success: true }`
+
+Rate limiting: max 10 events per `visitor_id` per minute to prevent abuse.
+
+## Frontend Changes
+
+### `src/pages/admin/Metrics.tsx`
+Wrap existing content in a `Tabs` component with two tabs:
+- **Platform KPIs** — current 8 stat cards + 2 charts (no changes)
+- **Campaign Tracking** — new component `CampaignTrackingTab`
+
+### New Components (in `src/components/admin/campaign-tracking/`)
+
+1. **`CampaignTrackingTab.tsx`** — Main container with stat cards, link table, funnel chart
+2. **`TrackingLinkTable.tsx`** — Table of all tracking links with columns: Name, Platform, Code, Clicks, Conversions, Conv. Rate, Status, Actions (copy URL, toggle active, delete)
+3. **`CreateLinkDialog.tsx`** — Dialog form: name, platform (select), UTM fields, destination path, affiliate name. Auto-generates a short code. Shows the full copyable URL after creation.
+4. **`TrackingFunnelChart.tsx`** — Horizontal funnel or bar chart showing Clicks → Valuations → Registrations → Listings with drop-off percentages
+5. **`TrackingStatsCards.tsx`** — 4 MetricCard-style cards for total clicks, total valuations, total registrations, total listings
+
+### New Hook: `src/hooks/useTrackingData.ts`
+- Fetches `tracking_links` with computed conversion counts (via `get_tracking_funnel_stats` RPC)
+- CRUD operations for links (create, toggle active, delete)
+- Fetches aggregate funnel stats for the stat cards and chart
+- Uses `@tanstack/react-query` like all other hooks
+
+### Sidebar Navigation
+Change the "Insights" menu item from a direct link to a submenu:
+```
+Insights
+  ├── Platform Metrics  → /admin/metrics
+  └── Analytics         → /admin/analytics
+```
+
+## File Changes Summary
+
+| File | Action |
+|------|--------|
+| Migration SQL | Create 3 tables + RLS + indexes + `get_tracking_funnel_stats` function |
+| `supabase/functions/track-event/index.ts` | New edge function |
+| `supabase/config.toml` | Add `[functions.track-event]` with `verify_jwt = false` |
+| `src/pages/admin/Metrics.tsx` | Add Tabs wrapper, import CampaignTrackingTab |
+| `src/components/admin/campaign-tracking/CampaignTrackingTab.tsx` | New |
+| `src/components/admin/campaign-tracking/TrackingLinkTable.tsx` | New |
+| `src/components/admin/campaign-tracking/CreateLinkDialog.tsx` | New |
+| `src/components/admin/campaign-tracking/TrackingFunnelChart.tsx` | New |
+| `src/components/admin/campaign-tracking/TrackingStatsCards.tsx` | New |
+| `src/hooks/useTrackingData.ts` | New |
+| `src/constants/sidebarMenuItems.ts` | Change Insights to submenu with Metrics + Analytics |
 
