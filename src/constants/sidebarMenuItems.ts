@@ -117,7 +117,16 @@ export const menuItems: SidebarMenuItem[] = [
   {
     title: "Insights",
     icon: LineChart,
-    path: "/admin/analytics",
+    submenu: [
+      {
+        title: "Platform Metrics",
+        path: "/admin/metrics",
+      },
+      {
+        title: "Analytics",
+        path: "/admin/analytics",
+      },
+    ],
   },
   {
     title: "System",

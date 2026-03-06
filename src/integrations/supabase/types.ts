@@ -2172,6 +2172,158 @@ export type Database = {
         }
         Relationships: []
       }
+      tracking_conversions: {
+        Row: {
+          conversion_type: string
+          created_at: string
+          event_id: string
+          id: string
+          link_id: string
+          user_id: string | null
+        }
+        Insert: {
+          conversion_type: string
+          created_at?: string
+          event_id: string
+          id?: string
+          link_id: string
+          user_id?: string | null
+        }
+        Update: {
+          conversion_type?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          link_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_conversions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracking_conversions_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracking_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          ip_hash: string | null
+          link_id: string | null
+          metadata: Json
+          page_url: string | null
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_hash?: string | null
+          link_id?: string | null
+          metadata?: Json
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_hash?: string | null
+          link_id?: string | null
+          metadata?: Json
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_events_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracking_links: {
+        Row: {
+          affiliate_name: string | null
+          click_count: number
+          code: string
+          created_at: string
+          created_by: string
+          destination_path: string
+          id: string
+          is_active: boolean
+          name: string
+          platform: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          affiliate_name?: string | null
+          click_count?: number
+          code: string
+          created_at?: string
+          created_by: string
+          destination_path?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          platform?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          affiliate_name?: string | null
+          click_count?: number
+          code?: string
+          created_at?: string
+          created_by?: string
+          destination_path?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          platform?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_at: string | null
@@ -3485,6 +3637,19 @@ export type Database = {
           is_nullable: string
         }[]
       }
+      get_tracking_funnel_stats: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          clicks: number
+          link_code: string
+          link_id: string
+          link_name: string
+          listings: number
+          platform: string
+          registrations: number
+          valuations: number
+        }[]
+      }
       get_user_and_dealer_by_email: {
         Args: { p_email: string }
         Returns: {
@@ -3525,6 +3690,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_click_count: { Args: { _link_id: string }; Returns: undefined }
       is_admin_from_jwt: { Args: never; Returns: boolean }
       is_admin_user: { Args: { user_id?: string }; Returns: boolean }
       is_dealer: { Args: never; Returns: boolean }
