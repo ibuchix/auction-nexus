@@ -3690,6 +3690,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_click_count: { Args: { _link_id: string }; Returns: undefined }
       is_admin_from_jwt: { Args: never; Returns: boolean }
       is_admin_user: { Args: { user_id?: string }; Returns: boolean }
       is_dealer: { Args: never; Returns: boolean }
