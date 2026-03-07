@@ -1,65 +1,41 @@
 
 
-## Edge Function Security Hardening — Implementation Plan
+# Diagnosis: Campaign Tracking Data Not Showing
 
-### Corrected Approach (No Extra Secrets Needed)
+## What I Found
 
-The `SUPABASE_SERVICE_ROLE_KEY` is already available as an env var in every edge function. For cron-called functions, we check if the bearer token matches the service role key. For admin-called functions, we validate the user JWT and check admin role via `has_role()` RPC — the same pattern already used in `admin-api`.
+### 1. The `tracking_links` table is completely empty
+The link you created via the admin UI **did not persist** in the database. The table has zero rows. This is the root cause of everything else failing.
 
-### Auth Guard Pattern
+### 2. Events exist but are unlinked
+The edge function logged 4 events successfully (1 link_click, 1 valuation_started, 1 valuation_completed, and an earlier test click). However, all have `link_id = NULL` because the edge function tried to look up code `in-test-0o0t` in `tracking_links` and found nothing.
 
-Two variants will be used:
+### 3. Funnel stats return empty
+The `get_tracking_funnel_stats` RPC joins `tracking_links` with `tracking_events` on `link_id`. Since no links exist, it returns nothing — even though events exist.
 
-**Variant A — Admin-only functions** (called from admin UI via `supabase.functions.invoke()`):
-```typescript
-const authHeader = req.headers.get('Authorization');
-if (!authHeader?.startsWith('Bearer ')) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
-}
-const token = authHeader.replace('Bearer ', '');
-const userClient = createClient(supabaseUrl, supabaseAnonKey);
-const { data: { user }, error } = await userClient.auth.getUser(token);
-if (error || !user) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
-}
-const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'admin' });
-if (!isAdmin) {
-  return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
-}
-```
+### 4. Seller app hooks are correctly integrated
+I verified the seller app ([auto-strada001testing](/projects/2e214cd6-929f-4573-bcb7-4fa30f9779b0)). The `useTrackingCapture` hook is called in `App.tsx`, and `useTrackEvent` is integrated at the valuation form, auth page, and listing form. The implementation looks correct.
 
-**Variant B — Admin OR cron functions** (called from admin UI + pg_cron):
-Same as Variant A, but with a fallback: if the bearer token matches `SUPABASE_SERVICE_ROLE_KEY`, allow access (this is how cron jobs authenticate).
+## Why Link Creation Failed
 
-### Changes Per Function
+The RLS policy on `tracking_links` uses `has_role(auth.uid(), 'admin')` which is correct and works for your admin user. The most likely cause is that the Supabase client's `insert` call failed silently — possibly because `tracking_links` is not in the TypeScript types file (`src/integrations/supabase/types.ts`), causing the Supabase client to reject the query or the response typing to swallow the error.
 
-| Function | Guard | Additional Changes |
-|----------|-------|--------------------|
-| `close-ended-auctions` | Variant A (admin only) | None |
-| `start-scheduled-auctions` | Variant A (admin only) | None |
-| `send-notifications` | Variant B (admin + cron) | None |
-| `recover-auction` | Variant A (admin only) | None |
-| `reset-auction-system` | Variant A (admin only) | None |
-| `cleanup-cars-history` | Variant A (admin only) | None |
-| `cleanup-old-vehicle-files` | Variant B (admin + cron) | None |
-| `generate-audit-report` | **Delete entirely** | Remove from config.toml, delete function dir |
+## Fix Plan
 
-### Phase 3: Port Recovery Logic to admin-api
+### Fix 1: Update Supabase TypeScript types
+The `types.ts` file needs to include `tracking_links`, `tracking_events`, and `tracking_conversions` table definitions so the Supabase JS client can properly interact with them. Currently, the Supabase client likely treats these as unknown tables.
 
-Replace the stub at line 729-737 of `admin-api/index.ts` with the actual recovery logic from `recover-auction/index.ts` (lines 40-178). This makes the AuctionRecovery UI actually functional instead of returning a fake success.
+### Fix 2: Update the funnel stats query to also show unlinked events
+Currently, events without a `link_id` (organic or from failed link lookups) are invisible. Add an "Organic / Unlinked" row to the funnel stats so you can see all activity regardless of attribution.
 
-### File Changes Summary
+### Fix 3: Backfill existing events
+Once the link is successfully created, update the 3 existing events that have code `in-test-0o0t` in their `page_url` to link them to the correct `link_id`. This is a one-time data fix via SQL.
 
-1. **`supabase/functions/close-ended-auctions/index.ts`** — Add Variant A auth guard after CORS check
-2. **`supabase/functions/start-scheduled-auctions/index.ts`** — Add Variant A auth guard after CORS check
-3. **`supabase/functions/send-notifications/index.ts`** — Add Variant B auth guard after CORS check
-4. **`supabase/functions/recover-auction/index.ts`** — Add Variant A auth guard after CORS check
-5. **`supabase/functions/reset-auction-system/index.ts`** — Add Variant A auth guard after CORS check
-6. **`supabase/functions/cleanup-cars-history/index.ts`** — Add Variant A auth guard after CORS check
-7. **`supabase/functions/cleanup-old-vehicle-files/index.ts`** — Add Variant B auth guard after CORS check
-8. **`supabase/functions/generate-audit-report/index.ts`** — Delete file
-9. **`supabase/config.toml`** — Remove `generate-audit-report` entry
-10. **`supabase/functions/admin-api/index.ts`** — Replace recoverAuction stub with actual logic
+## Files to Change
 
-No new secrets, no new environment variables. All authentication uses existing Supabase infrastructure.
+| File | Change |
+|------|--------|
+| `src/integrations/supabase/types.ts` | Add type definitions for `tracking_links`, `tracking_events`, `tracking_conversions` tables and the `get_tracking_funnel_stats` + `increment_click_count` functions |
+| `src/hooks/useTrackingData.ts` | Add error logging to surface silent failures; ensure insert payloads match expected types |
+| Migration SQL | Update `get_tracking_funnel_stats` to include an "Organic" row for events with `link_id IS NULL` |
 
