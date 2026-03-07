@@ -2,15 +2,15 @@ import { edgeFunctionAdminOperations } from './edgeFunctionAdminOperations';
 import { toast } from 'sonner';
 
 /**
- * Restores 109 auctions that ended on 27 February 2026 at 14:00 back to live status.
- * New end time: Friday 7 March 2026 at 14:00 Polish time (CET, UTC+1)
+ * Restores 104 auctions that ended on 7 March 2026 at 14:00 Polish time back to live status.
+ * Excludes 3 cars with seller decisions (declined).
+ * New end time: Friday 14 March 2026 at 14:00 Polish time (CET, UTC+1)
  * Run this from the browser console: restoreAuctionsToLive()
  */
 export async function restoreAuctionsToLive() {
   const carIds = [
     '0323dfc2-45c8-4221-b992-fcb40f83e74e',
     '04353558-7e62-490c-af33-fd672e84d15d',
-    '05d611bb-85cf-4d6c-a511-7d3c2bcdea94',
     '0c85a327-c9dd-4202-88b2-277ebe4e6956',
     '0d1c1e0a-391f-44e8-8bdd-2bf9cb1881ee',
     '0d5c88fc-9b57-430b-bb30-9d1e2fd5a498',
@@ -45,7 +45,6 @@ export async function restoreAuctionsToLive() {
     '403974c5-406a-4e87-a594-c81cd82456aa',
     '4158e5eb-aa10-4db3-a73c-889bb41f581c',
     '42b71942-2da1-4ce1-8c10-b7c999994835',
-    '4801bf7d-fbc2-4af8-a097-8e809e50e6e2',
     '490eef92-1a73-43bb-87ab-97e83904a85b',
     '4bc3396b-6dde-4901-9c11-364375221c9d',
     '4d403024-5989-48ad-be4b-55b8a7f41924',
@@ -71,7 +70,6 @@ export async function restoreAuctionsToLive() {
     '889226d3-00d1-495e-8a42-6df6c7ea5688',
     '8de6e31b-e125-466e-bbe2-57f2a90a7d49',
     '91f532fe-8cd7-4dc5-865b-42bdf984b292',
-    '93811756-dc7c-40ec-b82e-cf264ae6ccae',
     '9469984b-9fb7-4374-9a5f-a648e0fc4ad7',
     '96a951ad-dec9-4217-95e7-2cf6bbe5cadf',
     '991077c8-b22c-4b9d-8341-0f6927438cba',
@@ -119,12 +117,12 @@ export async function restoreAuctionsToLive() {
     'ffc34ee6-5fb2-4e1f-9b4c-d491fbdc9cc9'
   ];
   
-  // Friday 7 March 2026 at 14:00 Polish time (CET = UTC+1)
-  const auctionEndTime = '2026-03-07T13:00:00Z';
+  // Friday 14 March 2026 at 14:00 Polish time (CET = UTC+1)
+  const auctionEndTime = '2026-03-14T13:00:00Z';
   
   console.log('Starting bulk auction restore...');
   console.log(`Restoring ${carIds.length} auctions to live status`);
-  console.log(`New end time: ${auctionEndTime} (14:00 Polish time, 7 March 2026)`);
+  console.log(`New end time: ${auctionEndTime} (14:00 Polish time, 14 March 2026)`);
   
   toast.info(`Restoring ${carIds.length} auctions...`);
   

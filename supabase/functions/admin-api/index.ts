@@ -885,7 +885,35 @@ Deno.serve(async (req) => {
         
         console.log(`Restoring ${carIds.length} auctions to active status with end time: ${auctionEndTime}`)
         
-        // Update cars table
+        // Step 1: Clean up dealer_won_vehicles for these cars
+        const { data: deletedWonVehicles, error: wonVehiclesError } = await supabase
+          .from('dealer_won_vehicles')
+          .delete()
+          .in('car_id', carIds)
+          .select('id, car_id')
+        
+        if (wonVehiclesError) {
+          console.error('dealer_won_vehicles cleanup error:', wonVehiclesError)
+          // Don't throw - cleanup is best-effort
+        } else {
+          console.log(`Cleaned up ${deletedWonVehicles?.length || 0} dealer_won_vehicles records`)
+        }
+        
+        // Step 2: Clean up auction_results for these cars
+        const { data: deletedResults, error: resultsError } = await supabase
+          .from('auction_results')
+          .delete()
+          .in('car_id', carIds)
+          .select('id, car_id')
+        
+        if (resultsError) {
+          console.error('auction_results cleanup error:', resultsError)
+          // Don't throw - cleanup is best-effort
+        } else {
+          console.log(`Cleaned up ${deletedResults?.length || 0} auction_results records`)
+        }
+        
+        // Step 3: Update cars table
         const { data: carsUpdateData, error: carsUpdateError } = await supabase
           .from('cars')
           .update({
@@ -893,6 +921,7 @@ Deno.serve(async (req) => {
             status: 'available',
             auction_end_time: auctionEndTime,
             is_auction: true,
+            awaiting_seller_decision: false,
             updated_at: new Date().toISOString()
           })
           .in('id', carIds)
