@@ -1,65 +1,45 @@
 
 
-## Edge Function Security Hardening — Implementation Plan
+# Fix: Flexible Destination Paths + Accurate Seller Flow Tracking
 
-### Corrected Approach (No Extra Secrets Needed)
+## Understanding
 
-The `SUPABASE_SERVICE_ROLE_KEY` is already available as an env var in every edge function. For cron-called functions, we check if the bearer token matches the service role key. For admin-called functions, we validate the user JWT and check admin role via `has_role()` RPC — the same pattern already used in `admin-api`.
+The seller flow is:
+1. Seller clicks ad link → lands on **homepage** (`https://www.autaro.pl/`) or any other page
+2. Uses VIN to do a **valuation check** on the homepage
+3. If happy, clicks to **list their car**
+4. If not logged in → redirected to **auth page** (`/auth`) to register or login
+5. After auth → completes **listing form**
 
-### Auth Guard Pattern
+The tracking must persist across all these page transitions (homepage → valuation → auth → listing) and attribute everything back to the original link, regardless of which page was the landing page.
 
-Two variants will be used:
+## Current State
 
-**Variant A — Admin-only functions** (called from admin UI via `supabase.functions.invoke()`):
-```typescript
-const authHeader = req.headers.get('Authorization');
-if (!authHeader?.startsWith('Bearer ')) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
-}
-const token = authHeader.replace('Bearer ', '');
-const userClient = createClient(supabaseUrl, supabaseAnonKey);
-const { data: { user }, error } = await userClient.auth.getUser(token);
-if (error || !user) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
-}
-const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'admin' });
-if (!isAdmin) {
-  return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
-}
-```
+The `CreateLinkDialog` already has a free-text `destinationPath` field (defaulting to `/sell`). This already supports any path. The issues are:
 
-**Variant B — Admin OR cron functions** (called from admin UI + pg_cron):
-Same as Variant A, but with a fallback: if the bearer token matches `SUPABASE_SERVICE_ROLE_KEY`, allow access (this is how cron jobs authenticate).
+1. **Default path is wrong** — should be `/` (homepage) not `/sell`, since the primary flow starts at the homepage
+2. **Better UX needed** — instead of a free-text input, provide a dropdown of common destinations so admins don't have to guess paths
+3. **Base URL is wrong** — currently uses `window.location.origin` (admin app) instead of `https://www.autaro.pl`
 
-### Changes Per Function
+## Changes
 
-| Function | Guard | Additional Changes |
-|----------|-------|--------------------|
-| `close-ended-auctions` | Variant A (admin only) | None |
-| `start-scheduled-auctions` | Variant A (admin only) | None |
-| `send-notifications` | Variant B (admin + cron) | None |
-| `recover-auction` | Variant A (admin only) | None |
-| `reset-auction-system` | Variant A (admin only) | None |
-| `cleanup-cars-history` | Variant A (admin only) | None |
-| `cleanup-old-vehicle-files` | Variant B (admin + cron) | None |
-| `generate-audit-report` | **Delete entirely** | Remove from config.toml, delete function dir |
+### 1. `CreateLinkDialog.tsx`
+- Replace the free-text destination path input with a **Select dropdown** of predefined destinations:
+  - `/` — "Homepage (Valuation Check)"
+  - `/auth` — "Registration / Login"  
+  - `/sell` — "Sell Your Car"
+- Default selection: `/` (homepage)
+- Keep an "Other" option that reveals a custom text input for flexibility
 
-### Phase 3: Port Recovery Logic to admin-api
+### 2. `CampaignTrackingTab.tsx`
+- Replace `window.location.origin` with a constant `SELLER_APP_BASE_URL = "https://www.autaro.pl"`
+- This ensures all generated and displayed URLs point to the seller app, not the admin app
 
-Replace the stub at line 729-737 of `admin-api/index.ts` with the actual recovery logic from `recover-auction/index.ts` (lines 40-178). This makes the AuctionRecovery UI actually functional instead of returning a fake success.
+### 3. `TrackingLinkTable.tsx`
+- Same base URL fix — use `SELLER_APP_BASE_URL` instead of `baseUrl` prop (or pass the correct one)
 
-### File Changes Summary
+### 4. Seller-side tracking note
+The `?ref=CODE` parameter is captured by the seller app on whatever page the seller lands on. The tracking hooks in the seller app store the code in `localStorage` and carry it through the entire flow (homepage → valuation → auth → listing). The edge function (`track-event`) is page-agnostic — it records event types, not pages. So whether the seller lands on `/` or `/auth`, the attribution chain is maintained across all subsequent steps.
 
-1. **`supabase/functions/close-ended-auctions/index.ts`** — Add Variant A auth guard after CORS check
-2. **`supabase/functions/start-scheduled-auctions/index.ts`** — Add Variant A auth guard after CORS check
-3. **`supabase/functions/send-notifications/index.ts`** — Add Variant B auth guard after CORS check
-4. **`supabase/functions/recover-auction/index.ts`** — Add Variant A auth guard after CORS check
-5. **`supabase/functions/reset-auction-system/index.ts`** — Add Variant A auth guard after CORS check
-6. **`supabase/functions/cleanup-cars-history/index.ts`** — Add Variant A auth guard after CORS check
-7. **`supabase/functions/cleanup-old-vehicle-files/index.ts`** — Add Variant B auth guard after CORS check
-8. **`supabase/functions/generate-audit-report/index.ts`** — Delete file
-9. **`supabase/config.toml`** — Remove `generate-audit-report` entry
-10. **`supabase/functions/admin-api/index.ts`** — Replace recoverAuction stub with actual logic
-
-No new secrets, no new environment variables. All authentication uses existing Supabase infrastructure.
+No database or edge function changes needed — the current schema's `destination_path` column already stores any path string.
 
