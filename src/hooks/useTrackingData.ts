@@ -51,11 +51,14 @@ export function useTrackingData(dateRange?: { from: Date | null; to: Date | null
   const linksQuery = useQuery({
     queryKey: ["tracking-links"],
     queryFn: async (): Promise<TrackingLink[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("tracking_links")
         .select("*")
         .order("created_at", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        console.error("[TrackingData] Failed to fetch links:", error);
+        throw error;
+      }
       return (data ?? []) as TrackingLink[];
     },
     staleTime: 30_000,
@@ -64,11 +67,14 @@ export function useTrackingData(dateRange?: { from: Date | null; to: Date | null
   const funnelQuery = useQuery({
     queryKey: ["tracking-funnel", dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async (): Promise<FunnelStats[]> => {
-      const { data, error } = await supabase.rpc("get_tracking_funnel_stats", {
+      const { data, error } = await (supabase as any).rpc("get_tracking_funnel_stats", {
         _from: dateRange?.from?.toISOString() ?? null,
         _to: dateRange?.to?.toISOString() ?? null,
       });
-      if (error) throw error;
+      if (error) {
+        console.error("[TrackingData] Failed to fetch funnel stats:", error);
+        throw error;
+      }
       return (data ?? []) as FunnelStats[];
     },
     staleTime: 30_000,
@@ -79,10 +85,11 @@ export function useTrackingData(dateRange?: { from: Date | null; to: Date | null
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("tracking_links").insert({
+      const { data, error } = await (supabase as any).from("tracking_links").insert({
         ...input,
         created_by: user.id,
-      });
+      }).select();
+      console.log("[TrackingData] Create link result:", { data, error, input });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -91,13 +98,14 @@ export function useTrackingData(dateRange?: { from: Date | null; to: Date | null
       toast.success("Tracking link created");
     },
     onError: (err: Error) => {
+      console.error("[TrackingData] Create link error:", err);
       toast.error(err.message.includes("duplicate") ? "Code already exists" : err.message);
     },
   });
 
   const toggleActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("tracking_links")
         .update({ is_active, updated_at: new Date().toISOString() })
         .eq("id", id);
@@ -111,7 +119,7 @@ export function useTrackingData(dateRange?: { from: Date | null; to: Date | null
 
   const deleteLink = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tracking_links").delete().eq("id", id);
+      const { error } = await (supabase as any).from("tracking_links").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
