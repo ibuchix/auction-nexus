@@ -24,6 +24,13 @@ const PLATFORMS = [
   { value: "other", label: "Other" },
 ];
 
+const DESTINATIONS = [
+  { value: "/", label: "Homepage (Valuation Check)" },
+  { value: "/auth", label: "Registration / Login" },
+  { value: "/sell", label: "Sell Your Car" },
+  { value: "custom", label: "Other (Custom Path)" },
+];
+
 function generateCode(name: string, platform: string): string {
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 20);
   const prefix = platform.slice(0, 2);
@@ -39,9 +46,11 @@ export function CreateLinkDialog({ open, onOpenChange, onSubmit, isSubmitting, b
   const [utmCampaign, setUtmCampaign] = useState("");
   const [utmContent, setUtmContent] = useState("");
   const [affiliateName, setAffiliateName] = useState("");
-  const [destinationPath, setDestinationPath] = useState("/sell");
+  const [destinationSelect, setDestinationSelect] = useState("/");
+  const [customPath, setCustomPath] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const destinationPath = destinationSelect === "custom" ? customPath : destinationSelect;
   const code = name ? generateCode(name, platform) : "";
   const fullUrl = code ? `${baseUrl}${destinationPath}?ref=${code}` : "";
 
@@ -106,9 +115,23 @@ export function CreateLinkDialog({ open, onOpenChange, onSubmit, isSubmitting, b
           )}
 
           <div className="space-y-2">
-            <Label>Destination Path</Label>
-            <Input value={destinationPath} onChange={(e) => setDestinationPath(e.target.value)} placeholder="/sell" />
+            <Label>Destination Page *</Label>
+            <Select value={destinationSelect} onValueChange={setDestinationSelect}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {DESTINATIONS.map((d) => (
+                  <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {destinationSelect === "custom" && (
+            <div className="space-y-2">
+              <Label>Custom Path</Label>
+              <Input value={customPath} onChange={(e) => setCustomPath(e.target.value)} placeholder="/custom-page" />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

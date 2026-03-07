@@ -9,12 +9,13 @@ import { TrackingLinkTable } from "./TrackingLinkTable";
 import { TrackingFunnelChart } from "./TrackingFunnelChart";
 import { CreateLinkDialog } from "./CreateLinkDialog";
 
+const SELLER_APP_BASE_URL = "https://www.autaro.pl";
+
 export function CampaignTrackingTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { links, funnel, aggregateStats, isLoading, createLink, toggleActive, deleteLink } = useTrackingData();
 
-  // Use the current origin as the base URL for generated links
-  const baseUrl = window.location.origin;
+  const baseUrl = SELLER_APP_BASE_URL;
 
   return (
     <div className="space-y-6">
