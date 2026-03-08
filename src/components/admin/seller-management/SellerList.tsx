@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Mail, Phone, MapPin } from "lucide-react";
+import { Trash2, Mail, Phone, MapPin, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 
 interface Seller {
@@ -72,9 +72,18 @@ export const SellerList = ({ sellers, onDeleteClick, isLoading }: SellerListProp
                       </div>
                     )}
                     {seller.mobile_number && (
-                      <div className="flex items-center gap-1 text-sm">
+                      <div className="flex items-center gap-1.5 text-sm">
                         <Phone className="w-3 h-3" />
-                        {seller.mobile_number}
+                        <span>{seller.mobile_number}</span>
+                        <a
+                          href={`https://wa.me/${seller.mobile_number.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Chat on WhatsApp"
+                          className="inline-flex items-center justify-center rounded-full w-5 h-5 bg-green-500 hover:bg-green-600 transition-colors"
+                        >
+                          <MessageCircle className="w-3 h-3 text-white" />
+                        </a>
                       </div>
                     )}
                     {seller.address && (

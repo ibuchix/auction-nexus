@@ -2111,6 +2111,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_verified: boolean
+          phone_number: string | null
           tax_id: string | null
           updated_at: string
           user_id: string
@@ -2123,6 +2124,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_verified?: boolean
+          phone_number?: string | null
           tax_id?: string | null
           updated_at?: string
           user_id: string
@@ -2135,6 +2137,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_verified?: boolean
+          phone_number?: string | null
           tax_id?: string | null
           updated_at?: string
           user_id?: string
@@ -3594,6 +3597,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_verified: boolean
+          phone_number: string | null
           tax_id: string | null
           updated_at: string
           user_id: string
@@ -3616,6 +3620,7 @@ export type Database = {
           full_name: string
           id: string
           is_verified: boolean
+          phone_number: string
           total_listings: number
           user_id: string
           verification_status: string
