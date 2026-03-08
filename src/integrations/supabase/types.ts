@@ -3620,6 +3620,7 @@ export type Database = {
           full_name: string
           id: string
           is_verified: boolean
+          phone_number: string
           total_listings: number
           user_id: string
           verification_status: string
