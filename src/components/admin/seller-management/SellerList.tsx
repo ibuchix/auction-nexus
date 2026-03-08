@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Mail, Phone, MapPin } from "lucide-react";
+import { Trash2, Mail, Phone, MapPin, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 
 interface Seller {

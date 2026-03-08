@@ -273,7 +273,7 @@ Deno.serve(async (req) => {
           created_at: seller.created_at,
           name: seller.full_name,
           email: seller.email,
-          mobile_number: null,
+          mobile_number: seller.phone_number || null,
           address: seller.address,
           verification_status: seller.verification_status,
           is_verified: seller.is_verified,
