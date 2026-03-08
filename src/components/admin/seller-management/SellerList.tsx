@@ -75,15 +75,13 @@ export const SellerList = ({ sellers, onDeleteClick, isLoading }: SellerListProp
                       <div className="flex items-center gap-1.5 text-sm">
                         <Phone className="w-3 h-3" />
                         <span>{seller.mobile_number}</span>
-                        <a
-                          href={`https://wa.me/${seller.mobile_number.replace(/[^0-9]/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={() => window.open(`https://wa.me/${seller.mobile_number!.replace(/[^0-9]/g, '')}`, '_blank', 'noopener,noreferrer')}
                           title="Chat on WhatsApp"
                           className="inline-flex items-center justify-center rounded-full w-5 h-5 bg-green-500 hover:bg-green-600 transition-colors"
                         >
                           <MessageCircle className="w-3 h-3 text-white" />
-                        </a>
+                        </button>
                       </div>
                     )}
                     {seller.address && (
