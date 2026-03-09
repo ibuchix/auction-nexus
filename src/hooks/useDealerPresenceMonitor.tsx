@@ -97,7 +97,11 @@ export function useDealerPresenceMonitor() {
           })
         );
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setIsLoading(false);
+        }
+      });
 
     setChannel(presenceChannel);
 
