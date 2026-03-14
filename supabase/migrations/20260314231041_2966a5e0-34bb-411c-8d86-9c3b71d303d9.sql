@@ -1,0 +1,17 @@
+DELETE FROM car_file_uploads WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM cars_history WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM auction_schedules WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM auction_metrics WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM auction_results WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM auction_closure_details WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM bids WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM dealer_won_vehicles WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM dealer_wishlists WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM dealer_purchases WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM dealer_reviews WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM email_notification_events WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM disputes WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM notifications WHERE related_entity_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM audit_logs WHERE entity_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM listing_verifications WHERE car_id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
+DELETE FROM cars WHERE id = 'b47cf001-781b-4b1a-b9b7-a6995f0e1080';
