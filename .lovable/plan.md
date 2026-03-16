@@ -1,65 +1,35 @@
 
+# Fix Campaign Tracking Attribution Accuracy
 
-## Edge Function Security Hardening — Implementation Plan
+## Status: Parts 1-3 DONE ✅ — Parts 4-7 pending (seller app)
 
-### Corrected Approach (No Extra Secrets Needed)
+## What was implemented (this project)
 
-The `SUPABASE_SERVICE_ROLE_KEY` is already available as an env var in every edge function. For cron-called functions, we check if the bearer token matches the service role key. For admin-called functions, we validate the user JWT and check admin role via `has_role()` RPC — the same pattern already used in `admin-api`.
+### Database changes (migration applied):
 
-### Auth Guard Pattern
+1. **`profiles.tracking_ref`** column added — stores the `ref` code that brought the user
+2. **`trg_attribute_listing_conversion`** trigger on `cars` INSERT — when a seller with a `tracking_ref` lists a car, automatically creates a `tracking_events` record (`listing_submitted`) and a `tracking_conversions` record
+3. **`trg_attribute_registration_conversion`** trigger on `profiles` UPDATE — when `tracking_ref` is first set on a profile, automatically creates a `registration` conversion record
 
-Two variants will be used:
+Both triggers use `SECURITY DEFINER` so they work regardless of RLS policies.
 
-**Variant A — Admin-only functions** (called from admin UI via `supabase.functions.invoke()`):
+## What's needed next (seller app — auto-strada001testing)
+
+The seller app needs these changes to actually populate `profiles.tracking_ref`:
+
+4. **`useTrackingCapture`**: When `?ref=CODE` is in the URL, persist it in localStorage AND keep it in URL state across navigation
+5. **`useTrackEvent`**: Remove silent drop when `visitor_id` is missing — generate one on the fly
+6. **Registration flow**: After signup, UPDATE the user's profile to set `tracking_ref` from localStorage/URL — this fires the registration trigger
+7. **Valuation flow**: Read `ref` from URL params as fallback when localStorage is empty
+
+### How the seller app should set tracking_ref:
+
 ```typescript
-const authHeader = req.headers.get('Authorization');
-if (!authHeader?.startsWith('Bearer ')) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
-}
-const token = authHeader.replace('Bearer ', '');
-const userClient = createClient(supabaseUrl, supabaseAnonKey);
-const { data: { user }, error } = await userClient.auth.getUser(token);
-if (error || !user) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
-}
-const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: user.id, _role: 'admin' });
-if (!isAdmin) {
-  return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
+// After successful registration/login, if ref code exists:
+const ref = localStorage.getItem('tracking_ref') || new URLSearchParams(window.location.search).get('ref');
+if (ref) {
+  await supabase.from('profiles').update({ tracking_ref: ref }).eq('id', user.id);
 }
 ```
 
-**Variant B — Admin OR cron functions** (called from admin UI + pg_cron):
-Same as Variant A, but with a fallback: if the bearer token matches `SUPABASE_SERVICE_ROLE_KEY`, allow access (this is how cron jobs authenticate).
-
-### Changes Per Function
-
-| Function | Guard | Additional Changes |
-|----------|-------|--------------------|
-| `close-ended-auctions` | Variant A (admin only) | None |
-| `start-scheduled-auctions` | Variant A (admin only) | None |
-| `send-notifications` | Variant B (admin + cron) | None |
-| `recover-auction` | Variant A (admin only) | None |
-| `reset-auction-system` | Variant A (admin only) | None |
-| `cleanup-cars-history` | Variant A (admin only) | None |
-| `cleanup-old-vehicle-files` | Variant B (admin + cron) | None |
-| `generate-audit-report` | **Delete entirely** | Remove from config.toml, delete function dir |
-
-### Phase 3: Port Recovery Logic to admin-api
-
-Replace the stub at line 729-737 of `admin-api/index.ts` with the actual recovery logic from `recover-auction/index.ts` (lines 40-178). This makes the AuctionRecovery UI actually functional instead of returning a fake success.
-
-### File Changes Summary
-
-1. **`supabase/functions/close-ended-auctions/index.ts`** — Add Variant A auth guard after CORS check
-2. **`supabase/functions/start-scheduled-auctions/index.ts`** — Add Variant A auth guard after CORS check
-3. **`supabase/functions/send-notifications/index.ts`** — Add Variant B auth guard after CORS check
-4. **`supabase/functions/recover-auction/index.ts`** — Add Variant A auth guard after CORS check
-5. **`supabase/functions/reset-auction-system/index.ts`** — Add Variant A auth guard after CORS check
-6. **`supabase/functions/cleanup-cars-history/index.ts`** — Add Variant A auth guard after CORS check
-7. **`supabase/functions/cleanup-old-vehicle-files/index.ts`** — Add Variant B auth guard after CORS check
-8. **`supabase/functions/generate-audit-report/index.ts`** — Delete file
-9. **`supabase/config.toml`** — Remove `generate-audit-report` entry
-10. **`supabase/functions/admin-api/index.ts`** — Replace recoverAuction stub with actual logic
-
-No new secrets, no new environment variables. All authentication uses existing Supabase infrastructure.
-
+This single line wires up the entire server-side attribution chain — the database triggers handle the rest automatically.
