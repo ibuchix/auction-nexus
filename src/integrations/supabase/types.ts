@@ -761,15 +761,7 @@ export type Database = {
           windows_working?: boolean | null
           year?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_cars_seller"
-            columns: ["seller_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       cars_history: {
         Row: {
@@ -2598,15 +2590,7 @@ export type Database = {
           vin?: string | null
           year?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_cars_seller"
-            columns: ["seller_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       cleanup_monitoring_dashboard: {
         Row: {
