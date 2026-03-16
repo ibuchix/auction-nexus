@@ -1971,6 +1971,7 @@ export type Database = {
           id: string
           role: Database["public"]["Enums"]["user_role"]
           suspended: boolean
+          tracking_ref: string | null
           updated_at: string
         }
         Insert: {
@@ -1979,6 +1980,7 @@ export type Database = {
           id: string
           role?: Database["public"]["Enums"]["user_role"]
           suspended?: boolean
+          tracking_ref?: string | null
           updated_at?: string
         }
         Update: {
@@ -1987,6 +1989,7 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           suspended?: boolean
+          tracking_ref?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -3387,6 +3390,7 @@ export type Database = {
           id: string
           role: Database["public"]["Enums"]["user_role"]
           suspended: boolean
+          tracking_ref: string | null
           updated_at: string
         }[]
         SetofOptions: {
