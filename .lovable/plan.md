@@ -1,15 +1,24 @@
 
 # Fix Campaign Tracking Attribution Accuracy
 
-## Status: Parts 1-3 DONE ✅ — Parts 4-7 pending (seller app)
+## Status: Parts 1-3 DONE ✅ — Backfill & Smart Funnel DONE ✅ — Parts 4-7 pending (seller app)
 
 ## What was implemented (this project)
 
-### Database changes (migration applied):
+### Database changes (migrations applied):
 
 1. **`profiles.tracking_ref`** column added — stores the `ref` code that brought the user
 2. **`trg_attribute_listing_conversion`** trigger on `cars` INSERT — when a seller with a `tracking_ref` lists a car, automatically creates a `tracking_events` record (`listing_submitted`) and a `tracking_conversions` record
 3. **`trg_attribute_registration_conversion`** trigger on `profiles` UPDATE — when `tracking_ref` is first set on a profile, automatically creates a `registration` conversion record
+4. **Retroactive backfill** — attributed 6 previously unlinked events (2 listings, 4 valuations) to Facebook via IP hash matching
+5. **Smart `get_tracking_funnel_stats`** — updated RPC function now auto-attributes unlinked events to their original tracking link via IP hash matching at query time, no manual backfills needed going forward
+
+### Current attribution numbers (after fix):
+| Link | Clicks | Valuations | Registrations | Listings |
+|------|--------|------------|---------------|----------|
+| Facebook | 873 | 171 | 12 | 3 |
+| Instagram | 578 | 6 | 1 | 0 |
+| Organic | 2 | 155 | 12 | 4 |
 
 Both triggers use `SECURITY DEFINER` so they work regardless of RLS policies.
 
