@@ -1,44 +1,42 @@
 
-# Fix Campaign Tracking Attribution Accuracy
 
-## Status: Parts 1-3 DONE ✅ — Backfill & Smart Funnel DONE ✅ — Parts 4-7 pending (seller app)
+# Fix: Re-create Missing Database Triggers
 
-## What was implemented (this project)
+## Problem Found
 
-### Database changes (migrations applied):
+The attribution trigger **functions** (`attribute_listing_conversion` and `attribute_registration_conversion`) exist in the database, but the **triggers** that attach them to the `cars` and `profiles` tables are missing. This means:
 
-1. **`profiles.tracking_ref`** column added — stores the `ref` code that brought the user
-2. **`trg_attribute_listing_conversion`** trigger on `cars` INSERT — when a seller with a `tracking_ref` lists a car, automatically creates a `tracking_events` record (`listing_submitted`) and a `tracking_conversions` record
-3. **`trg_attribute_registration_conversion`** trigger on `profiles` UPDATE — when `tracking_ref` is first set on a profile, automatically creates a `registration` conversion record
-4. **Retroactive backfill** — attributed 6 previously unlinked events (2 listings, 4 valuations) to Facebook via IP hash matching
-5. **Smart `get_tracking_funnel_stats`** — updated RPC function now auto-attributes unlinked events to their original tracking link via IP hash matching at query time, no manual backfills needed going forward
+1. Even when the seller app sets `profiles.tracking_ref`, the `trg_attribute_registration_conversion` trigger won't fire to create a conversion record
+2. When a user with `tracking_ref` lists a car, the `trg_attribute_listing_conversion` trigger won't fire either
 
-### Current attribution numbers (after fix):
-| Link | Clicks | Valuations | Registrations | Listings |
-|------|--------|------------|---------------|----------|
-| Facebook | 873 | 171 | 12 | 3 |
-| Instagram | 578 | 6 | 1 | 0 |
-| Organic | 2 | 155 | 12 | 4 |
+Additionally, **zero profiles have `tracking_ref` populated** — the seller app fix may not be deployed yet or may not be working. The most recent registration (Instagram user `4eeecd41` at 20:37) has `tracking_ref = NULL`.
 
-Both triggers use `SECURITY DEFINER` so they work regardless of RLS policies.
+## Fix
 
-## What's needed next (seller app — auto-strada001testing)
+### Part 1: Re-create the triggers via migration
 
-The seller app needs these changes to actually populate `profiles.tracking_ref`:
+```sql
+-- Re-attach the listing attribution trigger to cars table
+CREATE TRIGGER trg_attribute_listing_conversion
+  AFTER INSERT ON cars
+  FOR EACH ROW
+  EXECUTE FUNCTION attribute_listing_conversion();
 
-4. **`useTrackingCapture`**: When `?ref=CODE` is in the URL, persist it in localStorage AND keep it in URL state across navigation
-5. **`useTrackEvent`**: Remove silent drop when `visitor_id` is missing — generate one on the fly
-6. **Registration flow**: After signup, UPDATE the user's profile to set `tracking_ref` from localStorage/URL — this fires the registration trigger
-7. **Valuation flow**: Read `ref` from URL params as fallback when localStorage is empty
-
-### How the seller app should set tracking_ref:
-
-```typescript
-// After successful registration/login, if ref code exists:
-const ref = localStorage.getItem('tracking_ref') || new URLSearchParams(window.location.search).get('ref');
-if (ref) {
-  await supabase.from('profiles').update({ tracking_ref: ref }).eq('id', user.id);
-}
+-- Re-attach the registration attribution trigger to profiles table  
+CREATE TRIGGER trg_attribute_registration_conversion
+  AFTER UPDATE OF tracking_ref ON profiles
+  FOR EACH ROW
+  WHEN (OLD.tracking_ref IS NULL AND NEW.tracking_ref IS NOT NULL)
+  EXECUTE FUNCTION attribute_registration_conversion();
 ```
 
-This single line wires up the entire server-side attribution chain — the database triggers handle the rest automatically.
+### Part 2: Verify seller app fix
+
+After the triggers are re-created, you should test by:
+1. Opening `https://www.autaro.pl/sell?ref=ot-instagram-post-done--nyn4` in a fresh browser
+2. Registering as a new seller and completing the phone number step
+3. I can then query `profiles.tracking_ref` and `tracking_conversions` to confirm the full chain works
+
+### Files changed
+1. New SQL migration to re-create the two triggers
+
