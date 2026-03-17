@@ -1,42 +1,29 @@
 
 
-# Fix: Re-create Missing Database Triggers
+# Secure Fix: Column-Level GRANT for profiles
 
-## Problem Found
+## The Risk
 
-The attribution trigger **functions** (`attribute_listing_conversion` and `attribute_registration_conversion`) exist in the database, but the **triggers** that attach them to the `cars` and `profiles` tables are missing. This means:
+A blanket `GRANT UPDATE ON profiles TO authenticated` would allow any user to modify their own `role` (escalate to admin) and `suspended` (unsuspend themselves) columns. RLS only restricts row access, not column access.
 
-1. Even when the seller app sets `profiles.tracking_ref`, the `trg_attribute_registration_conversion` trigger won't fire to create a conversion record
-2. When a user with `tracking_ref` lists a car, the `trg_attribute_listing_conversion` trigger won't fire either
+## Safe Alternative
 
-Additionally, **zero profiles have `tracking_ref` populated** — the seller app fix may not be deployed yet or may not be working. The most recent registration (Instagram user `4eeecd41` at 20:37) has `tracking_ref = NULL`.
-
-## Fix
-
-### Part 1: Re-create the triggers via migration
+PostgreSQL supports column-level grants. We should grant UPDATE only on the columns users legitimately need to modify:
 
 ```sql
--- Re-attach the listing attribution trigger to cars table
-CREATE TRIGGER trg_attribute_listing_conversion
-  AFTER INSERT ON cars
-  FOR EACH ROW
-  EXECUTE FUNCTION attribute_listing_conversion();
-
--- Re-attach the registration attribution trigger to profiles table  
-CREATE TRIGGER trg_attribute_registration_conversion
-  AFTER UPDATE OF tracking_ref ON profiles
-  FOR EACH ROW
-  WHEN (OLD.tracking_ref IS NULL AND NEW.tracking_ref IS NOT NULL)
-  EXECUTE FUNCTION attribute_registration_conversion();
+GRANT UPDATE (full_name, avatar_url, tracking_ref, updated_at) ON public.profiles TO authenticated;
 ```
 
-### Part 2: Verify seller app fix
+This allows the seller app's `profiles.update({ tracking_ref: ref })` to work while preventing any changes to `role` or `suspended`.
 
-After the triggers are re-created, you should test by:
-1. Opening `https://www.autaro.pl/sell?ref=ot-instagram-post-done--nyn4` in a fresh browser
-2. Registering as a new seller and completing the phone number step
-3. I can then query `profiles.tracking_ref` and `tracking_conversions` to confirm the full chain works
+## What This Achieves
 
-### Files changed
-1. New SQL migration to re-create the two triggers
+- `tracking_ref` updates from the seller app will succeed
+- The `trg_attribute_registration_conversion` trigger will fire on tracking_ref changes
+- Users **cannot** modify `role`, `suspended`, or `id`
+- No other code changes needed
+
+## Files Changed
+
+1. New SQL migration: column-level GRANT statement
 
