@@ -1,26 +1,25 @@
 
 
-# Fix flatted DoS Vulnerability (Dependabot Alert #35)
+# Fix minimatch ReDoS Vulnerability (Dependabot Alert #29)
 
 ## Risk Assessment
 
-**How you're affected**: `flatted 3.3.1` is a transitive dependency via `eslint 9.31.0`. It's used only during development (linting), never in production builds or runtime code.
-
-**Practical risk**: **Very low**. The exploit requires passing untrusted input to `flatted.parse()`, which only happens inside ESLint's internal caching. No user input ever reaches this code path.
+`minimatch 3.1.2` is a transitive dependency via `eslint 9.31.0`. Development-only — never runs in production. **Very low** practical risk since no user input reaches ESLint's glob matching.
 
 ## Fix
 
-Add `flatted` to the existing `overrides` block in `package.json`:
+Add `minimatch` to the existing `overrides` block in `package.json`:
 
 ```json
 "overrides": {
   "rollup": ">=4.59.0",
-  "flatted": ">=3.4.2"
+  "flatted": ">=3.4.2",
+  "minimatch": ">=9.0.7"
 }
 ```
 
 ## What changes
 
-- `package.json`: Add `flatted` override (1 line)
-- No code changes, no behavior changes
+- `package.json`: Add 1 line to `overrides`
+- No code or behavior changes
 
