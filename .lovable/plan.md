@@ -1,32 +1,26 @@
 
 
-# Fix Rollup Path Traversal Vulnerability (CVE in Dependabot Alert #30)
+# Fix flatted DoS Vulnerability (Dependabot Alert #35)
 
 ## Risk Assessment
 
-**How you're affected**: Rollup 4.45.1 is pulled in as a transitive dependency via `vite 6.3.5` (line 87 of package.json). You don't use rollup directly, but Vite uses it internally for production builds.
+**How you're affected**: `flatted 3.3.1` is a transitive dependency via `eslint 9.31.0`. It's used only during development (linting), never in production builds or runtime code.
 
-**Practical risk for this project**: **Low-to-moderate**. The exploit requires either:
-- A malicious Rollup plugin in your build chain (you don't have any custom rollup plugins)
-- Running `rollup` CLI with attacker-controlled input names (you don't do this)
-- A malicious dependency that acts as a Rollup plugin during build
-
-The main real-world risk is **supply chain**: if any npm dependency you install in the future acts as a malicious Vite/Rollup plugin, it could write files outside the build output directory during `vite build`.
+**Practical risk**: **Very low**. The exploit requires passing untrusted input to `flatted.parse()`, which only happens inside ESLint's internal caching. No user input ever reaches this code path.
 
 ## Fix
 
-Add an `overrides` field to `package.json` to force rollup to the patched version:
+Add `flatted` to the existing `overrides` block in `package.json`:
 
 ```json
 "overrides": {
-  "rollup": ">=4.59.0"
+  "rollup": ">=4.59.0",
+  "flatted": ">=3.4.2"
 }
 ```
 
-This tells npm to resolve all instances of rollup (including transitive ones from vite) to 4.59.0+, which patches the path traversal in `sanitizeFileName.ts`.
-
 ## What changes
 
-- `package.json`: Add `overrides` block
-- No code changes, no behavior changes — rollup is only used internally by Vite during builds
+- `package.json`: Add `flatted` override (1 line)
+- No code changes, no behavior changes
 
