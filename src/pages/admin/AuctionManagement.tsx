@@ -147,7 +147,7 @@ const AuctionManagement = () => {
       </div>
 
       <Tabs defaultValue="ready" className="space-y-4">
-        <TabsList>
+        <TabsList className="w-full overflow-x-auto flex justify-start">
           <TabsTrigger value="ready" className="flex items-center gap-1">
             <Clock className="h-4 w-4" />
             Ready for Auction

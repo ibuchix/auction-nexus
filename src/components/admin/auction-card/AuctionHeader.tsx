@@ -142,7 +142,7 @@ export function AuctionHeader({
       </div>
 
       {(listedDate || startTime || endTime) && (
-        <div className="flex gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row gap-1 sm:gap-4 text-sm text-muted-foreground">
           {listedDate && (
             <div className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />

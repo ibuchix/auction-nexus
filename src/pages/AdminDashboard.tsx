@@ -9,7 +9,7 @@ import { ValuationStatsCard } from "@/components/admin/dashboard/ValuationStatsC
 const AdminDashboard = () => {
   return (
     <div className="space-y-6 mx-auto max-w-7xl">
-      <div className="flex justify-between items-center bg-gradient-to-r from-slate-50 to-gray-100 p-4 rounded-lg shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gradient-to-r from-slate-50 to-gray-100 p-4 rounded-lg shadow-sm">
         <DashboardHeader title="System Management" />
         <AdminActions />
       </div>

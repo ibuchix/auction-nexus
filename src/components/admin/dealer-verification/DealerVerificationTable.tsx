@@ -147,5 +147,6 @@ export const DealerVerificationTable = ({
         )}
       </TableBody>
     </Table>
+    </div>
   );
 };

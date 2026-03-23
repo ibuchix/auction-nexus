@@ -107,7 +107,7 @@ export function CampaignTrackingTab() {
               defaultMonth={customRange?.from ?? subDays(new Date(), 30)}
               selected={customRange}
               onSelect={handleCustomDateChange}
-              numberOfMonths={2}
+              numberOfMonths={isMobile ? 1 : 2}
               className={cn("p-3 pointer-events-auto")}
             />
           </PopoverContent>
