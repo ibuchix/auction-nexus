@@ -33,6 +33,8 @@ interface SellerListProps {
   sellers: Seller[];
   onDeleteClick: (seller: Seller) => void;
   isLoading: boolean;
+  reminderCounts?: Map<string, Record<string, number>>;
+  onReminderSent?: () => void;
 }
 
 export const SellerList = ({ sellers, onDeleteClick, isLoading }: SellerListProps) => {
