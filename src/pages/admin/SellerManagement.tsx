@@ -5,6 +5,8 @@ import { DeleteSellerDialog } from "@/components/admin/seller-management/DeleteS
 import { SellerPagination } from "@/components/admin/seller-management/SellerPagination";
 import { SellerSearch } from "@/components/admin/seller-management/SellerSearch";
 import { useSellerManagement } from "@/hooks/useSellerManagement";
+import { useSellerNotificationCounts } from "@/hooks/useSellerNotificationCounts";
+import { useSellerManagement } from "@/hooks/useSellerManagement";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";

@@ -13,7 +13,6 @@ import { Trash2, Mail, Phone, MapPin, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
 
 interface Seller {
   id: string;
