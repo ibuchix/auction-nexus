@@ -28,7 +28,7 @@ const SellerManagement = () => {
     handleDeleteSeller
   } = useSellerManagement();
 
-  const sellerIds = useMemo(() => (sellers || []).map(s => s.id), [sellers]);
+  const sellerIds = useMemo(() => Array.isArray(sellers) ? sellers.map(s => s.id) : [], [sellers]);
   const { data: reminderCounts, refetch: refetchCounts } = useSellerNotificationCounts(sellerIds);
 
   const [currentPage, setCurrentPage] = useState(1);
