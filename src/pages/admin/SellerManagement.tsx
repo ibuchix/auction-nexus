@@ -5,6 +5,7 @@ import { DeleteSellerDialog } from "@/components/admin/seller-management/DeleteS
 import { SellerPagination } from "@/components/admin/seller-management/SellerPagination";
 import { SellerSearch } from "@/components/admin/seller-management/SellerSearch";
 import { useSellerManagement } from "@/hooks/useSellerManagement";
+import { useSellerNotificationCounts } from "@/hooks/useSellerNotificationCounts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -26,6 +27,9 @@ const SellerManagement = () => {
     handleDeleteClick,
     handleDeleteSeller
   } = useSellerManagement();
+
+  const sellerIds = useMemo(() => (sellers || []).map(s => s.id), [sellers]);
+  const { data: reminderCounts, refetch: refetchCounts } = useSellerNotificationCounts(sellerIds);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -142,6 +146,8 @@ const SellerManagement = () => {
           sellers={paginatedSellers} 
           onDeleteClick={handleDeleteClick}
           isLoading={isLoading}
+          reminderCounts={reminderCounts}
+          onReminderSent={() => refetchCounts()}
         />
 
         {totalSellers > 0 && (

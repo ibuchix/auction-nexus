@@ -2047,6 +2047,39 @@ export type Database = {
           },
         ]
       }
+      seller_email_events: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string | null
+          metadata: Json
+          recipient_email: string
+          seller_id: string
+          subject: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          metadata?: Json
+          recipient_email: string
+          seller_id: string
+          subject: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          metadata?: Json
+          recipient_email?: string
+          seller_id?: string
+          subject?: string
+          type?: string
+        }
+        Relationships: []
+      }
       seller_reviews: {
         Row: {
           car_id: string
@@ -3477,6 +3510,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_seller_email_notification_counts: {
+        Args: { p_seller_ids: string[] }
+        Returns: {
+          seller_id: string
+          send_count: number
+          type: string
+        }[]
       }
       get_seller_listings: {
         Args: { p_seller_id: string }

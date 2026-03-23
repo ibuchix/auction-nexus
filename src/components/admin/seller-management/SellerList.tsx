@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Mail, Phone, MapPin, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Seller {
   id: string;
@@ -30,9 +32,33 @@ interface SellerListProps {
   sellers: Seller[];
   onDeleteClick: (seller: Seller) => void;
   isLoading: boolean;
+  reminderCounts?: Map<string, Record<string, number>>;
+  onReminderSent?: () => void;
 }
 
-export const SellerList = ({ sellers, onDeleteClick, isLoading }: SellerListProps) => {
+export const SellerList = ({ sellers, onDeleteClick, isLoading, reminderCounts, onReminderSent }: SellerListProps) => {
+  const handleSendReminder = async (seller: Seller) => {
+    if (!seller.email) {
+      toast.error("Seller has no email address");
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke("send-notifications", {
+        body: {
+          type: "seller_listing_reminder",
+          sellerId: seller.id,
+          sellerEmail: seller.email,
+        },
+      });
+      if (error) throw error;
+      toast.success(`Reminder sent to ${seller.email}`);
+      onReminderSent?.();
+    } catch (err: any) {
+      console.error("Error sending reminder:", err);
+      toast.error(err?.message || "Failed to send reminder");
+    }
+  };
+
   const getVerificationBadge = (isVerified: boolean, status: string | null) => {
     if (isVerified) {
       return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Verified</Badge>;
@@ -105,13 +131,30 @@ export const SellerList = ({ sellers, onDeleteClick, isLoading }: SellerListProp
                   {format(new Date(seller.created_at), "MMM d, yyyy 'at' h:mm a")}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => onDeleteClick(seller)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSendReminder(seller)}
+                      disabled={!seller.email}
+                      title="Send listing reminder"
+                      className="relative"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {(reminderCounts?.get(seller.id)?.seller_listing_reminder ?? 0) > 0 && (
+                        <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-[10px]">
+                          {reminderCounts?.get(seller.id)?.seller_listing_reminder}
+                        </Badge>
+                      )}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => onDeleteClick(seller)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
