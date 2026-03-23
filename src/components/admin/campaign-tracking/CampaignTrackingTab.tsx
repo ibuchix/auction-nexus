@@ -37,6 +37,7 @@ function getPresetRange(key: PresetKey): { from: Date | null; to: Date | null } 
 }
 
 export function CampaignTrackingTab() {
+  const isMobile = useIsMobile();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<PresetKey>("30d");
   const [customRange, setCustomRange] = useState<DateRange | undefined>(undefined);
