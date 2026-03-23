@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const SELLER_APP_BASE_URL = "https://www.autaro.pl";
 
@@ -36,6 +37,7 @@ function getPresetRange(key: PresetKey): { from: Date | null; to: Date | null } 
 }
 
 export function CampaignTrackingTab() {
+  const isMobile = useIsMobile();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<PresetKey>("30d");
   const [customRange, setCustomRange] = useState<DateRange | undefined>(undefined);
@@ -105,7 +107,7 @@ export function CampaignTrackingTab() {
               defaultMonth={customRange?.from ?? subDays(new Date(), 30)}
               selected={customRange}
               onSelect={handleCustomDateChange}
-              numberOfMonths={2}
+              numberOfMonths={isMobile ? 1 : 2}
               className={cn("p-3 pointer-events-auto")}
             />
           </PopoverContent>

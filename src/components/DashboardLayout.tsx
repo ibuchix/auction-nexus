@@ -32,7 +32,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       {/* Single navigation component for the application */}
       <TopNavbar />
       
-      <main className="flex-1 w-full pt-4">
+      <main className="flex-1 w-full pt-4 pb-20 md:pb-0">
         <div className="w-full container mx-auto px-4">
           <BreadcrumbNav />
           {children}

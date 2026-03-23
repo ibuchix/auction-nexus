@@ -67,7 +67,7 @@ export const SellerList = ({ sellers, onDeleteClick, isLoading, reminderCounts, 
   };
 
   return (
-    <div>
+    <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
