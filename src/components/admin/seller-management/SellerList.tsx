@@ -37,7 +37,29 @@ interface SellerListProps {
   onReminderSent?: () => void;
 }
 
-export const SellerList = ({ sellers, onDeleteClick, isLoading }: SellerListProps) => {
+export const SellerList = ({ sellers, onDeleteClick, isLoading, reminderCounts, onReminderSent }: SellerListProps) => {
+  const handleSendReminder = async (seller: Seller) => {
+    if (!seller.email) {
+      toast.error("Seller has no email address");
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke("send-notifications", {
+        body: {
+          type: "seller_listing_reminder",
+          sellerId: seller.id,
+          sellerEmail: seller.email,
+        },
+      });
+      if (error) throw error;
+      toast.success(`Reminder sent to ${seller.email}`);
+      onReminderSent?.();
+    } catch (err: any) {
+      console.error("Error sending reminder:", err);
+      toast.error(err?.message || "Failed to send reminder");
+    }
+  };
+
   const getVerificationBadge = (isVerified: boolean, status: string | null) => {
     if (isVerified) {
       return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Verified</Badge>;
