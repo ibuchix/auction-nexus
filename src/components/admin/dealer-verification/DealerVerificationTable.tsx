@@ -70,6 +70,7 @@ export const DealerVerificationTable = ({
   };
 
   return (
+    <div className="overflow-x-auto">
     <Table>
       <TableHeader>
         <TableRow>
