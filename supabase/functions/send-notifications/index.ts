@@ -705,10 +705,12 @@ async function logEmailEvent(event: { type: string; carId: string; dealerId?: st
 }
 
 interface NotifyRequest {
-  type: "seller_auction_ended" | "dealer_bid_accepted" | "dealer_bid_declined" | "seller_ready_for_pickup";
-  carId: string;
+  type: "seller_auction_ended" | "dealer_bid_accepted" | "dealer_bid_declined" | "seller_ready_for_pickup" | "seller_listing_reminder";
+  carId?: string;
   dealerId?: string;
   winningBid?: number;
+  sellerId?: string;
+  sellerEmail?: string;
 }
 
 async function getSellerUserId(carId: string) {
