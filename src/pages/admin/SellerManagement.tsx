@@ -146,6 +146,8 @@ const SellerManagement = () => {
           sellers={paginatedSellers} 
           onDeleteClick={handleDeleteClick}
           isLoading={isLoading}
+          reminderCounts={reminderCounts}
+          onReminderSent={() => refetchCounts()}
         />
 
         {totalSellers > 0 && (
