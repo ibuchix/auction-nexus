@@ -835,8 +835,47 @@ serve(async (req) => {
     // --- End Auth Guard ---
 
     // Parse and log the request
-    const { type, carId, dealerId, winningBid }: NotifyRequest = await req.json();
-    console.log("[send-notifications] request_received", { type, carId, dealerId, winningBid, from: FROM_HEADER });
+    const { type, carId, dealerId, winningBid, sellerId, sellerEmail }: NotifyRequest = await req.json();
+    console.log("[send-notifications] request_received", { type, carId, dealerId, winningBid, sellerId, from: FROM_HEADER });
+
+    // Handle seller_listing_reminder separately (no car involved)
+    if (type === "seller_listing_reminder") {
+      if (!sellerId || !sellerEmail) throw new Error("sellerId and sellerEmail are required for seller_listing_reminder");
+      
+      const subject = "Przypomnienie – wystaw swój samochód na Autaro!";
+      const html = buildSellerListingReminderEmail();
+      const { messageId } = await sendEmail(sellerEmail, subject, html);
+
+      // Log to seller_email_events table (not email_notification_events)
+      try {
+        await supabase.from('seller_email_events').insert([{
+          type: 'seller_listing_reminder',
+          seller_id: sellerId,
+          recipient_email: sellerEmail,
+          subject,
+          message_id: messageId ?? null,
+          metadata: {}
+        }]);
+      } catch (e) {
+        console.error('[send-notifications] seller_log_event_failed', { error: (e as Error)?.message });
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        type,
+        to: sellerEmail,
+        from: FROM_HEADER,
+        subject,
+        messageId,
+        sellerId,
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // All other types require carId
+    if (!carId) throw new Error("carId is required for this notification type");
 
     const car = await getCarSummary(carId);
     const carLabel = car ? `${car.year ?? ""} ${car.make ?? ""} ${car.model ?? ""}`.trim() : `Car ${carId}`;
