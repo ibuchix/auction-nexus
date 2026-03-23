@@ -1,26 +1,70 @@
 
 
-# Fix React Router XSS via Open Redirects (Dependabot Alert #22)
+# Revised Plan: Seller Listing Reminder Email (No Nullable car_id Change)
 
-## Risk Assessment
+## Key Change from Previous Plan
 
-`@remix-run/router 1.20.0` is a transitive dependency via `react-router-dom 6.27.0`. The vulnerability allows XSS via open redirects in loader/action redirects — but only if your code creates redirect paths from untrusted user input. Your app uses static redirect paths (e.g., `<Navigate to="/" replace />`), so **practical risk is low** but worth patching.
+Instead of making `car_id` nullable (which introduces risk of future bugs if any code assumes `car_id` is always present), we'll keep `car_id NOT NULL` and use a **separate lightweight table** for seller reminder email logs. This completely isolates the new feature from the existing auction outcome email system.
 
-## Fix
+## Changes
 
-Add `@remix-run/router` to the existing `overrides` block in `package.json`:
+### 1. Database Migration
 
-```json
-"overrides": {
-  "rollup": ">=4.59.0",
-  "flatted": ">=3.4.2",
-  "minimatch": ">=9.0.7",
-  "@remix-run/router": ">=1.23.2"
-}
+**New table** `seller_email_events` — simple, dedicated log for seller-level emails:
+
+```sql
+CREATE TABLE public.seller_email_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  type text NOT NULL,  -- e.g. 'seller_listing_reminder'
+  seller_id uuid NOT NULL,
+  recipient_email text NOT NULL,
+  subject text NOT NULL,
+  message_id text NULL,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb
+);
 ```
 
-## What changes
+With RLS (service role full access, admin SELECT), an index on `seller_id`, and a new RPC:
 
-- `package.json`: Add 1 line to `overrides`
-- No code or behavior changes
+```sql
+CREATE FUNCTION public.get_seller_email_notification_counts(p_seller_ids uuid[])
+RETURNS TABLE(seller_id uuid, type text, send_count integer)
+```
+
+The existing `email_notification_events` table and `get_email_notification_counts` RPC remain **completely untouched**.
+
+### 2. Edge Function: `send-notifications/index.ts`
+
+- Add `seller_listing_reminder` type handler
+- Add `buildSellerListingReminderEmail()` — branded Polish HTML template encouraging sellers to list their cars
+- Log to the new `seller_email_events` table instead of `email_notification_events`
+- Accept `sellerId` and `sellerEmail` in the request body
+- Redeploy the edge function
+
+### 3. New Hook: `useSellerNotificationCounts.ts`
+
+React Query hook calling `get_seller_email_notification_counts` RPC. Returns `Map<seller_id, { seller_listing_reminder: count }>`.
+
+### 4. UI: `SellerList.tsx`
+
+Add a "Remind" button (Mail icon) with a count badge to each seller row, next to the existing delete button.
+
+### 5. `SellerManagement.tsx`
+
+Wire up the new hook and pass counts + send handler to `SellerList`.
+
+## Files Changed
+
+1. New SQL migration (new table + RPC)
+2. `supabase/functions/send-notifications/index.ts` (new type + template + handler)
+3. `src/hooks/useSellerNotificationCounts.ts` (new file)
+4. `src/components/admin/seller-management/SellerList.tsx` (add button + badge)
+5. `src/pages/admin/SellerManagement.tsx` (wire up hook)
+
+## Safety
+
+- Zero changes to existing `email_notification_events` table or `get_email_notification_counts` RPC
+- All existing auction outcome email flows remain completely untouched
+- Clean separation between car-level and seller-level email tracking
 
