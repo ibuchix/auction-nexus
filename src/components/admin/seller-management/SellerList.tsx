@@ -132,13 +132,30 @@ export const SellerList = ({ sellers, onDeleteClick, isLoading, reminderCounts, 
                   {format(new Date(seller.created_at), "MMM d, yyyy 'at' h:mm a")}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => onDeleteClick(seller)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSendReminder(seller)}
+                      disabled={!seller.email}
+                      title="Send listing reminder"
+                      className="relative"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {(reminderCounts?.get(seller.id)?.seller_listing_reminder ?? 0) > 0 && (
+                        <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-[10px]">
+                          {reminderCounts?.get(seller.id)?.seller_listing_reminder}
+                        </Badge>
+                      )}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => onDeleteClick(seller)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
