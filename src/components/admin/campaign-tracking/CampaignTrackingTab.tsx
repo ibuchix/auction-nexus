@@ -1,24 +1,117 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, BarChart3 } from "lucide-react";
+import { Plus, BarChart3, CalendarIcon } from "lucide-react";
 import { useTrackingData } from "@/hooks/useTrackingData";
 import { TrackingStatsCards } from "./TrackingStatsCards";
 import { TrackingLinkTable } from "./TrackingLinkTable";
 import { TrackingFunnelChart } from "./TrackingFunnelChart";
 import { CreateLinkDialog } from "./CreateLinkDialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, subDays } from "date-fns";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 const SELLER_APP_BASE_URL = "https://www.autaro.pl";
 
+type PresetKey = "7d" | "30d" | "90d" | "all";
+
+const PRESETS: { key: PresetKey; label: string }[] = [
+  { key: "7d", label: "Last 7 days" },
+  { key: "30d", label: "Last 30 days" },
+  { key: "90d", label: "Last 90 days" },
+  { key: "all", label: "All time" },
+];
+
+function getPresetRange(key: PresetKey): { from: Date | null; to: Date | null } {
+  const now = new Date();
+  switch (key) {
+    case "7d": return { from: subDays(now, 7), to: now };
+    case "30d": return { from: subDays(now, 30), to: now };
+    case "90d": return { from: subDays(now, 90), to: now };
+    case "all": return { from: null, to: null };
+  }
+}
+
 export function CampaignTrackingTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { links, funnel, aggregateStats, isLoading, createLink, toggleActive, deleteLink } = useTrackingData();
+  const [activePreset, setActivePreset] = useState<PresetKey>("30d");
+  const [customRange, setCustomRange] = useState<DateRange | undefined>(undefined);
+
+  const dateRange = useMemo(() => {
+    if (customRange?.from) {
+      return { from: customRange.from, to: customRange.to ?? customRange.from };
+    }
+    return getPresetRange(activePreset);
+  }, [activePreset, customRange]);
+
+  const { links, funnel, aggregateStats, isLoading, createLink, toggleActive, deleteLink } = useTrackingData(dateRange);
 
   const baseUrl = SELLER_APP_BASE_URL;
 
+  const handlePresetClick = (key: PresetKey) => {
+    setActivePreset(key);
+    setCustomRange(undefined);
+  };
+
+  const handleCustomDateChange = (range: DateRange | undefined) => {
+    setCustomRange(range);
+    if (range?.from) {
+      setActivePreset(undefined as any);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Date Range Filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        {PRESETS.map((p) => (
+          <Button
+            key={p.key}
+            variant={activePreset === p.key && !customRange?.from ? "default" : "outline"}
+            size="sm"
+            onClick={() => handlePresetClick(p.key)}
+          >
+            {p.label}
+          </Button>
+        ))}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={customRange?.from ? "default" : "outline"}
+              size="sm"
+              className="gap-1.5"
+            >
+              <CalendarIcon className="h-4 w-4" />
+              {customRange?.from ? (
+                customRange.to ? (
+                  <>
+                    {format(customRange.from, "MMM d")} – {format(customRange.to, "MMM d, yyyy")}
+                  </>
+                ) : (
+                  format(customRange.from, "MMM d, yyyy")
+                )
+              ) : (
+                "Custom range"
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={customRange?.from ?? subDays(new Date(), 30)}
+              selected={customRange}
+              onSelect={handleCustomDateChange}
+              numberOfMonths={2}
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
       {/* Stats */}
       <TrackingStatsCards
         clicks={aggregateStats.clicks}
