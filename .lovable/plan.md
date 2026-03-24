@@ -1,76 +1,98 @@
 
 
-# Mobile-Responsive Admin App Overhaul
+# WhatsApp Messaging to Dealers via Twilio
 
-## Problem
+## Overview
 
-The admin app is unusable on mobile phones. Key issues:
+Add the ability for admins to send WhatsApp messages to verified dealers about cars available for bidding in their area, using Twilio's WhatsApp API through the connector gateway.
 
-1. **Tables overflow horizontally** — SellerList, DealerVerificationTable, and other tables have 6-9 columns with no horizontal scroll or card-based mobile layout
-2. **Auction Management tabs overflow** — 4 tab triggers with badges don't fit on small screens
-3. **Page headers overflow** — flex rows with titles + multiple buttons (export, refresh, badges) don't wrap properly
-4. **Dashboard grids don't stack** — AdminDashboard has `lg:grid-cols-3` but inner content still overflows
-5. **Bottom nav padding missing** — MobileNav bar covers content at the bottom (no `pb-16` on main)
-6. **Dialogs too wide** — DealerReviewDialog uses `grid-cols-2` with no mobile fallback
-7. **Date/time strings overflow** — AuctionHeader shows 3 date fields in a single `flex` row
+## Prerequisites
 
-## Approach
+**Twilio Connector**: No Twilio connection exists yet. We need to set up the Twilio connector using the `standard_connectors--connect` tool. This provides `LOVABLE_API_KEY` and `TWILIO_API_KEY` as environment variables for the edge function.
 
-Rather than rewriting every component, apply targeted fixes to the highest-impact areas using existing Tailwind responsive classes. The `useIsMobile` hook already exists and works; we'll use it where conditional rendering is needed, and use pure CSS (responsive classes + `overflow-x-auto`) everywhere else.
+**Twilio WhatsApp Sender**: You need a Twilio-approved WhatsApp sender number. This is configured in the Twilio console (either a sandbox number for testing or a production-approved number). You'll need to store the sender number as a secret.
+
+## Data Available
+
+- **Dealers table**: `id`, `dealership_name`, `address`, `user_id`, `verification_status`
+- **Dealer phone numbers**: fetched via `supabase.auth.admin.getUserById(dealer.user_id)` → `user.phone`
+- **Cars table**: `make`, `model`, `year`, `town`, `county`, `current_bid`, `reserve_price`, `auction_status`, `auction_end_time`
 
 ## Changes
 
-### 1. `DashboardLayout.tsx` — Add bottom padding for MobileNav
-- Add `pb-20 md:pb-0` to the main content area so the fixed bottom nav doesn't cover content
+### 1. Edge Function: `supabase/functions/send-whatsapp/index.ts`
 
-### 2. `AdminDashboard.tsx` — Fix grid stacking
-- Change header from `flex justify-between` to `flex flex-col sm:flex-row` so title and action buttons stack on mobile
+New edge function that:
+- Validates admin JWT (same pattern as `admin-api`)
+- Accepts actions: `sendToDealer` (single) and `sendToMultipleDealers` (bulk)
+- Calls Twilio WhatsApp API via connector gateway: `POST https://connector-gateway.lovable.dev/twilio/Messages.json`
+- Message body includes car details (make, model, year, town) and a link to the dealer app
+- Logs each message to a new `whatsapp_message_log` table
+- Uses `Content-Type: application/x-www-form-urlencoded` with `To: whatsapp:+48...` and `From: whatsapp:+{sender_number}`
 
-### 3. `SellerList.tsx` — Responsive table
-- Wrap `<Table>` in `<div className="overflow-x-auto">` to allow horizontal scroll on mobile
-- This is the fastest fix that preserves the existing layout on desktop
+### 2. Database Migration: `whatsapp_message_log` table
 
-### 4. `DealerVerificationTable.tsx` — Responsive table
-- Same `overflow-x-auto` wrapper
+```sql
+create table public.whatsapp_message_log (
+  id uuid primary key default gen_random_uuid(),
+  dealer_id text not null,
+  dealer_phone text not null,
+  car_id uuid references public.cars(id),
+  message_body text not null,
+  twilio_sid text,
+  status text default 'sent',
+  sent_by uuid references auth.users(id),
+  created_at timestamptz default now()
+);
+```
 
-### 5. `DealerVerification.tsx` — Header wrapping
-- Change header buttons row from `flex items-center space-x-2` to `flex flex-wrap items-center gap-2`
-- Stack title and buttons on mobile with `flex-col sm:flex-row`
+With RLS: only admins can read/insert (via `has_role` function).
 
-### 6. `SellerManagement.tsx` — Header wrapping
-- Same `flex-col sm:flex-row` fix for the header area
+### 3. Admin UI: `src/pages/admin/DealerMessaging.tsx`
 
-### 7. `AuctionManagement.tsx` — Scrollable tabs + controls
-- Make `TabsList` horizontally scrollable: wrap in `overflow-x-auto`
-- Controls card: already uses `flex-wrap`, but add `flex-col sm:flex-row` for the items-per-page row
+New page accessible from the sidebar with:
+- A car selector (dropdown of active auction cars with make/model/town)
+- A dealer list showing verified dealers with phone numbers, filterable by area (matching car's town/county to dealer address)
+- Checkboxes to select dealers + "Select All" option
+- Message template preview (auto-generated from car details, editable before send)
+- "Send via WhatsApp" button that calls the edge function
+- Message history log table at the bottom
 
-### 8. `AuctionHeader.tsx` — Date row wrapping
-- Change date info from `flex gap-4` to `flex flex-col sm:flex-row gap-1 sm:gap-4`
+### 4. Sidebar & Routing
 
-### 9. `DealerReviewDialog.tsx` — Stack on mobile
-- Change `grid-cols-2` to `grid-cols-1 md:grid-cols-2`
+- Add "Dealer Messaging" menu item under the existing dealer management group in `src/constants/sidebarMenuItems.ts`
+- Add route `/admin/dealer-messaging` in `src/components/routes/UserManagementRoutes.tsx`
 
-### 10. `Metrics.tsx` — Header wrapping
-- Add `flex-col sm:flex-row gap-2` to the header row
+### 5. Message Template
 
-### 11. `CampaignTrackingTab.tsx` — Calendar popover
-- Change `numberOfMonths={2}` to `numberOfMonths={1}` on small screens using `useIsMobile`
+Default Polish template:
+```
+🚗 Nowy samochód na Autaro!
 
-## Files Changed
+{year} {make} {model}
+📍 Lokalizacja: {town}, {county}
+💰 Cena wywoławcza: {reserve_price} PLN
+⏰ Aukcja kończy się: {auction_end_time}
 
-1. `src/components/DashboardLayout.tsx`
-2. `src/pages/AdminDashboard.tsx`
-3. `src/components/admin/seller-management/SellerList.tsx`
-4. `src/components/admin/dealer-verification/DealerVerificationTable.tsx`
-5. `src/pages/admin/DealerVerification.tsx`
-6. `src/pages/admin/SellerManagement.tsx`
-7. `src/pages/admin/AuctionManagement.tsx`
-8. `src/components/admin/auction-card/AuctionHeader.tsx`
-9. `src/components/admin/dealer-verification/DealerReviewDialog.tsx`
-10. `src/pages/admin/Metrics.tsx`
-11. `src/components/admin/campaign-tracking/CampaignTrackingTab.tsx`
+Złóż ofertę teraz: {dealer_app_url}
+```
 
-## Safety
+Editable by admin before sending.
 
-All changes are additive responsive classes or conditional rendering. Desktop layout remains identical. No logic changes.
+## Files
+
+1. `supabase/functions/send-whatsapp/index.ts` — new edge function
+2. `supabase/config.toml` — register new function
+3. Database migration — `whatsapp_message_log` table + RLS
+4. `src/pages/admin/DealerMessaging.tsx` — new page
+5. `src/constants/sidebarMenuItems.ts` — add menu item
+6. `src/components/routes/UserManagementRoutes.tsx` — add route
+
+## Implementation Order
+
+1. Connect Twilio connector + add WhatsApp sender number secret
+2. Create database migration
+3. Build and deploy edge function
+4. Build admin UI page
+5. Add routing and sidebar entry
 
