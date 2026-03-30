@@ -202,7 +202,7 @@ export default function DealerMessaging() {
               maxLength={1600}
             />
             <p className="text-xs text-muted-foreground">
-              {resolvedMessage.length}/1600 znaków. Użyj {"{car_title}"} aby wstawić nazwę pojazdu.
+              {resolvedMessage.length}/1600 characters. Use {"{car_title}"} to insert the vehicle name.
             </p>
           </div>
 
