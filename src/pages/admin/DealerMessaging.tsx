@@ -144,7 +144,7 @@ export default function DealerMessaging() {
               ) : (
                 <Select value={selectedDealerId} onValueChange={setSelectedDealerId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Wybierz dealera..." />
+                    <SelectValue placeholder="Select dealer..." />
                   </SelectTrigger>
                   <SelectContent>
                     {dealers.map((dealer) => (
