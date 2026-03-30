@@ -1,13 +1,23 @@
 
 
-# Update WhatsApp Sender Number
+# Remove Twilio Diagnostics
 
-## Change
-Update the hardcoded `TWILIO_FROM_NUMBER` in `supabase/functions/send-whatsapp/index.ts` from `+48732096585` to `+48459569800`.
+## Changes
 
-## File
-- `supabase/functions/send-whatsapp/index.ts` — change line defining `TWILIO_FROM_NUMBER`
+### 1. Delete edge function
+- Delete `supabase/functions/debug-twilio/index.ts` (the entire function directory)
 
-## After
-Redeploy the edge function and test sending a message.
+### 2. Update `src/hooks/useDealerMessaging.tsx`
+- Remove the `testConnector` mutation (lines 115-122)
+- Remove `testConnector` from the return object
+
+### 3. Update `src/pages/admin/DealerMessaging.tsx`
+- Remove the `TestTube2` icon import
+- Remove `testConnector` from the destructured hook values
+- Remove the `diagnosticResult` state variable
+- Remove the entire "Twilio Connection Diagnostics" `<Card>` block (lines ~87-114)
+
+### Technical notes
+- The `debug-twilio` edge function will also need to be deleted from Supabase using the edge function deletion tool
+- No database changes needed
 
