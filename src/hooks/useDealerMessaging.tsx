@@ -7,7 +7,6 @@ export interface VerifiedDealer {
   id: string;
   dealership_name: string;
   user_id: string;
-  phone_number: string | null;
 }
 
 export interface MessageLogEntry {
@@ -40,20 +39,7 @@ export function useDealerMessaging() {
         .order("dealership_name");
 
       if (error) throw error;
-
-      // Get phone numbers from profiles
-      const userIds = data.map((d) => d.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, phone")
-        .in("id", userIds);
-
-      const phoneMap = new Map(profiles?.map((p) => [p.id, p.phone]) || []);
-
-      return data.map((d) => ({
-        ...d,
-        phone_number: phoneMap.get(d.user_id) || null,
-      })) as VerifiedDealer[];
+      return data as VerifiedDealer[];
     },
   });
 
