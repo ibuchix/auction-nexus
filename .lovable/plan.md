@@ -1,47 +1,82 @@
 
-You’re right — I understand now.
 
-The Lovable Twilio connection form is asking for 3 values because this connector uses:
+# Dealer WhatsApp Messaging Feature
 
-1. Account SID → starts with `AC...`
-2. API Key SID → starts with `SK...`
-3. API Key Secret → not the Auth Token
+## Overview
+Build an admin feature to send WhatsApp messages to verified dealers about vehicles available for bidding, using the connected Twilio connector gateway.
 
-What likely happened:
-- You entered:
-  - `AC...` correctly
-  - `SK...` correctly
-  - Twilio Auth Token in the 3rd field
-- But the 3rd field expects the API Key Secret that belongs to that `SK...` key
+## Architecture
 
-That mismatch causes Twilio error `20003 Authenticate`.
-
-What to enter in the 3 fields:
 ```text
-Field 1: Account SID      -> AC...
-Field 2: API Key SID      -> SK...
-Field 3: API Key Secret   -> the secret generated together with that SK key
+Admin UI (Dealer Messaging page)
+  └─► supabase.functions.invoke('send-whatsapp')
+        └─► Twilio Gateway (connector-gateway.lovable.dev/twilio)
+              └─► WhatsApp message to dealer phone
+  └─► whatsapp_message_log table (tracks history)
 ```
 
-Important:
-- Do not use the main Twilio Auth Token in field 3
-- Use the API Key Secret created with that exact `SK...` key
-- The API Key Secret is usually only shown once when the key is created
-- If you no longer have it, create a new Standard API Key in Twilio and copy both:
-  - `SK...` API Key SID
-  - API Key Secret
+## Implementation Steps
 
-Also check this:
-- If Twilio asked you to choose a region when creating the API key, make sure the same region is selected in Lovable
-- No extra spaces before/after pasted values
+### Step 1: Database Migration — `whatsapp_message_log` table
+Create table to track message history:
+- `id` (uuid, PK)
+- `dealer_id` (uuid, FK to dealers)
+- `car_id` (uuid, nullable FK to cars)
+- `phone_number` (text)
+- `message_body` (text)
+- `template_name` (text, nullable)
+- `twilio_message_sid` (text, nullable)
+- `status` (text: queued/sent/delivered/failed)
+- `error_message` (text, nullable)
+- `sent_by` (uuid, FK to profiles — the admin who sent it)
+- `created_at` (timestamptz)
 
-So the fix is:
-1. Go to Twilio Console
-2. Create a new Standard API Key if needed
-3. Copy:
-   - Account SID (`AC...`)
-   - API Key SID (`SK...`)
-   - API Key Secret
-4. Paste those 3 exact values into Lovable
+RLS: admin-only access via `has_role(auth.uid(), 'admin')`.
+GRANTs for `authenticated` role (SELECT, INSERT).
 
-If you want, the next step I can help with is a very short field-by-field checklist using your Twilio screen so you know exactly where each of the 3 values comes from.
+### Step 2: Edge Function — `send-whatsapp`
+New edge function at `supabase/functions/send-whatsapp/index.ts`:
+- Validates JWT and admin role via `has_role` RPC
+- Input validation with Zod: `dealerId`, `phoneNumber`, `messageBody`, optional `carId`
+- Calls Twilio gateway: `POST https://connector-gateway.lovable.dev/twilio/Messages.json` with `Content-Type: application/x-www-form-urlencoded`
+- WhatsApp format: `To=whatsapp:+48...`, `From=whatsapp:+{twilio_number}`
+- Logs result to `whatsapp_message_log` table
+- Returns success/failure with Twilio SID
+
+Register in `supabase/config.toml` with `verify_jwt = false`.
+
+### Step 3: Admin UI — Dealer Messaging Page
+New page at `src/pages/admin/DealerMessaging.tsx`:
+- **Dealer selector**: dropdown of verified dealers (from `dealers` table, filtered by `is_verified = true`), showing dealership name + phone number
+- **Car selector** (optional): dropdown of active auction cars to reference in message
+- **Message template**: editable textarea with Polish-language default template, e.g. "Cześć! Mamy nowy pojazd dostępny do licytacji: {car_title}. Sprawdź szczegóły na aukcja.autaro.pl"
+- **Send button**: calls edge function, shows toast on success/failure
+- **Message history table**: paginated list from `whatsapp_message_log` showing dealer name, car, status, timestamp
+
+### Step 4: Routing & Navigation
+- Add route `/admin/dealer-messaging` in `UserManagementRoutes.tsx` wrapped in `AdminProtectedRoute`
+- Add "Dealer Messaging" entry to sidebar under "User Management" submenu in `sidebarMenuItems.ts`
+
+### Step 5: Hook — `useDealerMessaging`
+Custom hook to:
+- Fetch verified dealers with phone numbers
+- Fetch active cars for the car selector
+- Send message via `supabase.functions.invoke('send-whatsapp')`
+- Fetch message history from `whatsapp_message_log`
+
+## Files to Create
+- `supabase/functions/send-whatsapp/index.ts`
+- `src/pages/admin/DealerMessaging.tsx`
+- `src/hooks/useDealerMessaging.tsx`
+
+## Files to Modify
+- `supabase/config.toml` — register new function
+- `src/constants/sidebarMenuItems.ts` — add menu item
+- `src/components/routes/UserManagementRoutes.tsx` — add route
+
+## Technical Notes
+- Dealers table has no direct `phone_number` column — it's on the related `profiles` or fetched via existing RPCs. The `sellers` table has `phone_number`. For dealers, phone numbers come from the `profiles` table email or from the dealer creation RPC (`p_phone_number`). We'll query via a join or existing RPC.
+- Twilio gateway auto-prepends `/2010-04-01/Accounts/{AccountSid}` — we only specify `/Messages.json`
+- Uses `application/x-www-form-urlencoded` (not JSON) for Twilio POST
+- The `LOVABLE_API_KEY` and `TWILIO_API_KEY` env vars are already available from the connected "AUTARO 3" connection
+
