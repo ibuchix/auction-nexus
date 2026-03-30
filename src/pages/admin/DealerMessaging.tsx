@@ -208,7 +208,7 @@ export default function DealerMessaging() {
 
           {selectedDealer && phoneNumber && (
             <div className="rounded-md border p-3 bg-muted/50 text-sm">
-              <p className="font-medium mb-1">Podgląd:</p>
+              <p className="font-medium mb-1">Preview:</p>
               <p className="flex items-center gap-1 text-muted-foreground">
                 <Phone className="h-3 w-3" />
                 Do: {phoneNumber} ({selectedDealer.dealership_name})
