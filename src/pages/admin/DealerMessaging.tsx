@@ -120,7 +120,7 @@ export default function DealerMessaging() {
             disabled={testConnector.isPending}
           >
             <TestTube2 className="h-4 w-4 mr-2" />
-            {testConnector.isPending ? "Testowanie..." : "Test połączenia Twilio"}
+            {testConnector.isPending ? "Testing..." : "Test Twilio Connection"}
           </Button>
           {diagnosticResult && (
             <pre className="mt-2 p-3 rounded-md bg-muted text-xs overflow-x-auto max-h-64 overflow-y-auto whitespace-pre-wrap">
