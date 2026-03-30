@@ -1,82 +1,62 @@
 
 
-# Dealer WhatsApp Messaging Feature
+# Diagnose Twilio Connector Gateway 403 and Prepare for WhatsApp Requirements
 
-## Overview
-Build an admin feature to send WhatsApp messages to verified dealers about vehicles available for bidding, using the connected Twilio connector gateway.
+## Key Finding
 
-## Architecture
+The `project_not_authorized` error originates from the **Lovable connector gateway**, not from Twilio. This means the request never reaches Twilio's servers. WhatsApp templates are irrelevant at this stage — template errors would produce Twilio error code 63016, not a gateway-level 403.
 
-```text
-Admin UI (Dealer Messaging page)
-  └─► supabase.functions.invoke('send-whatsapp')
-        └─► Twilio Gateway (connector-gateway.lovable.dev/twilio)
-              └─► WhatsApp message to dealer phone
-  └─► whatsapp_message_log table (tracks history)
-```
+## Root Cause Candidates
 
-## Implementation Steps
+1. **Stale credentials cached in edge function** — the function may still be using the old connection's `TWILIO_API_KEY` until redeployed
+2. **Gateway-level project/connection mismatch** — the connector may not be fully authorized for this Lovable project despite appearing linked
+3. **Credential format issue** — the API Key type or secret may still be incorrect
 
-### Step 1: Database Migration — `whatsapp_message_log` table
-Create table to track message history:
-- `id` (uuid, PK)
-- `dealer_id` (uuid, FK to dealers)
-- `car_id` (uuid, nullable FK to cars)
-- `phone_number` (text)
-- `message_body` (text)
-- `template_name` (text, nullable)
-- `twilio_message_sid` (text, nullable)
-- `status` (text: queued/sent/delivered/failed)
-- `error_message` (text, nullable)
-- `sent_by` (uuid, FK to profiles — the admin who sent it)
-- `created_at` (timestamptz)
+## Plan
 
-RLS: admin-only access via `has_role(auth.uid(), 'admin')`.
-GRANTs for `authenticated` role (SELECT, INSERT).
+### Step 1: Create a Diagnostic Edge Function
 
-### Step 2: Edge Function — `send-whatsapp`
-New edge function at `supabase/functions/send-whatsapp/index.ts`:
-- Validates JWT and admin role via `has_role` RPC
-- Input validation with Zod: `dealerId`, `phoneNumber`, `messageBody`, optional `carId`
-- Calls Twilio gateway: `POST https://connector-gateway.lovable.dev/twilio/Messages.json` with `Content-Type: application/x-www-form-urlencoded`
-- WhatsApp format: `To=whatsapp:+48...`, `From=whatsapp:+{twilio_number}`
-- Logs result to `whatsapp_message_log` table
-- Returns success/failure with Twilio SID
+Create `supabase/functions/debug-twilio/index.ts` that:
+- Logs masked versions of `LOVABLE_API_KEY` and `TWILIO_API_KEY` (first 8 chars only) to confirm which keys are loaded
+- Calls a **read-only** Twilio endpoint: `GET /IncomingPhoneNumbers.json` through the gateway
+- Returns the full gateway response status and body
+- This isolates whether the 403 is specific to `POST /Messages.json` or affects all gateway calls
 
-Register in `supabase/config.toml` with `verify_jwt = false`.
+### Step 2: Add Detailed Logging to send-whatsapp
 
-### Step 3: Admin UI — Dealer Messaging Page
-New page at `src/pages/admin/DealerMessaging.tsx`:
-- **Dealer selector**: dropdown of verified dealers (from `dealers` table, filtered by `is_verified = true`), showing dealership name + phone number
-- **Car selector** (optional): dropdown of active auction cars to reference in message
-- **Message template**: editable textarea with Polish-language default template, e.g. "Cześć! Mamy nowy pojazd dostępny do licytacji: {car_title}. Sprawdź szczegóły na aukcja.autaro.pl"
-- **Send button**: calls edge function, shows toast on success/failure
-- **Message history table**: paginated list from `whatsapp_message_log` showing dealer name, car, status, timestamp
+Update `supabase/functions/send-whatsapp/index.ts`:
+- Log masked key prefixes before the gateway call
+- Log the exact URL, headers (minus secrets), and body being sent
+- Log the full gateway response status and body on failure
+- This gives us the data to understand exactly what the gateway receives
 
-### Step 4: Routing & Navigation
-- Add route `/admin/dealer-messaging` in `UserManagementRoutes.tsx` wrapped in `AdminProtectedRoute`
-- Add "Dealer Messaging" entry to sidebar under "User Management" submenu in `sidebarMenuItems.ts`
+### Step 3: Redeploy Both Functions
 
-### Step 5: Hook — `useDealerMessaging`
-Custom hook to:
-- Fetch verified dealers with phone numbers
-- Fetch active cars for the car selector
-- Send message via `supabase.functions.invoke('send-whatsapp')`
-- Fetch message history from `whatsapp_message_log`
+Deploy both functions to ensure they pick up the latest `TWILIO_API_KEY` from the new "Autaro" connection.
+
+### Step 4: Add Diagnostic UI Button
+
+Add a "Test Twilio Connection" button to `DealerMessaging.tsx` that invokes `debug-twilio` and displays the raw result, so you can test without composing a full message.
+
+### Step 5: Prepare for WhatsApp Requirements (after gateway works)
+
+Once the gateway auth is resolved, update the implementation for WhatsApp compliance:
+- **For sandbox testing**: Add instructions that recipients must first send `join <keyword>` to the Twilio sandbox number
+- **For production**: Use Twilio Content Templates API with `ContentSid` parameter instead of freeform `Body`, since business-initiated messages require approved templates
 
 ## Files to Create
-- `supabase/functions/send-whatsapp/index.ts`
-- `src/pages/admin/DealerMessaging.tsx`
-- `src/hooks/useDealerMessaging.tsx`
+- `supabase/functions/debug-twilio/index.ts`
 
 ## Files to Modify
-- `supabase/config.toml` — register new function
-- `src/constants/sidebarMenuItems.ts` — add menu item
-- `src/components/routes/UserManagementRoutes.tsx` — add route
+- `supabase/functions/send-whatsapp/index.ts` — add diagnostic logging
+- `supabase/config.toml` — register debug-twilio function
+- `src/pages/admin/DealerMessaging.tsx` — add diagnostic button
+- `src/hooks/useDealerMessaging.tsx` — add diagnostic invoke method
 
-## Technical Notes
-- Dealers table has no direct `phone_number` column — it's on the related `profiles` or fetched via existing RPCs. The `sellers` table has `phone_number`. For dealers, phone numbers come from the `profiles` table email or from the dealer creation RPC (`p_phone_number`). We'll query via a join or existing RPC.
-- Twilio gateway auto-prepends `/2010-04-01/Accounts/{AccountSid}` — we only specify `/Messages.json`
-- Uses `application/x-www-form-urlencoded` (not JSON) for Twilio POST
-- The `LOVABLE_API_KEY` and `TWILIO_API_KEY` env vars are already available from the connected "AUTARO 3" connection
+## Expected Outcome
+
+Running the diagnostic will tell us:
+- If **both** endpoints fail with 403 → the connector linkage itself is broken (needs Lovable support or re-link)
+- If **GET works but POST fails** → permissions issue on the Twilio account side
+- If **both work after redeploy** → it was stale cached credentials
 
