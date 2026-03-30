@@ -90,7 +90,7 @@ export default function DealerMessaging() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <MessageSquare className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold">Wiadomości WhatsApp do Dealerów</h1>
+        <h1 className="text-2xl font-bold">WhatsApp Messages to Dealers</h1>
       </div>
 
       <Card>
