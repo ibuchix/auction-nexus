@@ -92,43 +92,6 @@ export default function DealerMessaging() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <TestTube2 className="h-5 w-5" />
-            Twilio Connection Diagnostics
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Check if the Twilio connector gateway is properly configured.
-          </p>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              setDiagnosticResult(null);
-              try {
-                const result = await testConnector.mutateAsync();
-                setDiagnosticResult(JSON.stringify(result, null, 2));
-              } catch (err: unknown) {
-                setDiagnosticResult(
-                  `Error: ${err instanceof Error ? err.message : String(err)}`
-                );
-              }
-            }}
-            disabled={testConnector.isPending}
-          >
-            <TestTube2 className="h-4 w-4 mr-2" />
-            {testConnector.isPending ? "Testing..." : "Test Twilio Connection"}
-          </Button>
-          {diagnosticResult && (
-            <pre className="mt-2 p-3 rounded-md bg-muted text-xs overflow-x-auto max-h-64 overflow-y-auto whitespace-pre-wrap">
-              {diagnosticResult}
-            </pre>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle className="text-lg">Send Message</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

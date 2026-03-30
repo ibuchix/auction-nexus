@@ -112,15 +112,6 @@ export function useDealerMessaging() {
     },
   });
 
-  // Diagnostic: test Twilio connector
-  const testConnector = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("debug-twilio");
-      if (error) throw error;
-      return data;
-    },
-  });
-
   return {
     dealers,
     dealersLoading,
@@ -129,6 +120,5 @@ export function useDealerMessaging() {
     messageHistory,
     historyLoading,
     sendMessage,
-    testConnector,
   };
 }
