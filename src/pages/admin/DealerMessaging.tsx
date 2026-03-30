@@ -158,7 +158,7 @@ export default function DealerMessaging() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Numer telefonu (E.164)</label>
+              <label className="text-sm font-medium">Phone Number (E.164)</label>
               <Input
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
