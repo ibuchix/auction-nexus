@@ -179,7 +179,7 @@ export default function DealerMessaging() {
             ) : (
               <Select value={selectedCarId} onValueChange={setSelectedCarId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Wybierz pojazd..." />
+                  <SelectValue placeholder="Select vehicle..." />
                 </SelectTrigger>
                 <SelectContent>
                   {activeCars.map((car) => (
