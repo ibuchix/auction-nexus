@@ -138,6 +138,7 @@ export default function DealerMessaging() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Dealer</label>
+
               {dealersLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : (
