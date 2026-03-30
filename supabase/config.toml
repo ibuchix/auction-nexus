@@ -29,3 +29,6 @@ project_id = "sdvakfhmoaoucmhbhwvy"
 
 [functions.send-whatsapp]
   verify_jwt = false
+
+[functions.debug-twilio]
+  verify_jwt = false
