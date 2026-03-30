@@ -211,7 +211,7 @@ export default function DealerMessaging() {
               <p className="font-medium mb-1">Preview:</p>
               <p className="flex items-center gap-1 text-muted-foreground">
                 <Phone className="h-3 w-3" />
-                Do: {phoneNumber} ({selectedDealer.dealership_name})
+                To: {phoneNumber} ({selectedDealer.dealership_name})
               </p>
               <p className="mt-1">{resolvedMessage}</p>
             </div>
