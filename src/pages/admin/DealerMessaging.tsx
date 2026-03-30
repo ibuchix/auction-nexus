@@ -173,7 +173,7 @@ export default function DealerMessaging() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Pojazd (opcjonalnie)</label>
+            <label className="text-sm font-medium">Vehicle (optional)</label>
             {carsLoading ? (
               <Skeleton className="h-10 w-full" />
             ) : (
