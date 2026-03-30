@@ -97,7 +97,7 @@ export default function DealerMessaging() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <TestTube2 className="h-5 w-5" />
-            Diagnostyka połączenia Twilio
+            Twilio Connection Diagnostics
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
