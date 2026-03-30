@@ -234,7 +234,7 @@ export default function DealerMessaging() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Historia wiadomości</CardTitle>
+          <CardTitle className="text-lg">Message History</CardTitle>
         </CardHeader>
         <CardContent>
           {historyLoading ? (
