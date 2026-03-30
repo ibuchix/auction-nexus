@@ -23,7 +23,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDealerMessaging } from "@/hooks/useDealerMessaging";
 import { format } from "date-fns";
-import { pl } from "date-fns/locale";
 
 const DEFAULT_TEMPLATE =
   "Cześć! Mamy nowy pojazd dostępny do licytacji: {car_title}. Sprawdź szczegóły na platformie AUTARO.";
