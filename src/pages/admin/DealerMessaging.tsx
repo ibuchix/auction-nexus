@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { MessageSquare, Send, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -40,6 +41,7 @@ export default function DealerMessaging() {
 
   const [selectedDealerId, setSelectedDealerId] = useState<string>("");
   const [selectedCarId, setSelectedCarId] = useState<string>("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [messageBody, setMessageBody] = useState(DEFAULT_TEMPLATE);
 
   const selectedDealer = useMemo(
@@ -52,7 +54,6 @@ export default function DealerMessaging() {
     [activeCars, selectedCarId]
   );
 
-  // Auto-fill template when car changes
   const resolvedMessage = useMemo(() => {
     if (!selectedCar) return messageBody;
     const carTitle =
@@ -61,11 +62,13 @@ export default function DealerMessaging() {
     return messageBody.replace("{car_title}", carTitle);
   }, [messageBody, selectedCar]);
 
+  const isValidPhone = /^\+\d{7,15}$/.test(phoneNumber);
+
   const handleSend = () => {
-    if (!selectedDealer?.phone_number) return;
+    if (!selectedDealerId || !isValidPhone) return;
     sendMessage.mutate({
       dealerId: selectedDealerId,
-      phoneNumber: selectedDealer.phone_number,
+      phoneNumber,
       messageBody: resolvedMessage,
       carId: selectedCarId || undefined,
     });
@@ -88,14 +91,12 @@ export default function DealerMessaging() {
         <h1 className="text-2xl font-bold">Wiadomości WhatsApp do Dealerów</h1>
       </div>
 
-      {/* Send Message Card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Wyślij wiadomość</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Dealer selector */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Dealer</label>
               {dealersLoading ? (
@@ -108,19 +109,7 @@ export default function DealerMessaging() {
                   <SelectContent>
                     {dealers.map((dealer) => (
                       <SelectItem key={dealer.id} value={dealer.id}>
-                        <span className="flex items-center gap-2">
-                          {dealer.dealership_name}
-                          {dealer.phone_number && (
-                            <span className="text-muted-foreground text-xs">
-                              ({dealer.phone_number})
-                            </span>
-                          )}
-                          {!dealer.phone_number && (
-                            <span className="text-destructive text-xs">
-                              (brak numeru)
-                            </span>
-                          )}
-                        </span>
+                        {dealer.dealership_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -128,29 +117,41 @@ export default function DealerMessaging() {
               )}
             </div>
 
-            {/* Car selector */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Pojazd (opcjonalnie)</label>
-              {carsLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <Select value={selectedCarId} onValueChange={setSelectedCarId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Wybierz pojazd..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {activeCars.map((car) => (
-                      <SelectItem key={car.id} value={car.id}>
-                        {car.title || `${car.make} ${car.model} ${car.year}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <label className="text-sm font-medium">Numer telefonu (E.164)</label>
+              <Input
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+48123456789"
+              />
+              {phoneNumber && !isValidPhone && (
+                <p className="text-xs text-destructive">
+                  Format: +48XXXXXXXXX
+                </p>
               )}
             </div>
           </div>
 
-          {/* Message body */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Pojazd (opcjonalnie)</label>
+            {carsLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <Select value={selectedCarId} onValueChange={setSelectedCarId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Wybierz pojazd..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeCars.map((car) => (
+                    <SelectItem key={car.id} value={car.id}>
+                      {car.title || `${car.make} ${car.model} ${car.year}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Treść wiadomości</label>
             <Textarea
@@ -165,13 +166,12 @@ export default function DealerMessaging() {
             </p>
           </div>
 
-          {/* Preview */}
-          {selectedDealer && (
+          {selectedDealer && phoneNumber && (
             <div className="rounded-md border p-3 bg-muted/50 text-sm">
               <p className="font-medium mb-1">Podgląd:</p>
               <p className="flex items-center gap-1 text-muted-foreground">
                 <Phone className="h-3 w-3" />
-                Do: {selectedDealer.phone_number || "brak numeru"}
+                Do: {phoneNumber} ({selectedDealer.dealership_name})
               </p>
               <p className="mt-1">{resolvedMessage}</p>
             </div>
@@ -181,7 +181,7 @@ export default function DealerMessaging() {
             onClick={handleSend}
             disabled={
               !selectedDealerId ||
-              !selectedDealer?.phone_number ||
+              !isValidPhone ||
               !resolvedMessage.trim() ||
               sendMessage.isPending
             }
@@ -192,7 +192,6 @@ export default function DealerMessaging() {
         </CardContent>
       </Card>
 
-      {/* Message History */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Historia wiadomości</CardTitle>
