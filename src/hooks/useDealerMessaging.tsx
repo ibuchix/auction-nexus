@@ -98,14 +98,14 @@ export function useDealerMessaging() {
     },
     onSuccess: () => {
       toast({
-        title: "Wiadomość wysłana",
-        description: "WhatsApp został wysłany pomyślnie.",
+        title: "Message sent",
+        description: "WhatsApp was sent successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["whatsapp-message-history"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Błąd wysyłania",
+        title: "Send error",
         description: error.message,
         variant: "destructive",
       });
