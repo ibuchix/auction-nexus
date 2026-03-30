@@ -102,7 +102,7 @@ export default function DealerMessaging() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Sprawdź czy connector gateway Twilio jest poprawnie skonfigurowany.
+            Check if the Twilio connector gateway is properly configured.
           </p>
           <Button
             variant="outline"
