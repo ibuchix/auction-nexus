@@ -6,8 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -17,23 +15,23 @@ Deno.serve(async (req) => {
 
   try {
     // 1. Check env vars
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
+    const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
 
-    diagnostics.lovable_key_present = !!LOVABLE_API_KEY;
-    diagnostics.lovable_key_prefix = LOVABLE_API_KEY ? LOVABLE_API_KEY.substring(0, 8) + "..." : "MISSING";
-    diagnostics.twilio_key_present = !!TWILIO_API_KEY;
-    diagnostics.twilio_key_prefix = TWILIO_API_KEY ? TWILIO_API_KEY.substring(0, 8) + "..." : "MISSING";
+    diagnostics.account_sid_present = !!TWILIO_ACCOUNT_SID;
+    diagnostics.account_sid_prefix = TWILIO_ACCOUNT_SID ? TWILIO_ACCOUNT_SID.substring(0, 6) + "..." : "MISSING";
+    diagnostics.auth_token_present = !!TWILIO_AUTH_TOKEN;
+    diagnostics.auth_token_prefix = TWILIO_AUTH_TOKEN ? TWILIO_AUTH_TOKEN.substring(0, 4) + "..." : "MISSING";
 
-    if (!LOVABLE_API_KEY) {
-      diagnostics.error = "LOVABLE_API_KEY is not configured";
+    if (!TWILIO_ACCOUNT_SID) {
+      diagnostics.error = "TWILIO_ACCOUNT_SID is not configured";
       return new Response(JSON.stringify(diagnostics), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (!TWILIO_API_KEY) {
-      diagnostics.error = "TWILIO_API_KEY is not configured";
+    if (!TWILIO_AUTH_TOKEN) {
+      diagnostics.error = "TWILIO_AUTH_TOKEN is not configured";
       return new Response(JSON.stringify(diagnostics), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -76,36 +74,35 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Call a read-only Twilio endpoint through the gateway
-    const testUrl = `${GATEWAY_URL}/IncomingPhoneNumbers.json?PageSize=1`;
-    diagnostics.gateway_url = testUrl;
+    // 3. Call Twilio API directly
+    const testUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/IncomingPhoneNumbers.json?PageSize=1`;
+    const basicAuth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+    diagnostics.twilio_url = testUrl;
+    diagnostics.method = "direct_api";
 
-    console.log("[debug-twilio] Calling gateway:", testUrl);
-    console.log("[debug-twilio] LOVABLE_API_KEY prefix:", LOVABLE_API_KEY.substring(0, 8));
-    console.log("[debug-twilio] TWILIO_API_KEY prefix:", TWILIO_API_KEY.substring(0, 8));
+    console.log("[debug-twilio] Calling Twilio directly:", testUrl);
 
-    const gatewayResponse = await fetch(testUrl, {
+    const twilioResponse = await fetch(testUrl, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": TWILIO_API_KEY,
+        Authorization: `Basic ${basicAuth}`,
       },
     });
 
-    const responseBody = await gatewayResponse.text();
-    diagnostics.gateway_status = gatewayResponse.status;
-    diagnostics.gateway_status_text = gatewayResponse.statusText;
+    const responseBody = await twilioResponse.text();
+    diagnostics.twilio_status = twilioResponse.status;
+    diagnostics.twilio_status_text = twilioResponse.statusText;
 
     try {
-      diagnostics.gateway_response = JSON.parse(responseBody);
+      diagnostics.twilio_response = JSON.parse(responseBody);
     } catch {
-      diagnostics.gateway_response = responseBody.substring(0, 500);
+      diagnostics.twilio_response = responseBody.substring(0, 500);
     }
 
-    console.log("[debug-twilio] Gateway response status:", gatewayResponse.status);
-    console.log("[debug-twilio] Gateway response body:", responseBody.substring(0, 300));
+    console.log("[debug-twilio] Twilio response status:", twilioResponse.status);
+    console.log("[debug-twilio] Twilio response body:", responseBody.substring(0, 300));
 
-    diagnostics.success = gatewayResponse.ok;
+    diagnostics.success = twilioResponse.ok;
 
     return new Response(JSON.stringify(diagnostics, null, 2), {
       status: 200,

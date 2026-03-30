@@ -6,7 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 const TWILIO_FROM_NUMBER = "+48732096585";
 
 Deno.serve(async (req) => {
@@ -15,14 +14,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate env vars with diagnostic logging
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
+    if (!TWILIO_ACCOUNT_SID) throw new Error("TWILIO_ACCOUNT_SID is not configured");
 
-    const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
-    if (!TWILIO_API_KEY) throw new Error("TWILIO_API_KEY is not configured");
+    const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
+    if (!TWILIO_AUTH_TOKEN) throw new Error("TWILIO_AUTH_TOKEN is not configured");
 
-    console.log("[send-whatsapp] Keys loaded - LOVABLE prefix:", LOVABLE_API_KEY.substring(0, 8), "TWILIO prefix:", TWILIO_API_KEY.substring(0, 8));
+    console.log("[send-whatsapp] Using direct Twilio API. Account SID prefix:", TWILIO_ACCOUNT_SID.substring(0, 6));
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -87,32 +85,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Send WhatsApp via Twilio gateway
-    const gatewayUrl = `${GATEWAY_URL}/Messages.json`;
+    // Send WhatsApp via Twilio REST API directly
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+    const basicAuth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
     const requestBody = new URLSearchParams({
       To: `whatsapp:${phoneNumber}`,
       From: `whatsapp:${TWILIO_FROM_NUMBER}`,
       Body: messageBody,
     });
 
-    console.log("[send-whatsapp] Gateway URL:", gatewayUrl);
+    console.log("[send-whatsapp] Twilio URL:", twilioUrl);
     console.log("[send-whatsapp] Request To:", `whatsapp:${phoneNumber}`);
     console.log("[send-whatsapp] Request From:", `whatsapp:${TWILIO_FROM_NUMBER}`);
     console.log("[send-whatsapp] Body length:", messageBody.length);
 
-    const twilioResponse = await fetch(gatewayUrl, {
+    const twilioResponse = await fetch(twilioUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": TWILIO_API_KEY,
+        Authorization: `Basic ${basicAuth}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: requestBody,
     });
 
     const twilioResponseText = await twilioResponse.text();
-    console.log("[send-whatsapp] Gateway response status:", twilioResponse.status);
-    console.log("[send-whatsapp] Gateway response body:", twilioResponseText.substring(0, 500));
+    console.log("[send-whatsapp] Twilio response status:", twilioResponse.status);
+    console.log("[send-whatsapp] Twilio response body:", twilioResponseText.substring(0, 500));
 
     let twilioData: Record<string, unknown>;
     try {
