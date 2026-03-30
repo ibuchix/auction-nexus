@@ -36,10 +36,7 @@ export default function DealerMessaging() {
     messageHistory,
     historyLoading,
     sendMessage,
-    testConnector,
   } = useDealerMessaging();
-
-  const [diagnosticResult, setDiagnosticResult] = useState<string | null>(null);
 
   const [selectedDealerId, setSelectedDealerId] = useState<string>("");
   const [selectedCarId, setSelectedCarId] = useState<string>("");
