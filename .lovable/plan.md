@@ -1,34 +1,40 @@
 
 
-# Translate Dealer Messaging Platform UI to English
+# Switch from Connector Gateway to Direct Twilio API
 
-The platform UI is currently in Polish but should be in English. The default message template (sent to dealers) stays in Polish since dealers are Polish-speaking customers.
+## Why
 
-## Changes
+The Lovable connector gateway keeps returning `project_not_authorized` despite valid credentials and multiple reconnections. This is a gateway-level issue we cannot resolve. Going direct bypasses it entirely.
 
-### File: `src/pages/admin/DealerMessaging.tsx`
+## What You'll Need
 
-All UI labels, headings, placeholders, and helper text translated to English:
+Three Twilio credentials (from https://console.twilio.com):
+1. **Account SID** — starts with `AC`, found on dashboard home
+2. **Auth Token** — found on dashboard home (click to reveal)
 
-- Page title: "WhatsApp Messages to Dealers"
-- Diagnostic card title: "Twilio Connection Diagnostics"
-- Diagnostic description: "Check if the Twilio connector gateway is properly configured."
-- Diagnostic button: "Test Twilio Connection" / "Testing..."
-- Send card title: "Send Message"
-- Labels: "Dealer", "Phone Number (E.164)", "Vehicle (optional)", "Message Body"
-- Placeholders: "Select dealer...", "Select vehicle...", "Enter message body..."
-- Helper text: "{length}/1600 characters. Use {car_title} to insert the vehicle name."
-- Preview section: "Preview:", "To:"
-- Send button: "Send WhatsApp" / "Sending..."
-- Empty state: "No messages sent."
-- Table headers: "Date", "Dealer", "Phone", "Vehicle", "Status", "Message"
-- Phone validation: "Format: +48XXXXXXXXX"
-- Remove `pl` locale import from date-fns (use default English formatting)
+These will be stored as Supabase Edge Function secrets.
 
-**Keep the DEFAULT_TEMPLATE in Polish** — this is the message content sent to Polish-speaking dealers.
+## Plan
 
-### File: `src/hooks/useDealerMessaging.tsx`
+### Step 1: Add Supabase Secrets
+Add two secrets to the Supabase project:
+- `TWILIO_ACCOUNT_SID` — your Account SID (AC...)
+- `TWILIO_AUTH_TOKEN` — your primary Auth Token
 
-- Success toast: "Message sent" / "WhatsApp was sent successfully."
-- Error toast: "Send error" / error.message
+### Step 2: Update `send-whatsapp/index.ts`
+- Remove gateway URL, `LOVABLE_API_KEY`, and `TWILIO_API_KEY` references
+- Call Twilio API directly: `https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json`
+- Use HTTP Basic Auth: `Authorization: Basic base64(AccountSid:AuthToken)`
+- Keep all existing validation, logging, and DB logging
+
+### Step 3: Update `debug-twilio/index.ts`
+- Same change: call Twilio directly instead of through gateway
+- Test endpoint: `GET /IncomingPhoneNumbers.json`
+
+### Step 4: Disconnect the Twilio Connector
+- Once direct calls work, disconnect the connector to avoid confusion
+
+## Files Modified
+- `supabase/functions/send-whatsapp/index.ts`
+- `supabase/functions/debug-twilio/index.ts`
 
