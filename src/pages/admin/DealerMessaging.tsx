@@ -227,7 +227,7 @@ export default function DealerMessaging() {
             }
           >
             <Send className="h-4 w-4 mr-2" />
-            {sendMessage.isPending ? "Wysyłanie..." : "Wyślij WhatsApp"}
+            {sendMessage.isPending ? "Sending..." : "Send WhatsApp"}
           </Button>
         </CardContent>
       </Card>
