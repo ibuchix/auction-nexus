@@ -264,9 +264,7 @@ export default function DealerMessaging() {
                   {messageHistory.map((msg) => (
                     <TableRow key={msg.id}>
                       <TableCell className="whitespace-nowrap text-sm">
-                        {format(new Date(msg.created_at), "dd MMM yyyy HH:mm", {
-                          locale: pl,
-                        })}
+                        {format(new Date(msg.created_at), "dd MMM yyyy HH:mm")}
                       </TableCell>
                       <TableCell>
                         {msg.dealers?.dealership_name || "—"}

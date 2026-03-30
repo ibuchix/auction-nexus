@@ -105,7 +105,7 @@ export function useDealerMessaging() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Błąd wysyłania",
+        title: "Send error",
         description: error.message,
         variant: "destructive",
       });
