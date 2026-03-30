@@ -131,6 +131,7 @@ export default function DealerMessaging() {
         </CardContent>
       </Card>
 
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Wyślij wiadomość</CardTitle>
         </CardHeader>
