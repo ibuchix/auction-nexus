@@ -198,7 +198,7 @@ export default function DealerMessaging() {
               value={messageBody}
               onChange={(e) => setMessageBody(e.target.value)}
               rows={4}
-              placeholder="Wpisz treść wiadomości..."
+              placeholder="Enter message body..."
               maxLength={1600}
             />
             <p className="text-xs text-muted-foreground">
