@@ -245,7 +245,7 @@ export default function DealerMessaging() {
             </div>
           ) : messageHistory.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">
-              Brak wysłanych wiadomości.
+              No messages sent.
             </p>
           ) : (
             <div className="overflow-x-auto">
