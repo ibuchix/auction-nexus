@@ -252,12 +252,12 @@ export default function DealerMessaging() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Data</TableHead>
+                     <TableHead>Date</TableHead>
                     <TableHead>Dealer</TableHead>
-                    <TableHead>Telefon</TableHead>
-                    <TableHead>Pojazd</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Vehicle</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="max-w-[200px]">Wiadomość</TableHead>
+                    <TableHead className="max-w-[200px]">Message</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
