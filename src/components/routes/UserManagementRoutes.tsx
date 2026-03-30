@@ -7,6 +7,7 @@ import SellerManagement from "@/pages/admin/SellerManagement";
 import ManualValuation from "@/pages/admin/ManualValuation";
 import ValuationStats from "@/pages/admin/ValuationStats";
 import ReviewManagement from "@/pages/admin/ReviewManagement";
+import DealerMessaging from "@/pages/admin/DealerMessaging";
 
 export const UserManagementRoutes = (
   <>
@@ -63,6 +64,14 @@ export const UserManagementRoutes = (
       element={
         <AdminProtectedRoute>
           <ReviewManagement />
+        </AdminProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/admin/dealer-messaging" 
+      element={
+        <AdminProtectedRoute>
+          <DealerMessaging />
         </AdminProtectedRoute>
       } 
     />

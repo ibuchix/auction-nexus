@@ -2433,6 +2433,70 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_message_log: {
+        Row: {
+          car_id: string | null
+          created_at: string
+          dealer_id: string
+          error_message: string | null
+          id: string
+          message_body: string
+          phone_number: string
+          sent_by: string | null
+          status: string
+          template_name: string | null
+          twilio_message_sid: string | null
+        }
+        Insert: {
+          car_id?: string | null
+          created_at?: string
+          dealer_id: string
+          error_message?: string | null
+          id?: string
+          message_body: string
+          phone_number: string
+          sent_by?: string | null
+          status?: string
+          template_name?: string | null
+          twilio_message_sid?: string | null
+        }
+        Update: {
+          car_id?: string | null
+          created_at?: string
+          dealer_id?: string
+          error_message?: string | null
+          id?: string
+          message_body?: string
+          phone_number?: string
+          sent_by?: string | null
+          status?: string
+          template_name?: string | null
+          twilio_message_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_log_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_log_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars_public_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_log_dealer_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "dealers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       auction_activity_stats: {

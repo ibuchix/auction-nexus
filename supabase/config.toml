@@ -26,3 +26,6 @@ project_id = "sdvakfhmoaoucmhbhwvy"
 
 [functions.track-event]
   verify_jwt = false
+
+[functions.send-whatsapp]
+  verify_jwt = false
