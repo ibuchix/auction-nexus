@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { MessageSquare, Send, Phone } from "lucide-react";
+import { MessageSquare, Send, Phone, TestTube2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,10 @@ export default function DealerMessaging() {
     messageHistory,
     historyLoading,
     sendMessage,
+    testConnector,
   } = useDealerMessaging();
+
+  const [diagnosticResult, setDiagnosticResult] = useState<string | null>(null);
 
   const [selectedDealerId, setSelectedDealerId] = useState<string>("");
   const [selectedCarId, setSelectedCarId] = useState<string>("");
@@ -90,6 +93,43 @@ export default function DealerMessaging() {
         <MessageSquare className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">Wiadomości WhatsApp do Dealerów</h1>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TestTube2 className="h-5 w-5" />
+            Diagnostyka połączenia Twilio
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Sprawdź czy connector gateway Twilio jest poprawnie skonfigurowany.
+          </p>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setDiagnosticResult(null);
+              try {
+                const result = await testConnector.mutateAsync();
+                setDiagnosticResult(JSON.stringify(result, null, 2));
+              } catch (err: unknown) {
+                setDiagnosticResult(
+                  `Error: ${err instanceof Error ? err.message : String(err)}`
+                );
+              }
+            }}
+            disabled={testConnector.isPending}
+          >
+            <TestTube2 className="h-4 w-4 mr-2" />
+            {testConnector.isPending ? "Testowanie..." : "Test połączenia Twilio"}
+          </Button>
+          {diagnosticResult && (
+            <pre className="mt-2 p-3 rounded-md bg-muted text-xs overflow-x-auto max-h-64 overflow-y-auto whitespace-pre-wrap">
+              {diagnosticResult}
+            </pre>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

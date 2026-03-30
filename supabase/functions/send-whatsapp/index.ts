@@ -15,12 +15,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate env vars
+    // Validate env vars with diagnostic logging
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
     if (!TWILIO_API_KEY) throw new Error("TWILIO_API_KEY is not configured");
+
+    console.log("[send-whatsapp] Keys loaded - LOVABLE prefix:", LOVABLE_API_KEY.substring(0, 8), "TWILIO prefix:", TWILIO_API_KEY.substring(0, 8));
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -86,21 +88,38 @@ Deno.serve(async (req) => {
     }
 
     // Send WhatsApp via Twilio gateway
-    const twilioResponse = await fetch(`${GATEWAY_URL}/Messages.json`, {
+    const gatewayUrl = `${GATEWAY_URL}/Messages.json`;
+    const requestBody = new URLSearchParams({
+      To: `whatsapp:${phoneNumber}`,
+      From: `whatsapp:${TWILIO_FROM_NUMBER}`,
+      Body: messageBody,
+    });
+
+    console.log("[send-whatsapp] Gateway URL:", gatewayUrl);
+    console.log("[send-whatsapp] Request To:", `whatsapp:${phoneNumber}`);
+    console.log("[send-whatsapp] Request From:", `whatsapp:${TWILIO_FROM_NUMBER}`);
+    console.log("[send-whatsapp] Body length:", messageBody.length);
+
+    const twilioResponse = await fetch(gatewayUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "X-Connection-Api-Key": TWILIO_API_KEY,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        To: `whatsapp:${phoneNumber}`,
-        From: `whatsapp:${TWILIO_FROM_NUMBER}`,
-        Body: messageBody,
-      }),
+      body: requestBody,
     });
 
-    const twilioData = await twilioResponse.json();
+    const twilioResponseText = await twilioResponse.text();
+    console.log("[send-whatsapp] Gateway response status:", twilioResponse.status);
+    console.log("[send-whatsapp] Gateway response body:", twilioResponseText.substring(0, 500));
+
+    let twilioData: Record<string, unknown>;
+    try {
+      twilioData = JSON.parse(twilioResponseText);
+    } catch {
+      twilioData = { raw: twilioResponseText.substring(0, 500) };
+    }
 
     const status = twilioResponse.ok ? "queued" : "failed";
     const errorMessage = twilioResponse.ok ? null : JSON.stringify(twilioData);
@@ -116,7 +135,7 @@ Deno.serve(async (req) => {
       car_id: carId || null,
       phone_number: phoneNumber,
       message_body: messageBody,
-      twilio_message_sid: twilioData.sid || null,
+      twilio_message_sid: (twilioData as Record<string, string>).sid || null,
       status,
       error_message: errorMessage,
       sent_by: userId,
@@ -127,11 +146,11 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, messageSid: twilioData.sid }),
+      JSON.stringify({ success: true, messageSid: (twilioData as Record<string, string>).sid }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
-    console.error("Error sending WhatsApp message:", error);
+    console.error("[send-whatsapp] Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
