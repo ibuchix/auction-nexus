@@ -9,6 +9,18 @@ const corsHeaders = {
 const TWILIO_FROM_NUMBER = "+48459569800";
 const WHATSAPP_CONTENT_SID = "HX59c13261dc7029887afdc2be35bd6a3a";
 
+const normalizePhoneNumber = (value: unknown) => {
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const digitsOnly = trimmed.replace(/[^\d+]/g, "");
+  const normalized = digitsOnly.startsWith("+") ? digitsOnly : `+${digitsOnly}`;
+
+  return /^\+\d{7,15}$/.test(normalized) ? normalized : null;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -65,6 +77,7 @@ Deno.serve(async (req) => {
     // Parse and validate input
     const body = await req.json();
     const { dealerId, phoneNumber, messageBody, carId, useTemplate, contentVariables } = body;
+    const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
 
     if (!dealerId || typeof dealerId !== "string") {
       return new Response(JSON.stringify({ error: "dealerId is required" }), {
@@ -72,7 +85,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (!phoneNumber || typeof phoneNumber !== "string" || !/^\+\d{7,15}$/.test(phoneNumber)) {
+    if (!normalizedPhoneNumber) {
       return new Response(
         JSON.stringify({ error: "phoneNumber must be E.164 format (e.g. +48123456789)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -94,7 +107,7 @@ Deno.serve(async (req) => {
     const basicAuth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
 
     const params: Record<string, string> = {
-      To: `whatsapp:${phoneNumber}`,
+      To: `whatsapp:${normalizedPhoneNumber}`,
       From: `whatsapp:${TWILIO_FROM_NUMBER}`,
     };
 
@@ -155,7 +168,7 @@ Deno.serve(async (req) => {
     await serviceClient.from("whatsapp_message_log").insert({
       dealer_id: dealerId,
       car_id: carId || null,
-      phone_number: phoneNumber,
+       phone_number: normalizedPhoneNumber,
       message_body: logMessageBody,
       twilio_message_sid: (twilioData as Record<string, string>).sid || null,
       status,
