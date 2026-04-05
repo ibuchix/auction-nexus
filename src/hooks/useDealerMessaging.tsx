@@ -28,7 +28,6 @@ export function useDealerMessaging() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch verified dealers with phone from profiles
   const { data: dealers = [], isLoading: dealersLoading } = useQuery({
     queryKey: ["verified-dealers-messaging"],
     queryFn: async () => {
@@ -43,7 +42,6 @@ export function useDealerMessaging() {
     },
   });
 
-  // Fetch active auction cars
   const { data: activeCars = [], isLoading: carsLoading } = useQuery({
     queryKey: ["active-auction-cars-messaging"],
     queryFn: async () => {
@@ -60,7 +58,6 @@ export function useDealerMessaging() {
     },
   });
 
-  // Fetch message history
   const { data: messageHistory = [], isLoading: historyLoading } = useQuery({
     queryKey: ["whatsapp-message-history"],
     queryFn: async () => {
@@ -75,21 +72,24 @@ export function useDealerMessaging() {
     },
   });
 
-  // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async ({
       dealerId,
       phoneNumber,
       messageBody,
       carId,
+      useTemplate,
+      contentVariables,
     }: {
       dealerId: string;
       phoneNumber: string;
-      messageBody: string;
+      messageBody?: string;
       carId?: string;
+      useTemplate?: boolean;
+      contentVariables?: Record<string, string>;
     }) => {
       const { data, error } = await supabase.functions.invoke("send-whatsapp", {
-        body: { dealerId, phoneNumber, messageBody, carId },
+        body: { dealerId, phoneNumber, messageBody, carId, useTemplate, contentVariables },
       });
 
       if (error) throw error;
