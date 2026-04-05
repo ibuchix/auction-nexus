@@ -101,11 +101,14 @@ Deno.serve(async (req) => {
 
     if (useTemplate) {
       params.ContentSid = WHATSAPP_CONTENT_SID;
-      params.ContentVariables = typeof contentVariables === "string"
-        ? contentVariables
-        : JSON.stringify(contentVariables || {});
+      // Only add ContentVariables if provided and non-empty
+      if (contentVariables && Object.keys(contentVariables).length > 0) {
+        params.ContentVariables = typeof contentVariables === "string"
+          ? contentVariables
+          : JSON.stringify(contentVariables);
+        console.log("[send-whatsapp] ContentVariables:", params.ContentVariables);
+      }
       console.log("[send-whatsapp] Using template. ContentSid:", WHATSAPP_CONTENT_SID);
-      console.log("[send-whatsapp] ContentVariables:", params.ContentVariables);
     } else {
       params.Body = messageBody;
       console.log("[send-whatsapp] Using free-form body. Length:", messageBody.length);
