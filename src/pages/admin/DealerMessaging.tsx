@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
-import { MessageSquare, Send, Phone } from "lucide-react";
+import { MessageSquare, Send, Phone, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -24,7 +26,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDealerMessaging } from "@/hooks/useDealerMessaging";
 import { format } from "date-fns";
 
-const DEFAULT_TEMPLATE =
+const TEMPLATE_TEXT =
+  "Cześć! Nowy pojazd jest dostępny do licytacji: {{1}}. Sprawdź szczegóły na platformie AUTARO.";
+
+const DEFAULT_FREEFORM =
   "Cześć! Mamy nowy pojazd dostępny do licytacji: {car_title}. Sprawdź szczegóły na platformie AUTARO.";
 
 export default function DealerMessaging() {
@@ -41,7 +46,8 @@ export default function DealerMessaging() {
   const [selectedDealerId, setSelectedDealerId] = useState<string>("");
   const [selectedCarId, setSelectedCarId] = useState<string>("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [messageBody, setMessageBody] = useState(DEFAULT_TEMPLATE);
+  const [messageBody, setMessageBody] = useState(DEFAULT_FREEFORM);
+  const [useTemplate, setUseTemplate] = useState(true);
 
   const selectedDealer = useMemo(
     () => dealers.find((d) => d.id === selectedDealerId),
@@ -53,24 +59,51 @@ export default function DealerMessaging() {
     [activeCars, selectedCarId]
   );
 
-  const resolvedMessage = useMemo(() => {
-    if (!selectedCar) return messageBody;
-    const carTitle =
+  const carTitle = useMemo(() => {
+    if (!selectedCar) return "";
+    return (
       selectedCar.title ||
-      `${selectedCar.make || ""} ${selectedCar.model || ""} ${selectedCar.year || ""}`.trim();
+      `${selectedCar.make || ""} ${selectedCar.model || ""} ${selectedCar.year || ""}`.trim()
+    );
+  }, [selectedCar]);
+
+  const resolvedTemplatePreview = useMemo(() => {
+    if (!carTitle) return TEMPLATE_TEXT;
+    return TEMPLATE_TEXT.replace("{{1}}", carTitle);
+  }, [carTitle]);
+
+  const resolvedFreeformMessage = useMemo(() => {
+    if (!selectedCar) return messageBody;
     return messageBody.replace("{car_title}", carTitle);
-  }, [messageBody, selectedCar]);
+  }, [messageBody, selectedCar, carTitle]);
 
   const isValidPhone = /^\+\d{7,15}$/.test(phoneNumber);
 
+  const canSend = useMemo(() => {
+    if (!selectedDealerId || !isValidPhone || sendMessage.isPending) return false;
+    if (useTemplate) return !!selectedCarId;
+    return !!resolvedFreeformMessage.trim();
+  }, [selectedDealerId, isValidPhone, sendMessage.isPending, useTemplate, selectedCarId, resolvedFreeformMessage]);
+
   const handleSend = () => {
-    if (!selectedDealerId || !isValidPhone) return;
-    sendMessage.mutate({
-      dealerId: selectedDealerId,
-      phoneNumber,
-      messageBody: resolvedMessage,
-      carId: selectedCarId || undefined,
-    });
+    if (!canSend) return;
+
+    if (useTemplate) {
+      sendMessage.mutate({
+        dealerId: selectedDealerId,
+        phoneNumber,
+        carId: selectedCarId || undefined,
+        useTemplate: true,
+        contentVariables: { "1": carTitle },
+      });
+    } else {
+      sendMessage.mutate({
+        dealerId: selectedDealerId,
+        phoneNumber,
+        messageBody: resolvedFreeformMessage,
+        carId: selectedCarId || undefined,
+      });
+    }
   };
 
   const statusBadge = (status: string) => {
@@ -95,10 +128,33 @@ export default function DealerMessaging() {
           <CardTitle className="text-lg">Send Message</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Template toggle */}
+          <div className="flex items-center gap-3">
+            <Switch
+              id="use-template"
+              checked={useTemplate}
+              onCheckedChange={setUseTemplate}
+            />
+            <Label htmlFor="use-template" className="text-sm font-medium">
+              Use approved template
+            </Label>
+            {useTemplate && (
+              <Badge variant="secondary" className="text-xs">Recommended</Badge>
+            )}
+          </div>
+
+          {!useTemplate && (
+            <div className="flex items-start gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-400">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>
+                Free-form messages only work within 24h of the dealer messaging you first. Use the approved template for reliable delivery.
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Dealer</label>
-
               {dealersLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : (
@@ -125,15 +181,15 @@ export default function DealerMessaging() {
                 placeholder="+48123456789"
               />
               {phoneNumber && !isValidPhone && (
-                <p className="text-xs text-destructive">
-                  Format: +48XXXXXXXXX
-                </p>
+                <p className="text-xs text-destructive">Format: +48XXXXXXXXX</p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Vehicle (optional)</label>
+            <label className="text-sm font-medium">
+              Vehicle {useTemplate ? "(required)" : "(optional)"}
+            </label>
             {carsLoading ? (
               <Skeleton className="h-10 w-full" />
             ) : (
@@ -152,19 +208,29 @@ export default function DealerMessaging() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Message Body</label>
-            <Textarea
-              value={messageBody}
-              onChange={(e) => setMessageBody(e.target.value)}
-              rows={4}
-              placeholder="Enter message body..."
-              maxLength={1600}
-            />
-            <p className="text-xs text-muted-foreground">
-              {resolvedMessage.length}/1600 characters. Use {"{car_title}"} to insert the vehicle name.
-            </p>
-          </div>
+          {/* Template mode: read-only preview */}
+          {useTemplate ? (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Template Preview</label>
+              <div className="rounded-md border bg-muted/50 p-3 text-sm">
+                {resolvedTemplatePreview}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Message Body</label>
+              <Textarea
+                value={messageBody}
+                onChange={(e) => setMessageBody(e.target.value)}
+                rows={4}
+                placeholder="Enter message body..."
+                maxLength={1600}
+              />
+              <p className="text-xs text-muted-foreground">
+                {resolvedFreeformMessage.length}/1600 characters. Use {"{car_title}"} to insert the vehicle name.
+              </p>
+            </div>
+          )}
 
           {selectedDealer && phoneNumber && (
             <div className="rounded-md border p-3 bg-muted/50 text-sm">
@@ -173,21 +239,15 @@ export default function DealerMessaging() {
                 <Phone className="h-3 w-3" />
                 To: {phoneNumber} ({selectedDealer.dealership_name})
               </p>
-              <p className="mt-1">{resolvedMessage}</p>
+              <p className="mt-1">
+                {useTemplate ? resolvedTemplatePreview : resolvedFreeformMessage}
+              </p>
             </div>
           )}
 
-          <Button
-            onClick={handleSend}
-            disabled={
-              !selectedDealerId ||
-              !isValidPhone ||
-              !resolvedMessage.trim() ||
-              sendMessage.isPending
-            }
-          >
+          <Button onClick={handleSend} disabled={!canSend}>
             <Send className="h-4 w-4 mr-2" />
-            {sendMessage.isPending ? "Sending..." : "Send WhatsApp"}
+            {sendMessage.isPending ? "Sending..." : useTemplate ? "Send Template" : "Send WhatsApp"}
           </Button>
         </CardContent>
       </Card>
@@ -212,7 +272,7 @@ export default function DealerMessaging() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                     <TableHead>Date</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead>Dealer</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Vehicle</TableHead>

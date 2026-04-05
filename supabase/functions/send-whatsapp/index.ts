@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const TWILIO_FROM_NUMBER = "+48459569800";
+const WHATSAPP_CONTENT_SID = "HX59c13261dc7029887afdc2be35bd6a3a";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -64,7 +65,7 @@ Deno.serve(async (req) => {
 
     // Parse and validate input
     const body = await req.json();
-    const { dealerId, phoneNumber, messageBody, carId } = body;
+    const { dealerId, phoneNumber, messageBody, carId, useTemplate, contentVariables } = body;
 
     if (!dealerId || typeof dealerId !== "string") {
       return new Response(JSON.stringify({ error: "dealerId is required" }), {
@@ -78,26 +79,42 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    if (!messageBody || typeof messageBody !== "string" || messageBody.length > 1600) {
-      return new Response(
-        JSON.stringify({ error: "messageBody is required and max 1600 chars" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+
+    // For free-form mode, messageBody is required
+    if (!useTemplate) {
+      if (!messageBody || typeof messageBody !== "string" || messageBody.length > 1600) {
+        return new Response(
+          JSON.stringify({ error: "messageBody is required and max 1600 chars" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
-    // Send WhatsApp via Twilio REST API directly
+    // Build Twilio request
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
     const basicAuth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
-    const requestBody = new URLSearchParams({
+
+    const params: Record<string, string> = {
       To: `whatsapp:${phoneNumber}`,
       From: `whatsapp:${TWILIO_FROM_NUMBER}`,
-      Body: messageBody,
-    });
+    };
+
+    if (useTemplate) {
+      params.ContentSid = WHATSAPP_CONTENT_SID;
+      params.ContentVariables = typeof contentVariables === "string"
+        ? contentVariables
+        : JSON.stringify(contentVariables || {});
+      console.log("[send-whatsapp] Using template. ContentSid:", WHATSAPP_CONTENT_SID);
+      console.log("[send-whatsapp] ContentVariables:", params.ContentVariables);
+    } else {
+      params.Body = messageBody;
+      console.log("[send-whatsapp] Using free-form body. Length:", messageBody.length);
+    }
+
+    const requestBody = new URLSearchParams(params);
 
     console.log("[send-whatsapp] Twilio URL:", twilioUrl);
-    console.log("[send-whatsapp] Request To:", `whatsapp:${phoneNumber}`);
-    console.log("[send-whatsapp] Request From:", `whatsapp:${TWILIO_FROM_NUMBER}`);
-    console.log("[send-whatsapp] Body length:", messageBody.length);
+    console.log("[send-whatsapp] Request To:", params.To);
 
     const twilioResponse = await fetch(twilioUrl, {
       method: "POST",
@@ -122,6 +139,11 @@ Deno.serve(async (req) => {
     const status = twilioResponse.ok ? "queued" : "failed";
     const errorMessage = twilioResponse.ok ? null : JSON.stringify(twilioData);
 
+    // Determine the message body to log
+    const logMessageBody = useTemplate
+      ? `[Template: ${WHATSAPP_CONTENT_SID}] ${params.ContentVariables}`
+      : messageBody;
+
     // Log to database using service role for insert
     const serviceClient = createClient(
       supabaseUrl,
@@ -132,7 +154,7 @@ Deno.serve(async (req) => {
       dealer_id: dealerId,
       car_id: carId || null,
       phone_number: phoneNumber,
-      message_body: messageBody,
+      message_body: logMessageBody,
       twilio_message_sid: (twilioData as Record<string, string>).sid || null,
       status,
       error_message: errorMessage,
