@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export interface VerifiedDealer {
+export interface DealerWithPhone {
   id: string;
   dealership_name: string;
   user_id: string;
+  phone: string | null;
 }
 
 export interface MessageLogEntry {
@@ -24,21 +25,30 @@ export interface MessageLogEntry {
   cars?: { title: string | null; make: string | null; model: string | null; year: number | null } | null;
 }
 
+export interface BulkSendProgress {
+  total: number;
+  sent: number;
+  failed: number;
+  inProgress: boolean;
+}
+
 export function useDealerMessaging() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [bulkProgress, setBulkProgress] = useState<BulkSendProgress>({
+    total: 0,
+    sent: 0,
+    failed: 0,
+    inProgress: false,
+  });
 
-  const { data: dealers = [], isLoading: dealersLoading } = useQuery({
-    queryKey: ["verified-dealers-messaging"],
+  const { data: dealersWithPhones = [], isLoading: dealersLoading } = useQuery({
+    queryKey: ["dealers-with-phones"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("dealers")
-        .select("id, dealership_name, user_id")
-        .eq("is_verified", true)
-        .order("dealership_name");
-
+      const { data, error } = await supabase.functions.invoke("get-dealers-with-phones");
       if (error) throw error;
-      return data as VerifiedDealer[];
+      if (!data?.dealers) throw new Error("Failed to fetch dealers");
+      return data.dealers as DealerWithPhone[];
     },
   });
 
@@ -72,53 +82,90 @@ export function useDealerMessaging() {
     },
   });
 
-  const sendMessage = useMutation({
-    mutationFn: async ({
-      dealerId,
-      phoneNumber,
-      messageBody,
-      carId,
-      useTemplate,
-      contentVariables,
-    }: {
-      dealerId: string;
-      phoneNumber: string;
+  const sendSingleMessage = async ({
+    dealerId,
+    phoneNumber,
+    messageBody,
+    carId,
+    useTemplate,
+    contentVariables,
+  }: {
+    dealerId: string;
+    phoneNumber: string;
+    messageBody?: string;
+    carId?: string;
+    useTemplate?: boolean;
+    contentVariables?: Record<string, string>;
+  }) => {
+    const { data, error } = await supabase.functions.invoke("send-whatsapp", {
+      body: { dealerId, phoneNumber, messageBody, carId, useTemplate, contentVariables },
+    });
+
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error || "Failed to send message");
+    return data;
+  };
+
+  const sendBulkMessages = async (
+    recipients: { dealerId: string; phoneNumber: string }[],
+    options: {
       messageBody?: string;
       carId?: string;
       useTemplate?: boolean;
       contentVariables?: Record<string, string>;
-    }) => {
-      const { data, error } = await supabase.functions.invoke("send-whatsapp", {
-        body: { dealerId, phoneNumber, messageBody, carId, useTemplate, contentVariables },
-      });
+    }
+  ) => {
+    setBulkProgress({
+      total: recipients.length,
+      sent: 0,
+      failed: 0,
+      inProgress: true,
+    });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error || "Failed to send message");
-      return data;
-    },
-    onSuccess: () => {
+    let sent = 0;
+    let failed = 0;
+
+    for (const recipient of recipients) {
+      try {
+        await sendSingleMessage({
+          dealerId: recipient.dealerId,
+          phoneNumber: recipient.phoneNumber,
+          ...options,
+        });
+        sent++;
+      } catch (err) {
+        console.error(`Failed to send to ${recipient.phoneNumber}:`, err);
+        failed++;
+      }
+      setBulkProgress({ total: recipients.length, sent, failed, inProgress: true });
+    }
+
+    setBulkProgress({ total: recipients.length, sent, failed, inProgress: false });
+
+    queryClient.invalidateQueries({ queryKey: ["whatsapp-message-history"] });
+
+    if (failed === 0) {
       toast({
-        title: "Message sent",
-        description: "WhatsApp was sent successfully.",
+        title: "Wszystkie wiadomości wysłane",
+        description: `Wysłano ${sent} wiadomości WhatsApp.`,
       });
-      queryClient.invalidateQueries({ queryKey: ["whatsapp-message-history"] });
-    },
-    onError: (error: Error) => {
+    } else {
       toast({
-        title: "Send error",
-        description: error.message,
-        variant: "destructive",
+        title: "Wysyłanie zakończone",
+        description: `Wysłano: ${sent}, błędy: ${failed} z ${recipients.length}`,
+        variant: failed === recipients.length ? "destructive" : "default",
       });
-    },
-  });
+    }
+  };
 
   return {
-    dealers,
+    dealersWithPhones,
     dealersLoading,
     activeCars,
     carsLoading,
     messageHistory,
     historyLoading,
-    sendMessage,
+    sendBulkMessages,
+    bulkProgress,
   };
 }
