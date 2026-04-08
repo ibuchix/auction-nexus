@@ -188,7 +188,7 @@ export default function DealerMessaging() {
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Dealerzy ({selectedDealers.length} / {dealersWithValidPhone.length} wybranych)
+                Dealerzy ({selectedDealers.length} / {selectableDealers.length} wybranych)
               </label>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={selectAll} disabled={dealersLoading}>
