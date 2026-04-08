@@ -1,38 +1,24 @@
 
 
-# Fix Auth in Edge Functions
+# Add Manual Phone Number Override for Dealer Messaging
 
-## Problem
-Both `send-whatsapp` and `get-dealers-with-phones` use `supabase.auth.getClaims(token)`, which **does not exist** in `@supabase/supabase-js@2.38.4`. The working `admin-api` function uses `supabase.auth.getUser(token)` — confirming this is the correct method for this SDK version.
+## Concept
+Keep dealer selection mandatory (preserving the `dealer_id` foreign key constraint in logs). Add an optional phone number input that, when filled, overrides the dealer's registered phone number for that send. This lets admins message a dealer at an alternate number while still logging the message against that dealer.
 
-These functions were newly created and had never successfully processed a request — the `getClaims` call silently returns an error, causing the 401 response.
+## Changes
 
-## Evidence
-- `admin-api/index.ts` (line 68): uses `getUser(token)` — works
-- `send-whatsapp/index.ts` (line 43): uses `getClaims(token)` — returns 401
-- `get-dealers-with-phones/index.ts` (line 33): uses `getClaims(token)` — returns 401
-- Direct curl test confirmed both return `{"error":"Unauthorized"}`
+### 1. UI — `src/pages/admin/DealerMessaging.tsx`
+- Add a new "Override phone number" input field (with `+48` placeholder) below the dealer selection list
+- When populated, this number is used instead of the dealer's registered phone for all selected dealers
+- Small helper text: "Leave empty to use registered numbers"
+- Also allow selecting dealers who have no phone on file (currently filtered out), since the override number will be used
 
-## Fix (2 files)
+### 2. Send logic — same file
+- In `handleSend`, if override phone is set, map all recipients to use that number instead of `d.phone`
+- Validation: if override is set, check it looks like a valid E.164 number before allowing send
 
-### 1. `supabase/functions/send-whatsapp/index.ts`
-Replace lines 42-49:
-```typescript
-const token = authHeader.replace("Bearer ", "");
-const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-if (userError || !user) {
-  return new Response(JSON.stringify({ error: "Unauthorized" }), {
-    status: 401,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-const userId = user.id;
-```
+### 3. No edge function or hook changes needed
+The `send-whatsapp` function already accepts any `phoneNumber` + `dealerId` combo. The hook's `sendBulkMessages` already passes whatever phone number it receives. Only the UI mapping changes.
 
-### 2. `supabase/functions/get-dealers-with-phones/index.ts`
-Replace lines 32-40 with the same pattern.
-
-### 3. Deploy and test both functions
-
-No other changes needed. The rest of the logic (admin role check, Twilio call, DB logging, UI) is correct.
+## No database or migration changes required.
 
