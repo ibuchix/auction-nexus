@@ -86,18 +86,27 @@ export default function DealerMessaging() {
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedDealerIds(new Set(dealersWithValidPhone.map((d) => d.id)));
-  }, [dealersWithValidPhone]);
+    setSelectedDealerIds(new Set(selectableDealers.map((d) => d.id)));
+  }, [selectableDealers]);
 
   const deselectAll = useCallback(() => {
     setSelectedDealerIds(new Set());
   }, []);
 
+  const isValidOverridePhone = useMemo(() => {
+    if (!overridePhone.trim()) return true; // empty is fine (use registered)
+    const normalized = overridePhone.trim().startsWith("+") ? overridePhone.trim() : `+${overridePhone.trim()}`;
+    return /^\+\d{7,15}$/.test(normalized);
+  }, [overridePhone]);
+
   const canSend = useMemo(() => {
     if (selectedDealers.length === 0 || bulkProgress.inProgress) return false;
     if (!useTemplate && !messageBody.trim()) return false;
+    if (overridePhone.trim() && !isValidOverridePhone) return false;
+    // If no override, all selected dealers must have a phone
+    if (!overridePhone.trim() && selectedDealers.some((d) => !d.phone)) return false;
     return true;
-  }, [selectedDealers.length, bulkProgress.inProgress, useTemplate, messageBody]);
+  }, [selectedDealers, bulkProgress.inProgress, useTemplate, messageBody, overridePhone, isValidOverridePhone]);
 
   const handleSend = () => {
     if (!canSend) return;
