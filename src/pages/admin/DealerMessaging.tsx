@@ -111,9 +111,13 @@ export default function DealerMessaging() {
   const handleSend = () => {
     if (!canSend) return;
 
+    const overrideNormalized = overridePhone.trim()
+      ? (overridePhone.trim().startsWith("+") ? overridePhone.trim() : `+${overridePhone.trim()}`)
+      : null;
+
     const recipients = selectedDealers.map((d) => ({
       dealerId: d.id,
-      phoneNumber: d.phone,
+      phoneNumber: overrideNormalized || d.phone!,
     }));
 
     if (useTemplate) {
