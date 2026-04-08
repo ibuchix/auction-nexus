@@ -208,13 +208,13 @@ export default function DealerMessaging() {
                   <Skeleton key={i} className="h-10 w-full" />
                 ))}
               </div>
-            ) : dealersWithValidPhone.length === 0 ? (
+            ) : selectableDealers.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                Brak zweryfikowanych dealerów z numerem telefonu.
+                Brak zweryfikowanych dealerów.
               </p>
             ) : (
               <div className="max-h-60 overflow-y-auto rounded-md border">
-                {dealersWithValidPhone.map((dealer) => (
+                {selectableDealers.map((dealer) => (
                   <label
                     key={dealer.id}
                     className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer border-b last:border-b-0"
@@ -224,17 +224,39 @@ export default function DealerMessaging() {
                       onCheckedChange={() => toggleDealer(dealer.id)}
                     />
                     <span className="text-sm font-medium flex-1">{dealer.dealership_name}</span>
-                    <span className="text-xs text-muted-foreground font-mono">{dealer.phone}</span>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {dealer.phone || "brak numeru"}
+                    </span>
                   </label>
                 ))}
               </div>
             )}
 
-            {dealersWithoutPhone.length > 0 && (
+            {!overridePhone.trim() && dealersWithoutPhone.length > 0 && (
               <p className="text-xs text-muted-foreground">
-                {dealersWithoutPhone.length} dealer(ów) bez numeru telefonu — nie można wysłać.
+                {dealersWithoutPhone.length} dealer(ów) bez numeru telefonu — nie można wysłać (lub użyj nadpisania numeru poniżej).
               </p>
             )}
+          </div>
+
+          {/* Override phone number */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              Nadpisz numer telefonu (opcjonalnie)
+            </label>
+            <Input
+              value={overridePhone}
+              onChange={(e) => setOverridePhone(e.target.value)}
+              placeholder="+48..."
+              className="max-w-xs font-mono"
+            />
+            <p className="text-xs text-muted-foreground">
+              Zostaw puste, aby użyć zarejestrowanych numerów dealerów.
+              {overridePhone.trim() && !isValidOverridePhone && (
+                <span className="text-destructive ml-1">Nieprawidłowy format numeru.</span>
+              )}
+            </p>
           </div>
 
           {/* Vehicle selector (optional) */}
