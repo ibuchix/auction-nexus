@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
-import { MessageSquare, Send, AlertTriangle, CheckSquare, Square, Users } from "lucide-react";
+import { MessageSquare, Send, AlertTriangle, CheckSquare, Square, Users, Phone } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
