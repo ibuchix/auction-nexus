@@ -62,9 +62,15 @@ export default function DealerMessaging() {
     [dealersWithPhones]
   );
 
+  // When override phone is set, all dealers are selectable
+  const selectableDealers = useMemo(
+    () => overridePhone.trim() ? dealersWithPhones : dealersWithValidPhone,
+    [dealersWithPhones, dealersWithValidPhone, overridePhone]
+  );
+
   const selectedDealers = useMemo(
-    () => dealersWithValidPhone.filter((d) => selectedDealerIds.has(d.id)),
-    [dealersWithValidPhone, selectedDealerIds]
+    () => selectableDealers.filter((d) => selectedDealerIds.has(d.id)),
+    [selectableDealers, selectedDealerIds]
   );
 
   const toggleDealer = useCallback((dealerId: string) => {
