@@ -94,7 +94,7 @@ export default function DealerMessaging() {
   }, []);
 
   const isValidOverridePhone = useMemo(() => {
-    if (!overridePhone.trim()) return true; // empty is fine (use registered)
+    if (!overridePhone.trim()) return true;
     const normalized = overridePhone.trim().startsWith("+") ? overridePhone.trim() : `+${overridePhone.trim()}`;
     return /^\+\d{7,15}$/.test(normalized);
   }, [overridePhone]);
@@ -103,7 +103,6 @@ export default function DealerMessaging() {
     if (selectedDealers.length === 0 || bulkProgress.inProgress) return false;
     if (!useTemplate && !messageBody.trim()) return false;
     if (overridePhone.trim() && !isValidOverridePhone) return false;
-    // If no override, all selected dealers must have a phone
     if (!overridePhone.trim() && selectedDealers.some((d) => !d.phone)) return false;
     return true;
   }, [selectedDealers, bulkProgress.inProgress, useTemplate, messageBody, overridePhone, isValidOverridePhone]);
@@ -151,12 +150,12 @@ export default function DealerMessaging() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <MessageSquare className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold">WhatsApp — wiadomości do dealerów</h1>
+        <h1 className="text-2xl font-bold">WhatsApp — Dealer Messaging</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Wyślij wiadomość</CardTitle>
+          <CardTitle className="text-lg">Send Message</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Template toggle */}
@@ -167,10 +166,10 @@ export default function DealerMessaging() {
               onCheckedChange={setUseTemplate}
             />
             <Label htmlFor="use-template" className="text-sm font-medium">
-              Użyj zatwierdzonego szablonu
+              Use approved template
             </Label>
             {useTemplate && (
-              <Badge variant="secondary" className="text-xs">Zalecane</Badge>
+              <Badge variant="secondary" className="text-xs">Recommended</Badge>
             )}
           </div>
 
@@ -178,7 +177,7 @@ export default function DealerMessaging() {
             <div className="flex items-start gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-400">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <span>
-                Wiadomości dowolne działają tylko w ciągu 24h od ostatniej wiadomości dealera do Ciebie. Użyj szablonu dla niezawodnej dostawy.
+                Free-form messages only work within 24h of the dealer's last message to you. Use the template for reliable delivery.
               </span>
             </div>
           )}
@@ -188,16 +187,16 @@ export default function DealerMessaging() {
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Dealerzy ({selectedDealers.length} / {selectableDealers.length} wybranych)
+                Dealers ({selectedDealers.length} / {selectableDealers.length} selected)
               </label>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={selectAll} disabled={dealersLoading}>
                   <CheckSquare className="h-3 w-3 mr-1" />
-                  Zaznacz wszystkich
+                  Select All
                 </Button>
                 <Button variant="outline" size="sm" onClick={deselectAll} disabled={dealersLoading}>
                   <Square className="h-3 w-3 mr-1" />
-                  Odznacz
+                  Deselect
                 </Button>
               </div>
             </div>
@@ -210,7 +209,7 @@ export default function DealerMessaging() {
               </div>
             ) : selectableDealers.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                Brak zweryfikowanych dealerów.
+                No verified dealers found.
               </p>
             ) : (
               <div className="max-h-60 overflow-y-auto rounded-md border">
@@ -225,7 +224,7 @@ export default function DealerMessaging() {
                     />
                     <span className="text-sm font-medium flex-1">{dealer.dealership_name}</span>
                     <span className="text-xs text-muted-foreground font-mono">
-                      {dealer.phone || "brak numeru"}
+                      {dealer.phone || "no phone"}
                     </span>
                   </label>
                 ))}
@@ -234,7 +233,7 @@ export default function DealerMessaging() {
 
             {!overridePhone.trim() && dealersWithoutPhone.length > 0 && (
               <p className="text-xs text-muted-foreground">
-                {dealersWithoutPhone.length} dealer(ów) bez numeru telefonu — nie można wysłać (lub użyj nadpisania numeru poniżej).
+                {dealersWithoutPhone.length} dealer(s) without a phone number — cannot send (or use the phone override below).
               </p>
             )}
           </div>
@@ -243,7 +242,7 @@ export default function DealerMessaging() {
           <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-2">
               <Phone className="h-4 w-4" />
-              Nadpisz numer telefonu (opcjonalnie)
+              Override phone number (optional)
             </label>
             <Input
               value={overridePhone}
@@ -252,22 +251,22 @@ export default function DealerMessaging() {
               className="max-w-xs font-mono"
             />
             <p className="text-xs text-muted-foreground">
-              Zostaw puste, aby użyć zarejestrowanych numerów dealerów.
+              Leave empty to use registered dealer numbers.
               {overridePhone.trim() && !isValidOverridePhone && (
-                <span className="text-destructive ml-1">Nieprawidłowy format numeru.</span>
+                <span className="text-destructive ml-1">Invalid phone number format.</span>
               )}
             </p>
           </div>
 
           {/* Vehicle selector (optional) */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Pojazd (opcjonalnie — do logowania)</label>
+            <label className="text-sm font-medium">Vehicle (optional — for logging)</label>
             {carsLoading ? (
               <Skeleton className="h-10 w-full" />
             ) : (
               <Select value={selectedCarId} onValueChange={setSelectedCarId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Wybierz pojazd..." />
+                  <SelectValue placeholder="Select a vehicle..." />
                 </SelectTrigger>
                 <SelectContent>
                   {activeCars.map((car) => (
@@ -283,23 +282,23 @@ export default function DealerMessaging() {
           {/* Template preview or free-form */}
           {useTemplate ? (
             <div className="space-y-2">
-              <label className="text-sm font-medium">Podgląd szablonu</label>
+              <label className="text-sm font-medium">Template Preview</label>
               <div className="rounded-md border bg-muted/50 p-3 text-sm">
                 {TEMPLATE_TEXT}
               </div>
             </div>
           ) : (
             <div className="space-y-2">
-              <label className="text-sm font-medium">Treść wiadomości</label>
+              <label className="text-sm font-medium">Message Body</label>
               <Textarea
                 value={messageBody}
                 onChange={(e) => setMessageBody(e.target.value)}
                 rows={4}
-                placeholder="Wpisz treść wiadomości..."
+                placeholder="Enter message content..."
                 maxLength={1600}
               />
               <p className="text-xs text-muted-foreground">
-                {messageBody.length}/1600 znaków.
+                {messageBody.length}/1600 characters.
               </p>
             </div>
           )}
@@ -308,12 +307,12 @@ export default function DealerMessaging() {
           {selectedDealers.length > 0 && (
             <div className="rounded-md border p-3 bg-muted/50 text-sm space-y-1">
               <p className="font-medium">
-                Wysyłanie do {selectedDealers.length} dealer(ów):
+                Sending to {selectedDealers.length} dealer(s):
               </p>
               <div className="max-h-24 overflow-y-auto">
                 {selectedDealers.map((d) => (
                   <p key={d.id} className="text-muted-foreground text-xs">
-                    {d.dealership_name} — {d.phone}
+                    {d.dealership_name} — {overridePhone.trim() || d.phone || "no phone"}
                   </p>
                 ))}
               </div>
@@ -325,8 +324,8 @@ export default function DealerMessaging() {
             <div className="space-y-2">
               <Progress value={progressPercent} />
               <p className="text-sm text-muted-foreground">
-                Wysłano {bulkProgress.sent} / {bulkProgress.total}
-                {bulkProgress.failed > 0 && `, błędy: ${bulkProgress.failed}`}
+                Sent {bulkProgress.sent} / {bulkProgress.total}
+                {bulkProgress.failed > 0 && `, failed: ${bulkProgress.failed}`}
               </p>
             </div>
           )}
@@ -334,10 +333,10 @@ export default function DealerMessaging() {
           <Button onClick={handleSend} disabled={!canSend}>
             <Send className="h-4 w-4 mr-2" />
             {bulkProgress.inProgress
-              ? `Wysyłanie (${bulkProgress.sent + bulkProgress.failed}/${bulkProgress.total})...`
+              ? `Sending (${bulkProgress.sent + bulkProgress.failed}/${bulkProgress.total})...`
               : useTemplate
-                ? `Wyślij szablon (${selectedDealers.length})`
-                : `Wyślij WhatsApp (${selectedDealers.length})`}
+                ? `Send Template (${selectedDealers.length})`
+                : `Send WhatsApp (${selectedDealers.length})`}
           </Button>
         </CardContent>
       </Card>
@@ -345,7 +344,7 @@ export default function DealerMessaging() {
       {/* Message History */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Historia wiadomości</CardTitle>
+          <CardTitle className="text-lg">Message History</CardTitle>
         </CardHeader>
         <CardContent>
           {historyLoading ? (
@@ -356,19 +355,19 @@ export default function DealerMessaging() {
             </div>
           ) : messageHistory.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">
-              Brak wysłanych wiadomości.
+              No messages sent yet.
             </p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Data</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead>Dealer</TableHead>
-                    <TableHead>Telefon</TableHead>
-                    <TableHead>Pojazd</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Vehicle</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="max-w-[200px]">Wiadomość</TableHead>
+                    <TableHead className="max-w-[200px]">Message</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
