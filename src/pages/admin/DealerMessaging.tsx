@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
-import { MessageSquare, Send, AlertTriangle, CheckSquare, Square, Users } from "lucide-react";
+import { MessageSquare, Send, AlertTriangle, CheckSquare, Square, Users, Phone } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,6 +50,7 @@ export default function DealerMessaging() {
   const [selectedCarId, setSelectedCarId] = useState<string>("");
   const [messageBody, setMessageBody] = useState(DEFAULT_FREEFORM);
   const [useTemplate, setUseTemplate] = useState(true);
+  const [overridePhone, setOverridePhone] = useState("");
 
   const dealersWithValidPhone = useMemo(
     () => dealersWithPhones.filter((d): d is DealerWithPhone & { phone: string } => !!d.phone),
@@ -60,9 +62,15 @@ export default function DealerMessaging() {
     [dealersWithPhones]
   );
 
+  // When override phone is set, all dealers are selectable
+  const selectableDealers = useMemo(
+    () => overridePhone.trim() ? dealersWithPhones : dealersWithValidPhone,
+    [dealersWithPhones, dealersWithValidPhone, overridePhone]
+  );
+
   const selectedDealers = useMemo(
-    () => dealersWithValidPhone.filter((d) => selectedDealerIds.has(d.id)),
-    [dealersWithValidPhone, selectedDealerIds]
+    () => selectableDealers.filter((d) => selectedDealerIds.has(d.id)),
+    [selectableDealers, selectedDealerIds]
   );
 
   const toggleDealer = useCallback((dealerId: string) => {
@@ -78,25 +86,38 @@ export default function DealerMessaging() {
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedDealerIds(new Set(dealersWithValidPhone.map((d) => d.id)));
-  }, [dealersWithValidPhone]);
+    setSelectedDealerIds(new Set(selectableDealers.map((d) => d.id)));
+  }, [selectableDealers]);
 
   const deselectAll = useCallback(() => {
     setSelectedDealerIds(new Set());
   }, []);
 
+  const isValidOverridePhone = useMemo(() => {
+    if (!overridePhone.trim()) return true; // empty is fine (use registered)
+    const normalized = overridePhone.trim().startsWith("+") ? overridePhone.trim() : `+${overridePhone.trim()}`;
+    return /^\+\d{7,15}$/.test(normalized);
+  }, [overridePhone]);
+
   const canSend = useMemo(() => {
     if (selectedDealers.length === 0 || bulkProgress.inProgress) return false;
     if (!useTemplate && !messageBody.trim()) return false;
+    if (overridePhone.trim() && !isValidOverridePhone) return false;
+    // If no override, all selected dealers must have a phone
+    if (!overridePhone.trim() && selectedDealers.some((d) => !d.phone)) return false;
     return true;
-  }, [selectedDealers.length, bulkProgress.inProgress, useTemplate, messageBody]);
+  }, [selectedDealers, bulkProgress.inProgress, useTemplate, messageBody, overridePhone, isValidOverridePhone]);
 
   const handleSend = () => {
     if (!canSend) return;
 
+    const overrideNormalized = overridePhone.trim()
+      ? (overridePhone.trim().startsWith("+") ? overridePhone.trim() : `+${overridePhone.trim()}`)
+      : null;
+
     const recipients = selectedDealers.map((d) => ({
       dealerId: d.id,
-      phoneNumber: d.phone,
+      phoneNumber: overrideNormalized || d.phone!,
     }));
 
     if (useTemplate) {
@@ -167,7 +188,7 @@ export default function DealerMessaging() {
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Dealerzy ({selectedDealers.length} / {dealersWithValidPhone.length} wybranych)
+                Dealerzy ({selectedDealers.length} / {selectableDealers.length} wybranych)
               </label>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={selectAll} disabled={dealersLoading}>
@@ -187,13 +208,13 @@ export default function DealerMessaging() {
                   <Skeleton key={i} className="h-10 w-full" />
                 ))}
               </div>
-            ) : dealersWithValidPhone.length === 0 ? (
+            ) : selectableDealers.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                Brak zweryfikowanych dealerów z numerem telefonu.
+                Brak zweryfikowanych dealerów.
               </p>
             ) : (
               <div className="max-h-60 overflow-y-auto rounded-md border">
-                {dealersWithValidPhone.map((dealer) => (
+                {selectableDealers.map((dealer) => (
                   <label
                     key={dealer.id}
                     className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer border-b last:border-b-0"
@@ -203,17 +224,39 @@ export default function DealerMessaging() {
                       onCheckedChange={() => toggleDealer(dealer.id)}
                     />
                     <span className="text-sm font-medium flex-1">{dealer.dealership_name}</span>
-                    <span className="text-xs text-muted-foreground font-mono">{dealer.phone}</span>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {dealer.phone || "brak numeru"}
+                    </span>
                   </label>
                 ))}
               </div>
             )}
 
-            {dealersWithoutPhone.length > 0 && (
+            {!overridePhone.trim() && dealersWithoutPhone.length > 0 && (
               <p className="text-xs text-muted-foreground">
-                {dealersWithoutPhone.length} dealer(ów) bez numeru telefonu — nie można wysłać.
+                {dealersWithoutPhone.length} dealer(ów) bez numeru telefonu — nie można wysłać (lub użyj nadpisania numeru poniżej).
               </p>
             )}
+          </div>
+
+          {/* Override phone number */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              Nadpisz numer telefonu (opcjonalnie)
+            </label>
+            <Input
+              value={overridePhone}
+              onChange={(e) => setOverridePhone(e.target.value)}
+              placeholder="+48..."
+              className="max-w-xs font-mono"
+            />
+            <p className="text-xs text-muted-foreground">
+              Zostaw puste, aby użyć zarejestrowanych numerów dealerów.
+              {overridePhone.trim() && !isValidOverridePhone && (
+                <span className="text-destructive ml-1">Nieprawidłowy format numeru.</span>
+              )}
+            </p>
           </div>
 
           {/* Vehicle selector (optional) */}
