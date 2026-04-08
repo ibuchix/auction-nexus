@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
       twilioData = { raw: twilioResponseText.substring(0, 500) };
     }
 
-    const status = twilioResponse.ok ? "queued" : "failed";
+    const status = twilioResponse.ok ? "sent" : "failed";
     const errorMessage = twilioResponse.ok ? null : JSON.stringify(twilioData);
 
     // Determine the message body to log
