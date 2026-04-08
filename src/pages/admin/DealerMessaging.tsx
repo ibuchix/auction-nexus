@@ -50,6 +50,7 @@ export default function DealerMessaging() {
   const [selectedCarId, setSelectedCarId] = useState<string>("");
   const [messageBody, setMessageBody] = useState(DEFAULT_FREEFORM);
   const [useTemplate, setUseTemplate] = useState(true);
+  const [overridePhone, setOverridePhone] = useState("");
 
   const dealersWithValidPhone = useMemo(
     () => dealersWithPhones.filter((d): d is DealerWithPhone & { phone: string } => !!d.phone),
