@@ -1,42 +1,66 @@
+# Add "Bezwypadkowy" and "Salon PL" Badges to Listings
 
+## Goal
+Let admins toggle two visual badges — **Bezwypadkowy** (accident-free) and **Salon PL** (Polish showroom origin) — on any car listing from the admin auction management edit dialog. When enabled, the badges appear on the dealer-facing auction card and the vehicle details page.
 
-# Fix Message Status Display in WhatsApp History
+## Approach
+Reuse the existing data fields (`is_accident_record_poland`, `is_accident_record_abroad`, `is_polish_origin`) as the source of truth, but expose **dedicated, prominent admin toggles** in a new "Badges" tab so the admin doesn't have to hunt through the Vehicle History section.
 
-## Problem
-When Twilio successfully accepts a message, it returns status `"queued"` (Twilio's internal processing state). The edge function logs this literally as `"queued"` in the `whatsapp_message_log` table. From the admin's perspective, if Twilio accepted the message without error, it should show as **"sent"**.
+The toggles map to the underlying fields like this:
+- **Bezwypadkowy ON** → sets both `is_accident_record_poland = false` and `is_accident_record_abroad = false`
+- **Salon PL ON** → sets `is_polish_origin = true`
+- Toggling OFF reverts the relevant field(s) to `null` (unknown), so we don't accidentally assert the opposite.
 
-The only statuses that currently get logged are:
-- `"queued"` — Twilio accepted the request (line 154 of `send-whatsapp/index.ts`)
-- `"failed"` — Twilio returned an error
+This keeps a single source of truth (no schema changes) while giving the admin one-click control.
 
-There is no webhook set up to receive delivery status updates from Twilio, so "queued" messages never get updated to "sent" or "delivered".
+## Changes
 
-## Solution
-**Change the logged status from `"queued"` to `"sent"`** when Twilio returns a success response. This is a single-line change in the edge function.
+### 1. New "Badges" tab in admin edit dialog
+**File:** `src/components/admin/car-edit/tabs/BadgesTab.tsx` (new)
+- Two large `Switch` controls with clear labels and short descriptions:
+  - "Bezwypadkowy — Display the accident-free badge on the listing"
+  - "Salon PL — Display the Polish showroom badge on the listing"
+- Each switch reads its derived state from `formData` and writes back to the underlying fields via `updateField`.
+- Show a small note explaining that toggling ON also updates the related vehicle history fields.
 
-Line 154 of `supabase/functions/send-whatsapp/index.ts`:
-```typescript
-// Before:
-const status = twilioResponse.ok ? "queued" : "failed";
+**File:** `src/components/admin/car-edit/AdminCarEditDialog.tsx`
+- Add a 6th tab `<TabsTrigger value="badges">Badges</TabsTrigger>` and matching `<TabsContent>`.
+- Update `grid-cols-5` → `grid-cols-6`.
 
-// After:
-const status = twilioResponse.ok ? "sent" : "failed";
-```
+### 2. Shared badge display component
+**File:** `src/components/listing/ListingBadges.tsx` (new)
+- Small component that takes a car/auction object and renders the applicable badges.
+- Logic:
+  - Show **Bezwypadkowy** when `is_accident_record_poland === false && is_accident_record_abroad === false` (both explicitly false, not null).
+  - Show **Salon PL** when `is_polish_origin === true`.
+- Styled with the existing `Badge` component using distinct colors (e.g., green for Bezwypadkowy, blue for Salon PL) to differentiate from the red Damaged badge.
 
-Then redeploy the `send-whatsapp` edge function.
+### 3. Show badges on the auction card
+**File:** `src/components/admin/auction-card/AuctionHeader.tsx`
+- Render `<ListingBadges />` next to the existing Damaged badge.
+- Accept the new fields via props (or extend the existing auction prop).
 
-This means all **future** messages that Twilio accepts will show as "sent". Existing "queued" records in the database that were actually delivered will remain as "queued" unless we also run a one-time SQL update to fix historical data:
+**File:** `src/components/admin/AdminAuctionCard.tsx` (and/or parent that passes data)
+- Pass `is_accident_record_poland`, `is_accident_record_abroad`, `is_polish_origin` through to `AuctionHeader`.
 
-```sql
-UPDATE whatsapp_message_log
-SET status = 'sent'
-WHERE status = 'queued' AND error_message IS NULL;
-```
+### 4. Show badges on the vehicle details page
+**File:** `src/components/admin/car-details/AdminCarDetailsDialog.tsx`
+- Render `<ListingBadges />` near the title/header area alongside any existing badges.
 
-## Summary of changes
-1. **`supabase/functions/send-whatsapp/index.ts`** — change `"queued"` to `"sent"` on success
-2. **Deploy** the updated edge function
-3. **Migration** — update existing "queued" records to "sent" where there was no error
+### 5. Form data wiring
+**File:** `src/components/admin/car-edit/hooks/useCarEdit.tsx`
+- The three fields (`is_accident_record_poland`, `is_accident_record_abroad`, `is_polish_origin`) are already part of the schema and form — no changes needed beyond confirming they're in `formData` and saved.
 
-No frontend changes needed — the status badge component already handles "sent" with a default badge style.
+## What does NOT change
+- No database migration (reusing existing nullable boolean columns).
+- No edge function changes.
+- Dealer-facing browse pages outside the auction card scope are unchanged.
+- The existing Vehicle History & Records section in the Vehicle Details tab remains as-is for granular editing; the new Badges tab is just a friendlier shortcut for the most common toggles.
 
+## Acceptance criteria
+- In `/admin/auctions/manage`, opening Edit on any listing shows a new **Badges** tab with two toggles.
+- Toggling Bezwypadkowy ON and saving makes a green "Bezwypadkowy" badge appear on that auction card.
+- Toggling Salon PL ON and saving makes a blue "Salon PL" badge appear on that auction card.
+- Both badges also appear on the vehicle details dialog.
+- Toggling OFF removes the badge.
+- The two Polish words `Bezwypadkowy` and `Salon PL` are the only Polish strings introduced; everything else (tab label, descriptions, helper text) stays in English.
