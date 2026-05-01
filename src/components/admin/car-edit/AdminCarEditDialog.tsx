@@ -113,6 +113,10 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
             />
           </TabsContent>
 
+          <TabsContent value="badges" className="mt-4">
+            <BadgesTab formData={formData} updateField={updateField} />
+          </TabsContent>
+
           <TabsContent value="images" className="mt-4">
             <ImagesTab
               images={images}
