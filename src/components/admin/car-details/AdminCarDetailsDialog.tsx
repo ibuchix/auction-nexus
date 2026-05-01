@@ -21,6 +21,7 @@ import {
   CheckCircle,
   AlertCircle
 } from "lucide-react";
+import { ListingBadges } from "@/components/listing/ListingBadges";
 
 interface CarDetails {
   id: string;
@@ -113,6 +114,7 @@ export const AdminCarDetailsDialog = ({ car, isOpen, onClose }: AdminCarDetailsD
             <Car className="w-5 h-5" />
             {car.title}
           </DialogTitle>
+          <ListingBadges car={car} className="mt-1" />
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

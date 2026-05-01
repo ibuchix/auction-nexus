@@ -14,6 +14,7 @@ import {
   Settings
 } from "lucide-react";
 import { AuctionStatus } from "@/types/auction";
+import { ListingBadges } from "@/components/listing/ListingBadges";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +44,7 @@ interface AuctionHeaderProps {
   endTime?: string;
   isManuallyControlled?: boolean;
   listedDate?: string;
+  car?: any;
 }
 
 export function AuctionHeader({
@@ -61,7 +63,8 @@ export function AuctionHeader({
   startTime,
   endTime,
   isManuallyControlled,
-  listedDate
+  listedDate,
+  car
 }: AuctionHeaderProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -108,7 +111,7 @@ export function AuctionHeader({
           {vin && (
             <p className="text-sm text-muted-foreground">VIN: {vin}</p>
           )}
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             {getStatusBadge()}
             {isManuallyControlled && (
               <Badge variant="outline" className="text-xs">
@@ -116,6 +119,7 @@ export function AuctionHeader({
                 Manual Control
               </Badge>
             )}
+            {car && <ListingBadges car={car} />}
           </div>
         </div>
 
