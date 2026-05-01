@@ -10,6 +10,7 @@ import { ImagesTab } from "./tabs/ImagesTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
 import { SellerInfoTab } from "./tabs/SellerInfoTab";
 import { FeaturesTab } from "./tabs/FeaturesTab";
+import { BadgesTab } from "./tabs/BadgesTab";
 
 interface AdminCarEditDialogProps {
   auction: any;
@@ -70,9 +71,10 @@ export function AdminCarEditDialog({ auction, isOpen, onClose, onSuccess }: Admi
         )}
 
         <Tabs defaultValue="vehicle" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="vehicle">Vehicle Details</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
+            <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="seller">Seller Info</TabsTrigger>
