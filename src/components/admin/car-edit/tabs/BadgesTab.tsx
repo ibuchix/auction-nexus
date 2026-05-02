@@ -2,7 +2,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, Flag, Info } from "lucide-react";
+import { ShieldCheck, Flag } from "lucide-react";
 import type { CarEditFormData } from "../types";
 
 interface BadgesTabProps {
@@ -34,15 +34,6 @@ export function BadgesTab({ formData, updateField }: BadgesTabProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-2 rounded-md border border-muted-foreground/20 bg-muted/30 p-3 text-sm text-muted-foreground">
-        <Info className="h-4 w-4 mt-0.5 shrink-0" />
-        <p>
-          Toggle these badges to highlight key selling points on the listing.
-          When enabled, the related vehicle history fields are also updated automatically.
-          Dealers will see them on the auction card and details view.
-        </p>
-      </div>
-
       {/* Bezwypadkowy */}
       <Card>
         <CardContent className="flex items-center justify-between gap-4 p-4">
