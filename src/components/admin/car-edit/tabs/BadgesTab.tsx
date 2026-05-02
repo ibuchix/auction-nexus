@@ -53,9 +53,6 @@ export function BadgesTab({ formData, updateField }: BadgesTabProps) {
                   Preview
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Display the accident-free badge. Marks the vehicle as having no accident records in Poland or abroad.
-              </p>
             </div>
           </div>
           <Switch
@@ -85,9 +82,6 @@ export function BadgesTab({ formData, updateField }: BadgesTabProps) {
                   Preview
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Display the Polish showroom badge. Marks the vehicle as originally sold through a Polish dealership.
-              </p>
             </div>
           </div>
           <Switch
