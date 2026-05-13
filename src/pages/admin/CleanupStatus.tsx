@@ -243,7 +243,7 @@ export default function CleanupStatus() {
       <Card>
         <CardHeader>
           <CardTitle>Recent cleanup runs (last 30 days)</CardTitle>
-          <CardDescription>Each row is a successful nightly invocation.</CardDescription>
+          <CardDescription>Daily nightly runs and backlog drain runs.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -256,6 +256,7 @@ export default function CleanupStatus() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>When</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead className="text-right">Rows deleted</TableHead>
                     <TableHead className="text-right">Batches</TableHead>
                     <TableHead className="text-right">Duration</TableHead>
@@ -270,6 +271,13 @@ export default function CleanupStatus() {
                         <div className="text-muted-foreground">
                           {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {r.kind === "backlog" ? (
+                          <Badge variant="secondary">Backlog</Badge>
+                        ) : (
+                          <Badge variant="default">Daily</Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {parseInt(r.deleted_count || "0", 10).toLocaleString()}
