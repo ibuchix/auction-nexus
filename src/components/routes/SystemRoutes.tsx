@@ -6,6 +6,7 @@ import Analytics from "@/pages/admin/Analytics";
 import AuditLogs from "@/pages/admin/AuditLogs";
 import SystemSettings from "@/pages/admin/SystemSettings";
 import Metrics from "@/pages/admin/Metrics";
+import CleanupStatus from "@/pages/admin/CleanupStatus";
 
 export const SystemRoutes = (
   <>
