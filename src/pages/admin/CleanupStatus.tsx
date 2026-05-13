@@ -5,8 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Database, Clock, RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Database, Clock, RefreshCw, CheckCircle2, AlertTriangle, Gauge } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { Progress } from "@/components/ui/progress";
 
 interface CronJob {
   jobname: string;
