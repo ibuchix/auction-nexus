@@ -2966,6 +2966,7 @@ export type Database = {
           upload_status: string
         }[]
       }
+      admin_get_cars_history_cleanup_status: { Args: never; Returns: Json }
       admin_get_manual_valuations: {
         Args: { p_status?: string }
         Returns: Json
