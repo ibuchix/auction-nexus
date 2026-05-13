@@ -50,5 +50,13 @@ export const SystemRoutes = (
         </AdminProtectedRoute>
       } 
     />
+    <Route 
+      path="/admin/cleanup-status"
+      element={
+        <AdminProtectedRoute>
+          <CleanupStatus />
+        </AdminProtectedRoute>
+      } 
+    />
   </>
 );
