@@ -144,6 +144,10 @@ export const menuItems: SidebarMenuItem[] = [
         title: "System Settings",
         path: "/admin/settings",
       },
+      {
+        title: "Cleanup Status",
+        path: "/admin/cleanup-status",
+      },
     ],
   },
 ];
