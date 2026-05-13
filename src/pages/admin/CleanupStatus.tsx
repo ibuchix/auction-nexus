@@ -23,6 +23,7 @@ interface CleanupRun {
   duration_seconds: string | null;
   batches: string | null;
   cutoff_date: string | null;
+  kind?: "daily" | "backlog" | null;
 }
 
 interface CleanupStatus {
