@@ -207,7 +207,83 @@ export default function CleanupStatus() {
         </Card>
       </div>
 
-      {/* Cron jobs */}
+      {/* Backlog drain progress */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Gauge className="h-5 w-5" />
+            Backlog drain progress
+          </CardTitle>
+          <CardDescription>
+            Estimated from recent backlog drain runs in system_logs.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : backlogRuns.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No backlog drain runs recorded yet. Progress will appear here once the
+              <code className="mx-1 px-1 rounded bg-muted">temp-cars-history-backlog-drain</code>
+              job logs its first successful run.
+            </p>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Drained {backlogDrained.toLocaleString()} of ~
+                    {totalToProcess.toLocaleString()}
+                    {sampleCapped && "+"} rows
+                  </span>
+                  <span className="font-mono font-medium">{progressPct.toFixed(1)}%</span>
+                </div>
+                <Progress value={progressPct} className="h-2" />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3 text-sm">
+                <div>
+                  <div className="text-muted-foreground text-xs">Estimated remaining</div>
+                  <div className="font-mono text-base">
+                    {remainingEstimate.toLocaleString()}
+                    {sampleCapped && "+"}
+                    <span className="text-muted-foreground"> rows</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground text-xs">Throughput</div>
+                  <div className="font-mono text-base">
+                    {rowsPerSec > 0
+                      ? `${Math.round(rowsPerSec * 60).toLocaleString()} rows/min`
+                      : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground text-xs">ETA to clear backlog</div>
+                  <div className="font-mono text-base">
+                    {etaSeconds !== null ? formatEta(etaSeconds) : "—"}
+                    {sampleCapped && etaSeconds !== null && (
+                      <span className="text-muted-foreground"> +</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {lastBacklogRun && (
+                <p className="text-xs text-muted-foreground">
+                  Last backlog run {formatDistanceToNow(new Date(lastBacklogRun.created_at), { addSuffix: true })} —{" "}
+                  {parseInt(lastBacklogRun.deleted_count || "0", 10).toLocaleString()} rows in{" "}
+                  {parseFloat(lastBacklogRun.duration_seconds || "0").toFixed(1)}s
+                  {lastBacklogRun.batches && <> across {lastBacklogRun.batches} batches</>}.
+                  {sampleCapped && " ETA is a lower bound — older-than-90d sample is capped."}
+                </p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
