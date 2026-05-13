@@ -5,8 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Database, Clock, RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Database, Clock, RefreshCw, CheckCircle2, AlertTriangle, Gauge } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { Progress } from "@/components/ui/progress";
 
 interface CronJob {
   jobname: string;
@@ -90,6 +91,52 @@ export default function CleanupStatus() {
     data?.recent_runs.reduce((sum, r) => sum + (parseInt(r.deleted_count || "0", 10) || 0), 0) ?? 0;
   const lastRun = data?.recent_runs[0];
 
+  // Backlog drain progress + ETA from system_logs
+  const backlogRuns = data?.recent_runs.filter((r) => r.kind === "backlog") ?? [];
+  const backlogDrained = backlogRuns.reduce(
+    (sum, r) => sum + (parseInt(r.deleted_count || "0", 10) || 0),
+    0,
+  );
+  const lastBacklogRun = backlogRuns[0];
+  // Use the last 10 backlog runs for a fresher rate (rows/sec)
+  const recentBacklog = backlogRuns.slice(0, 10);
+  const recentDeleted = recentBacklog.reduce(
+    (s, r) => s + (parseInt(r.deleted_count || "0", 10) || 0),
+    0,
+  );
+  const recentDuration = recentBacklog.reduce(
+    (s, r) => s + (parseFloat(r.duration_seconds || "0") || 0),
+    0,
+  );
+  const rowsPerSec = recentDuration > 0 ? recentDeleted / recentDuration : 0;
+
+  const sample = data?.table_stats.rows_older_than_90d_sample ?? 0;
+  const sampleCap = data?.table_stats.sample_capped_at ?? 0;
+  const sampleCapped = sample >= sampleCap && sampleCap > 0;
+  // Best-effort remaining: if sample is capped, estimate from total rows
+  // (assume the rest of the table is mostly older-than-90d backlog).
+  const remainingEstimate = sampleCapped
+    ? Math.max(data?.table_stats.approximate_total_rows ?? 0, sample)
+    : sample;
+
+  const totalToProcess = backlogDrained + remainingEstimate;
+  const progressPct =
+    totalToProcess > 0 ? Math.min(100, (backlogDrained / totalToProcess) * 100) : 0;
+  const etaSeconds = rowsPerSec > 0 ? remainingEstimate / rowsPerSec : null;
+
+  const formatEta = (secs: number) => {
+    if (secs < 60) return `${Math.round(secs)}s`;
+    const mins = Math.round(secs / 60);
+    if (mins < 60) return `${mins} min`;
+    const hours = Math.floor(mins / 60);
+    const remMin = mins % 60;
+    if (hours < 24) return `${hours}h ${remMin}m`;
+    const days = Math.floor(hours / 24);
+    const remHours = hours % 24;
+    return `${days}d ${remHours}h`;
+  };
+
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -160,7 +207,83 @@ export default function CleanupStatus() {
         </Card>
       </div>
 
-      {/* Cron jobs */}
+      {/* Backlog drain progress */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Gauge className="h-5 w-5" />
+            Backlog drain progress
+          </CardTitle>
+          <CardDescription>
+            Estimated from recent backlog drain runs in system_logs.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : backlogRuns.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No backlog drain runs recorded yet. Progress will appear here once the
+              <code className="mx-1 px-1 rounded bg-muted">temp-cars-history-backlog-drain</code>
+              job logs its first successful run.
+            </p>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Drained {backlogDrained.toLocaleString()} of ~
+                    {totalToProcess.toLocaleString()}
+                    {sampleCapped && "+"} rows
+                  </span>
+                  <span className="font-mono font-medium">{progressPct.toFixed(1)}%</span>
+                </div>
+                <Progress value={progressPct} className="h-2" />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3 text-sm">
+                <div>
+                  <div className="text-muted-foreground text-xs">Estimated remaining</div>
+                  <div className="font-mono text-base">
+                    {remainingEstimate.toLocaleString()}
+                    {sampleCapped && "+"}
+                    <span className="text-muted-foreground"> rows</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground text-xs">Throughput</div>
+                  <div className="font-mono text-base">
+                    {rowsPerSec > 0
+                      ? `${Math.round(rowsPerSec * 60).toLocaleString()} rows/min`
+                      : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground text-xs">ETA to clear backlog</div>
+                  <div className="font-mono text-base">
+                    {etaSeconds !== null ? formatEta(etaSeconds) : "—"}
+                    {sampleCapped && etaSeconds !== null && (
+                      <span className="text-muted-foreground"> +</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {lastBacklogRun && (
+                <p className="text-xs text-muted-foreground">
+                  Last backlog run {formatDistanceToNow(new Date(lastBacklogRun.created_at), { addSuffix: true })} —{" "}
+                  {parseInt(lastBacklogRun.deleted_count || "0", 10).toLocaleString()} rows in{" "}
+                  {parseFloat(lastBacklogRun.duration_seconds || "0").toFixed(1)}s
+                  {lastBacklogRun.batches && <> across {lastBacklogRun.batches} batches</>}.
+                  {sampleCapped && " ETA is a lower bound — older-than-90d sample is capped."}
+                </p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
