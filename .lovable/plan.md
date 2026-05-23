@@ -1,44 +1,65 @@
-## Goal
 
-Make `cleanup_cars_history_backlog()` consistent with the daily job and visible on the Cleanup Status page, and have it drain the ~50M-row backlog significantly faster than 3M rows/hour.
+# Lock down cron + admin-only edge functions
 
-## Changes
+## Scope (confirmed)
 
-### 1. Rewrite `public.cleanup_cars_history_backlog()`
+Only two functions in this repo need work:
 
-Mirror the structure of `cleanup_cars_history_daily()` so both functions behave the same way:
+1. **`send-notifications`** — currently **completely open** (no auth guard). Called both by cron (`send-dealer-notifications`, every 5 min) and by the admin UI (`SellerList`, `AuctionOutcomes`). Highest risk: anyone on the internet can trigger Resend emails.
+2. **`cleanup-old-vehicle-files`** — already guarded, but mixes "service-role key as bearer" (anti-pattern) with admin-JWT. Cron path is fragile. Called monthly via `monthly-vehicle-cleanup`.
 
-- **Cutoff:** `NOW() - INTERVAL '90 days'` (was 60 days)
-- **Time budget:** 100 seconds per run (the cron runs every 2 minutes, so this leaves headroom and avoids the statement-timeout failure we saw at 10:00). Replace the hard `max_batches = 20` cap with the time-budget loop pattern from the daily job.
-- **Batch size:** raise from 5,000 to 10,000 rows per batch. With a 100s budget this targets roughly 300k–500k rows per run instead of the current ~100k cap.
-- **Logging:** insert one row into `public.system_logs` per run with `log_type = 'cleanup'` and `message = 'Cars_history backlog drain run'`, details containing `deleted_count`, `cutoff_date`, `batches`, `duration_seconds`, and `more_to_delete`. Skip the insert when `deleted_count = 0` so we don't pollute the log once the backlog is gone.
-- Keep `SECURITY DEFINER` and `SET search_path = public`.
+Not touched (already properly admin-JWT-guarded): `admin-api`, `close-ended-auctions`, `start-scheduled-auctions`, `recover-auction`, `reset-auction-system`, `cleanup-cars-history`.
 
-Expected throughput after change: ~300k–500k rows/run × 30 runs/hr ≈ 9–15M rows/hr → full ~50M drain in roughly 4–6 hours instead of ~17.
+Out of scope: `track-event`, `send-whatsapp`, `get-dealers-with-phones` (public/seller/dealer flows). The `migrate-manual-valuation-photos` function the advisory mentioned does not exist in this project — photo migration happens inside the `admin_transfer_manual_valuation_to_cars_enhanced` SQL RPC, already admin-guarded.
 
-### 2. Surface drain runs on the Cleanup Status page
+## Auth pattern
 
-`src/pages/admin/CleanupStatus.tsx` reads `recent_runs` from `admin_get_cars_history_cleanup_status`. Update that RPC so `recent_runs` includes both message types ('Daily cars_history cleanup completed' and 'Cars_history backlog drain run'), each row tagged with a `kind` field ('daily' | 'backlog'). The page's Recent Runs table gets a new "Type" column showing that tag.
+Each protected function gets the same two-path guard at the top:
 
-No other UI changes — the existing Cron Jobs panel already lists `temp-cars-history-backlog-drain`.
+```text
+1. If header `x-cron-secret` matches env CRON_SECRET → authorized as "cron"
+2. Else read Authorization: Bearer <token>
+   - supabase.auth.getUser(token)  (per project memory, NOT getClaims)
+   - has_role(user.id, 'admin')
+   - If admin → authorized as "admin"
+3. Else → 401 / 403
+```
 
-### 3. Cleanup expectations
+This preserves both flows: cron keeps working with a real shared secret, admin UI keeps working with the user's JWT (auto-attached by `supabase.functions.invoke`).
 
-- Once `older_than_90d` reaches zero, drop the temporary cron job `temp-cars-history-backlog-drain` (separate follow-up — not part of this change).
-- Postgres won't shrink the 50 GB table file after deletes; freed space is reused. A `VACUUM FULL` / `pg_repack` is a separate operation if physical reclaim is needed.
+## Steps
+
+1. **Add secret `CRON_SECRET`** via the secrets tool (you paste a random 48+ char value).
+2. **Edit `supabase/functions/send-notifications/index.ts`** — add the guard block at the top of the `serve` handler. No other logic changes.
+3. **Edit `supabase/functions/cleanup-old-vehicle-files/index.ts`** — replace the `token === serviceRoleKey` branch with the `x-cron-secret` branch. Keep the admin-JWT branch.
+4. **Update the two pg_cron jobs** to send `x-cron-secret` header. Done via direct SQL (not a migration file) so the secret literal isn't committed:
+   - `monthly-vehicle-cleanup` → `cleanup-old-vehicle-files`
+   - `send-dealer-notifications` → `send-notifications`
+5. **Verification:**
+   - `curl` `send-notifications` with no auth → 401
+   - `curl` with bogus secret → 401
+   - `curl` with `x-cron-secret: <CRON_SECRET>` → 200
+   - Admin clicks "Send notifications" in `SellerList` / `AuctionOutcomes` → still works (JWT path)
+   - Check `cron.job_run_details` after the next 5-min tick → `send-dealer-notifications` shows 200
+   - Note the third HTTP cron `process-seller-decisions` — points at an edge function that doesn't exist in this repo; I'll flag it but not modify it.
 
 ## Technical details
 
-- Both changes (`cleanup_cars_history_backlog` and `admin_get_cars_history_cleanup_status`) ship in a single migration. `CREATE OR REPLACE FUNCTION` for both, with `GRANT EXECUTE` on the RPC to `authenticated`.
-- The cron job itself does not need to change — it already calls `cleanup_cars_history_backlog()` every 2 minutes.
-- Frontend change is one file: add a `kind` column to the recent-runs table and adjust the `recent_runs` row type in the query result.
+**Files changed**
+- `supabase/functions/send-notifications/index.ts` — ~20-line guard added inside `serve`, before any logic.
+- `supabase/functions/cleanup-old-vehicle-files/index.ts` — swap service-role-bearer check for cron-secret header check.
 
-## Files
+**Secrets added**
+- `CRON_SECRET` (edge-function env var).
 
-- New migration under `supabase/migrations/` for both function definitions.
-- `src/pages/admin/CleanupStatus.tsx` — add Type column to Recent Runs table.
+**DB changes (direct SQL, no migration file)**
+- `cron.unschedule('monthly-vehicle-cleanup')` + re-`cron.schedule(...)` with `headers` jsonb containing `"x-cron-secret": "<secret>"`.
+- Same for `send-dealer-notifications`.
 
-## Verification after apply
+**Not touched**
+- `src/integrations/supabase/types.ts` (auto-generated).
+- Any seller/dealer-facing function.
+- The 6 functions already admin-JWT-guarded.
 
-- Wait for one drain run, then on `/admin/cleanup-status` confirm a new row appears in Recent Runs tagged "backlog" with a non-zero deleted count.
-- Re-run the rows-older-than-90d count after ~30 minutes to confirm the backlog is dropping at the higher rate.
+**Sequencing**
+Secret first, then deploy both function edits, then swap the cron jobs. If the cron is swapped before the functions deploy, one cron tick might 401 — acceptable for the 5-min job, but to be safe I'll do functions before cron.
