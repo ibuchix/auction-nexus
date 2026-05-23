@@ -41,20 +41,22 @@ Deno.serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // --- Admin OR Cron Auth Guard (Variant B) ---
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    const token = authHeader.replace('Bearer ', '');
-
-    // Check if the token is the service role key (cron job)
+    // --- Admin OR Cron Auth Guard (shared CRON_SECRET) ---
+    const cronSecretEnv = Deno.env.get('CRON_SECRET') ?? '';
     let isAuthorized = false;
-    if (token === supabaseServiceKey) {
+
+    // Path 1: cron / internal callers send x-cron-secret header
+    const cronSecretHeader = req.headers.get('x-cron-secret');
+    if (cronSecretEnv && cronSecretHeader && cronSecretHeader === cronSecretEnv) {
       isAuthorized = true;
-      console.log('🧹 Cleanup authorized via service role key (cron job)');
+      console.log('🧹 Cleanup authorized via x-cron-secret (cron/internal)');
     } else {
-      // Try JWT auth for admin users
+      // Path 2: admin user JWT
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader?.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const token = authHeader.replace('Bearer ', '');
       const userClient = createClient(supabaseUrl, supabaseAnonKey);
       const { data: { user }, error: authError } = await userClient.auth.getUser(token);
       if (!authError && user) {
