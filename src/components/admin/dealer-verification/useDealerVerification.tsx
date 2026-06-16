@@ -63,8 +63,18 @@ export const useDealerVerification = () => {
 
   // Use search results when searching, otherwise paginated results
   const isSearching = debouncedSearch.trim().length > 0;
-  const displayDealers = isSearching ? (searchFilteredDealers || []) : dealers;
-  const displayPagination = isSearching ? null : pagination;
+  const baseDealers = isSearching ? (searchFilteredDealers || []) : dealers;
+
+  // Apply subscription filter (client-side on current page / search results)
+  const isSubscribed = (d: DealerData) =>
+    d.subscriptionStatus === 'active' || d.subscriptionStatus === 'trialing';
+  const displayDealers = subscriptionFilter === 'all'
+    ? baseDealers
+    : subscriptionFilter === 'subscribed'
+      ? baseDealers.filter(isSubscribed)
+      : baseDealers.filter((d) => !isSubscribed(d));
+
+  const displayPagination = (isSearching || subscriptionFilter !== 'all') ? null : pagination;
 
   const invalidateDealersCache = async () => {
     // Invalidate queries for all tabs to ensure consistency
