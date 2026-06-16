@@ -51,6 +51,30 @@ export const DealerVerificationTable = ({
     }
   };
 
+  const getSubscriptionBadge = (dealer: DealerData) => {
+    const status = dealer.subscriptionStatus;
+    if (!status) {
+      return <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">Not subscribed</Badge>;
+    }
+    const isActive = status === 'active' || status === 'trialing';
+    if (isActive) {
+      const label = status === 'trialing' ? 'Trialing' : 'Subscribed';
+      const cancelling = dealer.subscriptionCancelAtPeriodEnd;
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          {label}{cancelling ? ' (cancelling)' : ''}
+        </Badge>
+      );
+    }
+    if (status === 'past_due' || status === 'unpaid') {
+      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Past due</Badge>;
+    }
+    if (status === 'canceled' || status === 'cancelled') {
+      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Canceled</Badge>;
+    }
+    return <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">{status}</Badge>;
+  };
+
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'N/A';
     
@@ -80,6 +104,7 @@ export const DealerVerificationTable = ({
           <TableHead>Tax ID</TableHead>
           <TableHead>Submitted</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead>Subscription</TableHead>
           <TableHead>Activity</TableHead>
           <TableHead>Verified</TableHead>
           <TableHead>Action</TableHead>
@@ -105,6 +130,7 @@ export const DealerVerificationTable = ({
                 {formatDate(dealer.createdAt)}
               </TableCell>
               <TableCell>{getStatusBadge(dealer.verification_status)}</TableCell>
+              <TableCell>{getSubscriptionBadge(dealer)}</TableCell>
               <TableCell>
                 <DealerActivityBadge {...getDealerActivityStatus(dealer.userId)} />
               </TableCell>
@@ -140,7 +166,7 @@ export const DealerVerificationTable = ({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={9} className="text-center py-4">
+            <TableCell colSpan={10} className="text-center py-4">
               No {activeTab === "all" ? "" : activeTab} dealers found
             </TableCell>
           </TableRow>

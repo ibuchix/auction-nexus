@@ -1022,6 +1022,53 @@ export type Database = {
           },
         ]
       }
+      dealer_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          dealer_id: string
+          id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          dealer_id: string
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          dealer_id?: string
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dealer_subscriptions_dealer_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: true
+            referencedRelation: "dealers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealer_verifications: {
         Row: {
           admin_id: string | null
@@ -3121,6 +3168,10 @@ export type Database = {
         }
         Returns: Json
       }
+      dealer_has_active_subscription: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       debug_auction_schedules_access: { Args: never; Returns: Json }
       debug_auth_context: { Args: never; Returns: Json }
       debug_auth_user_id: { Args: never; Returns: string }
@@ -3575,6 +3626,22 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_seller_contact_for_car: {
+        Args: { _car_id: string }
+        Returns: {
+          seller_email: string
+          seller_first_name: string
+          seller_phone: string
+        }[]
+      }
+      get_seller_contact_for_dealer: {
+        Args: { _car_id: string }
+        Returns: {
+          contact_email: string
+          mobile_number: string
+          seller_name: string
+        }[]
       }
       get_seller_email_notification_counts: {
         Args: { p_seller_ids: string[] }

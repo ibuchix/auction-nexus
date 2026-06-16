@@ -151,7 +151,10 @@ export const fetchDealers = async (
       createdAt: dealer.created_at,
       updatedAt: dealer.updated_at,
       email: dealer.email,
-      phoneNumber: dealer.phone_number
+      phoneNumber: dealer.phone_number,
+      subscriptionStatus: dealer.subscription_status ?? null,
+      subscriptionCurrentPeriodEnd: dealer.subscription_current_period_end ?? null,
+      subscriptionCancelAtPeriodEnd: dealer.subscription_cancel_at_period_end ?? false,
     }));
     
     return {
