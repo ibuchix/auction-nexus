@@ -26,4 +26,7 @@ export interface DealerData {
   updatedAt: string;
   email?: string;
   phoneNumber?: string;
+  subscriptionStatus?: string | null;
+  subscriptionCurrentPeriodEnd?: string | null;
+  subscriptionCancelAtPeriodEnd?: boolean;
 }
