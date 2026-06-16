@@ -20,9 +20,19 @@ export function exportDealerVerificationsToCSV(dealers: DealerData[], status?: s
     "License Number",
     "Status",
     "Verified",
+    "Subscription Status",
+    "Subscription Period End",
+    "Subscription Cancelling",
     "Created Date",
     "Updated Date",
   ];
+
+  const subscriptionLabel = (s?: string | null) => {
+    if (!s) return "Not subscribed";
+    if (s === "active") return "Subscribed";
+    if (s === "trialing") return "Trialing";
+    return s;
+  };
 
   // Convert data to CSV rows
   const rows = dealers.map((dealer) => {
@@ -39,6 +49,11 @@ export function exportDealerVerificationsToCSV(dealers: DealerData[], status?: s
       dealer.licenseNumber || "N/A",
       dealer.verification_status || "N/A",
       dealer.isVerified ? "Yes" : "No",
+      subscriptionLabel(dealer.subscriptionStatus),
+      dealer.subscriptionCurrentPeriodEnd
+        ? format(new Date(dealer.subscriptionCurrentPeriodEnd), "MMM dd, yyyy h:mm a")
+        : "N/A",
+      dealer.subscriptionCancelAtPeriodEnd ? "Yes" : "No",
       dealer.createdAt ? format(new Date(dealer.createdAt), "MMM dd, yyyy h:mm a") : "N/A",
       dealer.updatedAt ? format(new Date(dealer.updatedAt), "MMM dd, yyyy h:mm a") : "N/A",
     ];
