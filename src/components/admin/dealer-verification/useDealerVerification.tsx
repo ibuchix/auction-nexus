@@ -17,6 +17,7 @@ export const useDealerVerification = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(40);
+  const [subscriptionFilter, setSubscriptionFilter] = useState<"all" | "subscribed" | "not_subscribed">("all");
   
   const { user } = useAuth();
   const queryClient = useQueryClient();
