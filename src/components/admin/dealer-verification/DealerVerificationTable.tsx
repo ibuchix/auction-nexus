@@ -130,6 +130,7 @@ export const DealerVerificationTable = ({
                 {formatDate(dealer.createdAt)}
               </TableCell>
               <TableCell>{getStatusBadge(dealer.verification_status)}</TableCell>
+              <TableCell>{getSubscriptionBadge(dealer)}</TableCell>
               <TableCell>
                 <DealerActivityBadge {...getDealerActivityStatus(dealer.userId)} />
               </TableCell>
