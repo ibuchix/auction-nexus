@@ -166,7 +166,7 @@ export const DealerVerificationTable = ({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={9} className="text-center py-4">
+            <TableCell colSpan={10} className="text-center py-4">
               No {activeTab === "all" ? "" : activeTab} dealers found
             </TableCell>
           </TableRow>
