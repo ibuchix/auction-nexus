@@ -6,6 +6,13 @@ import { DealerVerificationTabs } from "@/components/admin/dealer-verification/D
 import { DealerReviewDialog } from "@/components/admin/dealer-verification/DealerReviewDialog";
 import { DealerPagination } from "@/components/admin/dealer-verification/DealerPagination";
 import { SearchBar } from "@/components/dashboard/SearchBar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const DealerVerification = () => {
   const {
@@ -33,7 +40,9 @@ const DealerVerification = () => {
     handleRejectDealer,
     handleToggleVerification,
     handleReviewDealer,
-    handleExportCSV
+    handleExportCSV,
+    subscriptionFilter,
+    setSubscriptionFilter,
   } = useDealerVerification();
 
   if (isLoading) {
@@ -74,16 +83,27 @@ const DealerVerification = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex-1">
           <SearchBar 
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
           />
         </div>
-        {dealers && searchQuery && (
-          <p className="text-sm text-muted-foreground">
-            Showing {dealers.length} result{dealers.length !== 1 ? 's' : ''} for "{searchQuery}"
+        <Select value={subscriptionFilter} onValueChange={(v) => setSubscriptionFilter(v as typeof subscriptionFilter)}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Subscription" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All subscriptions</SelectItem>
+            <SelectItem value="subscribed">Subscribed only</SelectItem>
+            <SelectItem value="not_subscribed">Not subscribed</SelectItem>
+          </SelectContent>
+        </Select>
+        {dealers && (searchQuery || subscriptionFilter !== 'all') && (
+          <p className="text-sm text-muted-foreground whitespace-nowrap">
+            Showing {dealers.length} result{dealers.length !== 1 ? 's' : ''}
+            {searchQuery ? ` for "${searchQuery}"` : ''}
           </p>
         )}
       </div>
