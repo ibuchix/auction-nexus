@@ -40,7 +40,9 @@ const DealerVerification = () => {
     handleRejectDealer,
     handleToggleVerification,
     handleReviewDealer,
-    handleExportCSV
+    handleExportCSV,
+    subscriptionFilter,
+    setSubscriptionFilter,
   } = useDealerVerification();
 
   if (isLoading) {
