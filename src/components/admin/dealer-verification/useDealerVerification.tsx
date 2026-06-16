@@ -264,6 +264,8 @@ export const useDealerVerification = () => {
     handleRejectDealer,
     handleToggleVerification,
     handleReviewDealer,
-    handleExportCSV
+    handleExportCSV,
+    subscriptionFilter,
+    setSubscriptionFilter,
   };
 };
