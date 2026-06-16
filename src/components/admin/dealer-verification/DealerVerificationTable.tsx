@@ -104,6 +104,7 @@ export const DealerVerificationTable = ({
           <TableHead>Tax ID</TableHead>
           <TableHead>Submitted</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead>Subscription</TableHead>
           <TableHead>Activity</TableHead>
           <TableHead>Verified</TableHead>
           <TableHead>Action</TableHead>
