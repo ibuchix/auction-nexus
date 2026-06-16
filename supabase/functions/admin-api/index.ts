@@ -343,9 +343,32 @@ Deno.serve(async (req) => {
 
         console.log(`Fetched ${dealersData?.length || 0} dealers, total count: ${count}`)
 
+        // Batch-fetch subscription info for these dealers
+        const dealerIds = (dealersData || []).map((d: any) => d.id)
+        const subscriptionsByDealerId: Record<string, any> = {}
+        if (dealerIds.length > 0) {
+          const { data: subsData, error: subsError } = await supabase
+            .from('dealer_subscriptions')
+            .select('dealer_id, status, current_period_end, cancel_at_period_end')
+            .in('dealer_id', dealerIds)
+          if (subsError) {
+            console.warn('Failed to fetch dealer_subscriptions:', subsError)
+          } else {
+            for (const sub of subsData || []) {
+              const existing = subscriptionsByDealerId[sub.dealer_id]
+              const isActive = sub.status === 'active' || sub.status === 'trialing'
+              const existingActive = existing && (existing.status === 'active' || existing.status === 'trialing')
+              if (!existing || (isActive && !existingActive)) {
+                subscriptionsByDealerId[sub.dealer_id] = sub
+              }
+            }
+          }
+        }
+
         // Fetch email and phone for ONLY the paginated dealers
         const dealersWithEmails = await Promise.all(
           (dealersData || []).map(async (dealer) => {
+            const sub = subscriptionsByDealerId[dealer.id] || null
             try {
               const { data: userData, error: userError } = await supabase.auth.admin.getUserById(dealer.user_id)
               
@@ -356,14 +379,20 @@ Deno.serve(async (req) => {
               return {
                 ...dealer,
                 email: userData?.user?.email || null,
-                phone_number: userData?.user?.phone || null
+                phone_number: userData?.user?.phone || null,
+                subscription_status: sub?.status || null,
+                subscription_current_period_end: sub?.current_period_end || null,
+                subscription_cancel_at_period_end: sub?.cancel_at_period_end || false,
               }
             } catch (err) {
               console.error(`Error fetching user for dealer ${dealer.id}:`, err)
               return {
                 ...dealer,
                 email: null,
-                phone_number: null
+                phone_number: null,
+                subscription_status: sub?.status || null,
+                subscription_current_period_end: sub?.current_period_end || null,
+                subscription_cancel_at_period_end: sub?.cancel_at_period_end || false,
               }
             }
           })
