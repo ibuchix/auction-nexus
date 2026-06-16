@@ -6,6 +6,13 @@ import { DealerVerificationTabs } from "@/components/admin/dealer-verification/D
 import { DealerReviewDialog } from "@/components/admin/dealer-verification/DealerReviewDialog";
 import { DealerPagination } from "@/components/admin/dealer-verification/DealerPagination";
 import { SearchBar } from "@/components/dashboard/SearchBar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const DealerVerification = () => {
   const {
