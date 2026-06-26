@@ -60,6 +60,7 @@ export function AuctionHeader({
   onStart,
   onPause,
   onExtendTime,
+  onReopen,
   onScheduleClick,
   status,
   startTime,
