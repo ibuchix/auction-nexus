@@ -99,6 +99,26 @@ export function AdminAuctionCard({
       await extendAuctionTime(auction.id, hours, reason);
     }
   };
+  const handleReopen = async () => {
+    const { data, error } = await supabase.rpc('admin_reopen_auction', {
+      p_car_id: auction.id,
+      p_hours_to_add: 168,
+      p_reason: 'Reopened from Ended tab',
+    });
+    if (error || (data && (data as any).success === false)) {
+      toast({
+        title: 'Failed to reopen auction',
+        description: (error?.message) || (data as any)?.error || 'Unknown error',
+        variant: 'destructive',
+      });
+      return;
+    }
+    toast({
+      title: 'Auction reopened',
+      description: 'The vehicle is back in Active Auctions for 7 days.',
+    });
+    onSuccess?.();
+  };
   const handleScheduleClick = () => onScheduleClick ? onScheduleClick(auction) : undefined;
 
   // Get proper pricing from valuation data if available
