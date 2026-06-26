@@ -2,16 +2,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Play, 
-  Pause, 
-  Ban, 
-  Edit, 
-  Save, 
-  X, 
+import {
+  Play,
+  Pause,
+  Ban,
+  Edit,
+  Save,
+  X,
   Clock,
   Calendar,
-  Settings
+  Settings,
+  RotateCcw
 } from "lucide-react";
 import { AuctionStatus } from "@/types/auction";
 import { ListingBadges } from "@/components/listing/ListingBadges";
@@ -38,6 +39,7 @@ interface AuctionHeaderProps {
   onStart?: () => Promise<void>;
   onPause?: () => Promise<void>;
   onExtendTime?: () => Promise<void>;
+  onReopen?: () => Promise<void>;
   onScheduleClick?: () => void;
   status?: AuctionStatus;
   startTime?: string;
@@ -58,6 +60,7 @@ export function AuctionHeader({
   onStart,
   onPause,
   onExtendTime,
+  onReopen,
   onScheduleClick,
   status,
   startTime,
@@ -217,6 +220,38 @@ export function AuctionHeader({
             <Clock className="h-4 w-4 mr-1" />
             Extend
           </Button>
+        )}
+
+        {onReopen && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isSubmitting}
+                className="border-amber-500 text-amber-700 hover:bg-amber-50"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Reopen auction
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reopen this auction?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will put the vehicle back into Active Auctions for another 7 days.
+                  Any recorded winner for this auction will be removed so the car can be re-auctioned.
+                  This cannot be undone automatically.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleAction(onReopen)}>
+                  Yes, reopen for 7 days
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
 
         <AlertDialog>
