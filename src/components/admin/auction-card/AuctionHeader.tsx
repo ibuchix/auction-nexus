@@ -39,6 +39,7 @@ interface AuctionHeaderProps {
   onStart?: () => Promise<void>;
   onPause?: () => Promise<void>;
   onExtendTime?: () => Promise<void>;
+  onReopen?: () => Promise<void>;
   onScheduleClick?: () => void;
   status?: AuctionStatus;
   startTime?: string;
