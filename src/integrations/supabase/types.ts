@@ -3022,6 +3022,10 @@ export type Database = {
         Args: { p_valuation_id: string }
         Returns: Json
       }
+      admin_reopen_auction: {
+        Args: { p_car_id: string; p_hours_to_add?: number; p_reason?: string }
+        Returns: Json
+      }
       admin_reorder_car_files: { Args: { p_files: Json }; Returns: undefined }
       admin_transfer_manual_valuation_to_cars: {
         Args: { p_reserve_price: number; p_valuation_id: string }
