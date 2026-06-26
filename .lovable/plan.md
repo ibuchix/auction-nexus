@@ -1,65 +1,58 @@
+## What's happening
 
-# Lock down cron + admin-only edge functions
+Today's auction-end job closed 5 cars at 13:00 UTC and the "Extend" button on the Ended tab doesn't work for them. Reason: `extend_auction_time` (the SQL function the button calls) hard-rejects anything whose `auction_status != 'active'`:
 
-## Scope (confirmed)
-
-Only two functions in this repo need work:
-
-1. **`send-notifications`** — currently **completely open** (no auth guard). Called both by cron (`send-dealer-notifications`, every 5 min) and by the admin UI (`SellerList`, `AuctionOutcomes`). Highest risk: anyone on the internet can trigger Resend emails.
-2. **`cleanup-old-vehicle-files`** — already guarded, but mixes "service-role key as bearer" (anti-pattern) with admin-JWT. Cron path is fragile. Called monthly via `monthly-vehicle-cleanup`.
-
-Not touched (already properly admin-JWT-guarded): `admin-api`, `close-ended-auctions`, `start-scheduled-auctions`, `recover-auction`, `reset-auction-system`, `cleanup-cars-history`.
-
-Out of scope: `track-event`, `send-whatsapp`, `get-dealers-with-phones` (public/seller/dealer flows). The `migrate-manual-valuation-photos` function the advisory mentioned does not exist in this project — photo migration happens inside the `admin_transfer_manual_valuation_to_cars_enhanced` SQL RPC, already admin-guarded.
-
-## Auth pattern
-
-Each protected function gets the same two-path guard at the top:
-
-```text
-1. If header `x-cron-secret` matches env CRON_SECRET → authorized as "cron"
-2. Else read Authorization: Bearer <token>
-   - supabase.auth.getUser(token)  (per project memory, NOT getClaims)
-   - has_role(user.id, 'admin')
-   - If admin → authorized as "admin"
-3. Else → 401 / 403
+```
+IF v_auction_status != 'active' THEN
+  RETURN ... 'Auction is not active (current status: ended)'
 ```
 
-This preserves both flows: cron keeps working with a real shared secret, admin UI keeps working with the user's JWT (auto-attached by `supabase.functions.invoke`).
+It also only looks at `auction_schedules` rows whose status is `active` / `running`. All 5 of these have schedules in `completed`. So the RPC fails before changing anything — that's why nothing moved into Active Auctions.
 
-## Steps
+## The 5 cars
 
-1. **Add secret `CRON_SECRET`** via the secrets tool (you paste a random 48+ char value).
-2. **Edit `supabase/functions/send-notifications/index.ts`** — add the guard block at the top of the `serve` handler. No other logic changes.
-3. **Edit `supabase/functions/cleanup-old-vehicle-files/index.ts`** — replace the `token === serviceRoleKey` branch with the `x-cron-secret` branch. Keep the admin-JWT branch.
-4. **Update the two pg_cron jobs** to send `x-cron-secret` header. Done via direct SQL (not a migration file) so the secret literal isn't committed:
-   - `monthly-vehicle-cleanup` → `cleanup-old-vehicle-files`
-   - `send-dealer-notifications` → `send-notifications`
-5. **Verification:**
-   - `curl` `send-notifications` with no auth → 401
-   - `curl` with bogus secret → 401
-   - `curl` with `x-cron-secret: <CRON_SECRET>` → 200
-   - Admin clicks "Send notifications" in `SellerList` / `AuctionOutcomes` → still works (JWT path)
-   - Check `cron.job_run_details` after the next 5-min tick → `send-dealer-notifications` shows 200
-   - Note the third HTTP cron `process-seller-decisions` — points at an edge function that doesn't exist in this repo; I'll flag it but not modify it.
+| # | Car | Notes |
+|---|---|---|
+| 1 | 2016 Hyundai i40 (`8d63a649…`) | clean — no winner, no result |
+| 2 | 2013 BMW 5-Series (`854666dd…`) | clean |
+| 3 | 2019 Ford Focus (`6904bc97…`) | clean |
+| 4 | 2015 Audi A6 (`1b838a85…`) | clean |
+| 5 | 2008 Peugeot 4007 (`79377060…`) | has 1 row in `auction_results` and 1 in `dealer_won_vehicles` — must be cleared or restore will conflict |
 
-## Technical details
+All 5 schedules are in `completed`, all cars are `auction_status = 'ended'`, original end was 2026-06-26 13:00 UTC.
 
-**Files changed**
-- `supabase/functions/send-notifications/index.ts` — ~20-line guard added inside `serve`, before any logic.
-- `supabase/functions/cleanup-old-vehicle-files/index.ts` — swap service-role-bearer check for cron-secret header check.
+## Plan
 
-**Secrets added**
-- `CRON_SECRET` (edge-function env var).
+### Step 1 — Restore these 5 specific cars (data fix, runs once)
 
-**DB changes (direct SQL, no migration file)**
-- `cron.unschedule('monthly-vehicle-cleanup')` + re-`cron.schedule(...)` with `headers` jsonb containing `"x-cron-secret": "<secret>"`.
-- Same for `send-dealer-notifications`.
+Run a single SQL transaction via the insert tool that, for each of the 5 car IDs:
 
-**Not touched**
-- `src/integrations/supabase/types.ts` (auto-generated).
-- Any seller/dealer-facing function.
-- The 6 functions already admin-JWT-guarded.
+1. `DELETE FROM dealer_won_vehicles WHERE car_id = …` (only Peugeot has a row, no-op for the others)
+2. `DELETE FROM auction_results WHERE car_id = …` (same)
+3. `UPDATE auction_schedules SET status='active', end_time = now() + interval '7 days', is_manually_controlled=true, last_status_change=now(), notes = notes || '🔄 Reopened by admin — extended 7 days from end' WHERE car_id = …`
+4. `UPDATE cars SET auction_status='active', auction_end_time = now() + interval '7 days', is_manually_controlled=true, updated_at=now() WHERE id = …`
+5. Insert one `audit_logs` row per car with action `'extend_auction'`, details `{reason: 'Manual reopen — extend ended auction by 7 days', hours_added: 168, old_end_time, new_end_time}`
 
-**Sequencing**
-Secret first, then deploy both function edits, then swap the cron jobs. If the cron is swapped before the functions deploy, one cron tick might 401 — acceptable for the 5-min job, but to be safe I'll do functions before cron.
+New end time will be **2026-07-03 ~21:50 UTC** (7×24h from when we run it). If you'd rather pin it to a clean clock time (e.g. 7 days from the original 13:00 UTC end → 2026-07-03 13:00 UTC), say so and I'll use that timestamp instead.
+
+### Step 2 — Make the Extend button work on the Ended tab going forward
+
+Right now the button is technically hidden on Ended cards (`AdminAuctionCard` only renders Extend when `auctionStatus === 'active'`), so a different surface must have been the one you clicked — I'll confirm which one after you approve Step 1. Two options once we know:
+
+- **A. Keep Extend strictly for active auctions** and add a separate **"Reopen auction"** action on Ended cards that reuses the Step 1 logic via a new RPC (e.g. `admin_reopen_auction(p_car_id, p_hours)`) which: clears `auction_results` + `dealer_won_vehicles`, flips schedule + car back to active, sets a new end time, writes an audit log.
+- **B. Extend the existing `extend_auction_time` RPC** so when the auction is `ended` it does the same reopen flow instead of erroring. Cleaner UX (one button) but slightly more "magic".
+
+My recommendation: **A** — explicit "Reopen" is safer because reopening wipes a winner record (matters for the Peugeot case).
+
+## Technical notes
+
+- The reopen affects: `cars`, `auction_schedules`, `auction_results`, `dealer_won_vehicles`, `audit_logs`. No bid data is touched, so existing bids stay attached.
+- For the Peugeot, removing the `dealer_won_vehicles` row means the dealer who currently "won" it will no longer see it in their won-vehicles list. Confirm that's acceptable before I run Step 1.
+- After Step 1, the 5 cars will appear under Active Auctions and disappear from the Ended tab automatically (those queries key off `auction_status`).
+- I will not touch any other ended auctions.
+
+## Confirm before I switch to build mode
+
+1. Use **7 days from now**, or **7 days from the original 13:00 UTC end** (2026-07-03 13:00 UTC)?
+2. OK to wipe the Peugeot 4007's winner record (`auction_results` + `dealer_won_vehicles`) so it can go back to auction?
+3. For Step 2, go with option **A (separate "Reopen" button)** or **B (Extend handles ended too)**?
