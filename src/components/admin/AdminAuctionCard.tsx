@@ -143,6 +143,7 @@ export function AdminAuctionCard({
           onStart={auction.auctionStatus === 'ready' || auction.auctionStatus === 'paused' ? handleStart : undefined}
           onPause={auction.auctionStatus === 'active' ? handlePause : undefined}
           onExtendTime={auction.auctionStatus === 'active' ? handleExtendTime : undefined}
+          onReopen={['ended','sold','cancelled','expired','closed'].includes(auction.auctionStatus) ? handleReopen : undefined}
           onScheduleClick={onScheduleClick ? handleScheduleClick : undefined}
           status={auction.auctionStatus as AuctionStatus}
           startTime={auction.auctionStartTime}
